@@ -1,0 +1,88 @@
+### OS ###
+.DS_Store
+Thumbs.db
+
+### IDE ###
+.idea/
+*.iws
+*.iml
+*.ipr
+/.vscode/
+backend/.vscode/
+frontend/.vscode/*
+!frontend/.vscode/launch.json
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated
+.sts4-cache/
+
+### Logs / Temp ###
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+### Backend (Gradle / Java) ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+HELP.md
+
+### Backend secrets (application-*.yml 은 profile 별 실제 값이므로 추적하지 않는다) ###
+application-dev.yml
+application-prod.yml
+
+### Frontend (Flutter / Dart) ###
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/coverage/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/ios/Flutter/ephemeral/
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/flutter_export_environment.sh
+*.xcuserstate
+*.ipa
+DerivedData/
+
+### Frontend 생성 코드 (build_runner 로 생성) ###
+*.g.dart
+*.freezed.dart
+
+### Frontend 환경값 (--dart-define-from-file 로 주입, example 파일 없음) ###
+frontend/config/*.json
+
+### 키 / 인증서 / 서비스 계정 ###
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+key.properties
+google-services.json
+GoogleService-Info.plist
+
+### Claude Code (개인/임시) ###
+.claude/settings.local.json
+.claude/worktrees/
