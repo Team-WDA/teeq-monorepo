@@ -29,7 +29,7 @@
 ## Commands
 
 - Backend: `cd backend && ./gradlew build`
-- Frontend: `cd frontend && dart run build_runner build --delete-conflicting-outputs && flutter analyze && flutter test`
+- Frontend: `cd frontend && dart run build_runner build && flutter analyze && flutter test`
 
 ## Evidence
 

@@ -27,7 +27,7 @@ ai-friend-monorepo/
 ## 프론트엔드 실행
 
 1. `frontend/config/dev.json`을 직접 만듭니다. 필요한 키는 `frontend/lib/core/config/app_config.dart`의 `AppConfig`를 참고하세요. (gitignore 파일이며 example은 없습니다.)
-2. `cd frontend && flutter pub get && dart run build_runner build --delete-conflicting-outputs`
+2. `cd frontend && flutter pub get && dart run build_runner build`
 3. `flutter run --dart-define-from-file=config/dev.json`
 
 생성 코드(`*.g.dart`, `*.freezed.dart`)는 커밋하지 않으므로 클론 직후 `build_runner`를 한 번 실행해야 합니다.

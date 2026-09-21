@@ -16,7 +16,7 @@ paths:
 
 - Models: `freezed`(불변)와 `json_serializable`을 사용한다.
 - Generated files: `*.g.dart`, `*.freezed.dart`는 gitignore이며 커밋하지 않는다.
-- Generate: `cd frontend && dart run build_runner build --delete-conflicting-outputs`. 클론 직후와 어노테이션을 바꾼 뒤에 실행한다.
+- Generate: `cd frontend && dart run build_runner build`. 클론 직후와 어노테이션을 바꾼 뒤에 실행한다.
 
 ## Environment values
 
