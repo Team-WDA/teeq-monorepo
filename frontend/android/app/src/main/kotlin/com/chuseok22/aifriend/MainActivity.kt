@@ -1,4 +1,4 @@
-package com.chuseok22.aifriend.ai_friend
+package com.chuseok22.aifriend
 
 import io.flutter.embedding.android.FlutterActivity
 

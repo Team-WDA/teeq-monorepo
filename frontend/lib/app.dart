@@ -8,6 +8,6 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    return MaterialApp.router(title: 'ai-friend', routerConfig: router);
+    return MaterialApp.router(title: 'AI Friend', routerConfig: router);
   }
 }
