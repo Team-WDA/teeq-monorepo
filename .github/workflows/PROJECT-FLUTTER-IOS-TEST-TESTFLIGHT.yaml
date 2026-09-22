@@ -974,6 +974,10 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 성공
         if: success() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.notify-start.outputs.comment_id != ''
         uses: actions/github-script@v9
+        # [ai-friend: client_payload 값을 env로 받아 JS 문자열 인젝션 방지]
+        env:
+          BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+          BUILD_NUMBER: ${{ github.event.client_payload.build_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -982,8 +986,8 @@ jobs:
             const step2EndTime = parseInt('${{ needs.build-ios-test.outputs.step2_end_time }}');
             const step1Elapsed = '${{ needs.build-ios-test.outputs.step1_elapsed }}';
             const step2Elapsed = '${{ needs.build-ios-test.outputs.step2_elapsed }}';
-            const branchName = '${{ github.event.client_payload.branch_name }}';
-            const buildNumber = '${{ github.event.client_payload.build_number }}';
+            const branchName = process.env.BRANCH_NAME;
+            const buildNumber = process.env.BUILD_NUMBER;
             const version = '${{ needs.prepare-test-build.outputs.version }}';
             const commitHash = '${{ needs.prepare-test-build.outputs.commit_hash }}';
             const runId = '${{ github.run_id }}';
@@ -1037,6 +1041,10 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 실패
         if: failure() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.notify-start.outputs.comment_id != ''
         uses: actions/github-script@v9
+        # [ai-friend: client_payload 값을 env로 받아 JS 문자열 인젝션 방지]
+        env:
+          BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+          BUILD_NUMBER: ${{ github.event.client_payload.build_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -1045,8 +1053,8 @@ jobs:
             const step2EndTime = parseInt('${{ needs.build-ios-test.outputs.step2_end_time }}') || 0;
             const step1Elapsed = '${{ needs.build-ios-test.outputs.step1_elapsed }}';
             const step2Elapsed = '${{ needs.build-ios-test.outputs.step2_elapsed }}';
-            const branchName = '${{ github.event.client_payload.branch_name }}';
-            const buildNumber = '${{ github.event.client_payload.build_number }}';
+            const branchName = process.env.BRANCH_NAME;
+            const buildNumber = process.env.BUILD_NUMBER;
             const version = '${{ needs.prepare-test-build.outputs.version }}';
             const commitHash = '${{ needs.prepare-test-build.outputs.commit_hash }}';
             const runId = '${{ github.run_id }}';

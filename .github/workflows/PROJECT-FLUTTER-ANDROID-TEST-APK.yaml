@@ -830,6 +830,10 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 성공
         if: success() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.prepare-test-build.outputs.progress_comment_id != ''
         uses: actions/github-script@v9
+        # [ai-friend: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
+        env:
+          BRANCH_NAME: ${{ needs.prepare-test-build.outputs.branch_name }}
+          PR_NUMBER: ${{ github.event.client_payload.pr_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -839,9 +843,9 @@ jobs:
             const step2Elapsed = '${{ steps.progress_step2.outputs.elapsed }}';
             const step3Elapsed = '${{ steps.artifact_time.outputs.elapsed }}';
             const step4Elapsed = '${{ steps.firebase_time.outputs.elapsed }}';
-            const prNumber = parseInt('${{ github.event.client_payload.pr_number }}');
+            const prNumber = parseInt(process.env.PR_NUMBER);
             const buildNumber = '${{ needs.prepare-test-build.outputs.build_number }}';
-            const branchName = '${{ needs.prepare-test-build.outputs.branch_name }}';
+            const branchName = process.env.BRANCH_NAME;
             const commitHash = '${{ needs.prepare-test-build.outputs.commit_hash }}';
             const issueNumber = '${{ needs.prepare-test-build.outputs.issue_number }}';
             const runId = '${{ github.run_id }}';
@@ -943,6 +947,10 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 실패
         if: failure() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.prepare-test-build.outputs.progress_comment_id != ''
         uses: actions/github-script@v9
+        # [ai-friend: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
+        env:
+          BRANCH_NAME: ${{ needs.prepare-test-build.outputs.branch_name }}
+          PR_NUMBER: ${{ github.event.client_payload.pr_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -950,10 +958,10 @@ jobs:
             const startTime = parseInt('${{ needs.prepare-test-build.outputs.progress_start_time }}');
             const step1EndTime = parseInt('${{ steps.progress_step1.outputs.end_time }}') || 0;
             const step1Elapsed = '${{ steps.progress_step1.outputs.elapsed }}';
-            const prNumber = parseInt('${{ github.event.client_payload.pr_number }}');
+            const prNumber = parseInt(process.env.PR_NUMBER);
             const buildNumber = '${{ needs.prepare-test-build.outputs.build_number }}';
             const version = '${{ needs.prepare-test-build.outputs.version }}';
-            const branchName = '${{ needs.prepare-test-build.outputs.branch_name }}';
+            const branchName = process.env.BRANCH_NAME;
             const issueNumber = '${{ needs.prepare-test-build.outputs.issue_number }}';
             const runId = '${{ github.run_id }}';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
