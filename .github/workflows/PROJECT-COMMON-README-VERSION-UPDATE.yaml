@@ -56,6 +56,10 @@ concurrency:
 on:
   push:
     branches: ["main"]
+    # [ai-friend: RELEASE-PUBLISH와 동일한 필터. README 버전 표시는 릴리스와 경쟁해 한 버전 뒤처질 수 있음(80-ci-cd.md 참고)]
+    paths:
+      - "backend/**"
+      - "frontend/**"
   workflow_dispatch:
 
 permissions:

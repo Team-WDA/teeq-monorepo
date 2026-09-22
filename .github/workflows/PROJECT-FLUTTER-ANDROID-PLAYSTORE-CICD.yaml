@@ -23,6 +23,7 @@ name: PROJECT-FLUTTER-ANDROID-PLAYSTORE-INTERNAL-CICD
 on:
   push:
     branches: ["main"]
+    paths: ["frontend/**"]  # [ai-friend]
   workflow_dispatch:
     inputs:
       deploy_mode:
@@ -40,9 +41,9 @@ on:
 # ============================================
 env:
   # 프로젝트 이름
-  APP_ARTIFACT_NAME: "ai-friend-monorepo"
+  APP_ARTIFACT_NAME: "ai-friend"  # [ai-friend]
   # Flutter/Java 버전
-  FLUTTER_VERSION: "3.35.5"
+  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
   JAVA_VERSION: "21"
   PROJECT_TYPE: "flutter"
   # Flutter 루트 경로(레포 루트 기준). 단일레포면 ".", 모노레포면 "app" 등.
@@ -76,12 +77,13 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      - name: Create .env file
-        env:
-          ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
-        run: |
-          printf '%s\n' "$ENV_CONTENT" > .env
-          echo ".env file created"
+      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # - name: Create .env file
+      #   env:
+      #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
+      #   run: |
+      #     printf '%s\n' "$ENV_CONTENT" > .env
+      #     echo ".env file created"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -99,9 +101,7 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
 
       # version_manager.py를 사용하여 현재 버전 정보 가져오기
       - name: 현재 버전 정보 가져오기
@@ -173,18 +173,17 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-      # 프로젝트 파일들을 아티팩트로 업로드
-      # .env는 보안상 아티팩트에 포함하지 않고, 각 job에서 secrets로 재생성
-      - name: Upload project files
-        uses: actions/upload-artifact@v7
-        with:
-          name: project-files
-          path: |
-            pubspec.yaml
-            lib/
-            assets/
-          retention-days: 1
-          if-no-files-found: error
+      # [ai-friend: disabled - workspace 루트 기준 경로라 pubspec.yaml/lib//assets/가 없어 if-no-files-found: error로 매번 실패함. build-android가 main을 다시 checkout하므로 불필요]
+      # - name: Upload project files
+      #   uses: actions/upload-artifact@v7
+      #   with:
+      #     name: project-files
+      #     path: |
+      #       pubspec.yaml
+      #       lib/
+      #       assets/
+      #     retention-days: 1
+      #     if-no-files-found: error
 
   build-android:
     name: Android AAB 빌드
@@ -204,20 +203,33 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      # 프로젝트 파일들 다운로드
-      - name: Download project files
-        uses: actions/download-artifact@v8
-        with:
-          name: project-files
-          path: .
+      # [ai-friend: disabled - prepare-build가 project-files 아티팩트를 만들지 않음]
+      # - name: Download project files
+      #   uses: actions/download-artifact@v8
+      #   with:
+      #     name: project-files
+      #     path: .
 
-      # .env 파일 생성 (보안을 위해 아티팩트가 아닌 시크릿에서 생성)
-      - name: Create .env file
+      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 배포용 job이므로 비어 있으면 즉시 실패]
+      - name: Create config/prod.json
         env:
-          ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
+          FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
         run: |
-          printf '%s\n' "$ENV_CONTENT" > .env
-          echo "✅ .env 파일 생성됨 (크기: $(wc -c < .env) bytes)"
+          mkdir -p config
+          if [ -z "$FRONTEND_CONFIG_JSON" ]; then
+            echo "::error::FRONTEND_CONFIG_JSON secret is not set"
+            exit 1
+          fi
+          printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
+          python3 -m json.tool config/prod.json > /dev/null
+
+      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # - name: Create .env file
+      #   env:
+      #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
+      #   run: |
+      #     printf '%s\n' "$ENV_CONTENT" > .env
+      #     echo "✅ .env 파일 생성됨 (크기: $(wc -c < .env) bytes)"
 
       # Release Keystore 설정
       - name: Setup Release Keystore
@@ -237,15 +249,15 @@ jobs:
           keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
           EOF
           echo "✅ key.properties 생성 완료"
-          cat android/key.properties
+          # [ai-friend: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
 
-      # Google-services.json 생성
-      - name: Create Google-services.json
-        run: |
-          cat << 'EOF' > android/app/google-services.json
-          ${{ secrets.GOOGLE_SERVICES_JSON }}
-          EOF
-          echo "✅ Google-services.json 생성 완료"
+      # [ai-friend: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
+      # - name: Create Google-services.json
+      #   run: |
+      #     cat << 'EOF' > android/app/google-services.json
+      #     ${{ secrets.GOOGLE_SERVICES_JSON }}
+      #     EOF
+      #     echo "✅ Google-services.json 생성 완료"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -263,9 +275,7 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
 
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -328,9 +338,7 @@ jobs:
           echo "🔄 Flutter clean 및 의존성 재설치..."
           flutter clean
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
 
           # local.properties에 버전 정보 추가 (Flutter 플래그가 무시되는 문제 해결)
           echo "🔧 local.properties에 버전 정보 설정..."
@@ -366,6 +374,7 @@ jobs:
             --release \
             --build-name="$VERSION_NAME" \
             --build-number="$VERSION_CODE" \
+            --dart-define-from-file=config/prod.json \
             --verbose
           
           BUILD_EXIT_CODE=$?

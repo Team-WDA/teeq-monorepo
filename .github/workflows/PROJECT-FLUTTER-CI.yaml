@@ -48,8 +48,10 @@ on:
   pull_request:
     branches: ["main"]
     types: [opened, synchronize, reopened]
+    paths: ["frontend/**"]  # [ai-friend]
   push:
     branches: ["main"]
+    paths: ["frontend/**"]  # [ai-friend]
   workflow_dispatch:
     inputs:
       analyze_only:
@@ -81,7 +83,7 @@ env:
   ENABLE_IOS: "true"        # iOS 빌드 활성화 (true/false)
 
   # 🔧 프로젝트별 설정
-  FLUTTER_VERSION: "3.35.5"
+  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
   JAVA_VERSION: "21"
   XCODE_VERSION: "26.0"
   ENV_FILE_PATH: ".env"     # 환경변수 파일 경로 (커스터마이징 가능)
@@ -136,11 +138,15 @@ jobs:
       # 빌드 정보 수집
       - name: 빌드 정보 수집
         id: info
+        # [ai-friend: github.head_ref(PR 브랜치명)를 env로 받아 셸 인젝션 방지]
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            BRANCH_NAME="${{ github.head_ref }}"
+            BRANCH_NAME="$HEAD_REF"
           else
-            BRANCH_NAME="${{ github.ref_name }}"
+            BRANCH_NAME="$REF_NAME"
           fi
           COMMIT_HASH=$(echo "${{ github.sha }}" | cut -c1-7)
 
@@ -154,14 +160,20 @@ jobs:
       # PR인 경우 진행 상황 댓글 생성
       - name: 진행 상황 댓글 생성
         id: comment
-        if: github.event_name == 'pull_request'
+        # [ai-friend: fork PR은 GITHUB_TOKEN이 read-only라 댓글 작성이 403으로 실패함 → 같은 저장소 PR만 실행]
+        if: |
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v9
+        env:
+          BRANCH_NAME: ${{ steps.info.outputs.branch_name }}
+          COMMIT_HASH: ${{ steps.info.outputs.commit_hash }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request.number;
-            const branchName = '${{ steps.info.outputs.branch_name }}';
-            const commitHash = '${{ steps.info.outputs.commit_hash }}';
+            const branchName = process.env.BRANCH_NAME;
+            const commitHash = process.env.COMMIT_HASH;
             const analyzeOnly = '${{ steps.config.outputs.analyze_only }}' === 'true';
             const enableAndroid = '${{ steps.config.outputs.enable_android }}' === 'true';
             const enableIos = '${{ steps.config.outputs.enable_ios }}' === 'true';
@@ -230,6 +242,9 @@ jobs:
     name: 코드 분석
     runs-on: ubuntu-latest
     needs: prepare
+    defaults:
+      run:
+        working-directory: frontend  # [ai-friend]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -246,13 +261,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # .env 파일 생성
-      - name: Create .env file
-        run: |
-          cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
-          ${{ secrets.ENV_FILE || secrets.ENV }}
-          EOF
-          echo "✅ ${{ env.ENV_FILE_PATH }} file created"
+      # [ai-friend: disabled - 앱은 .env를 읽지 않고 --dart-define-from-file만 읽음. analyze/test는 dart-define도 불필요]
+      # - name: Create .env file
+      #   run: |
+      #     cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
+      #     ${{ secrets.ENV_FILE || secrets.ENV }}
+      #     EOF
+      #     echo "✅ ${{ env.ENV_FILE_PATH }} file created"
 
       # Flutter 설정
       - name: Set up Flutter
@@ -278,9 +293,7 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
           echo "✅ Dependencies installed"
 
       # Flutter Analyze 실행
@@ -290,6 +303,14 @@ jobs:
           echo "🔍 Flutter 코드 분석 시작..."
           flutter analyze --no-fatal-infos
           echo "✅ 코드 분석 완료"
+
+      # [ai-friend: 추가 - flutter test]
+      - name: Run Flutter Tests
+        id: test
+        run: |
+          echo "🧪 Flutter 테스트 시작..."
+          flutter test
+          echo "✅ 테스트 완료"
 
       # 분석 결과 기록
       - name: 분석 결과 기록
@@ -305,7 +326,10 @@ jobs:
             const seconds = Math.floor((elapsed % 60000) / 1000);
             const duration = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 
-            const status = '${{ steps.analyze.outcome }}' === 'success' ? 'success' : 'failure';
+            // [ai-friend: analyze와 test 둘 다 성공해야 success]
+            const analyzeOk = '${{ steps.analyze.outcome }}' === 'success';
+            const testOk = '${{ steps.test.outcome }}' === 'success';
+            const status = (analyzeOk && testOk) ? 'success' : 'failure';
 
             core.setOutput('status', status);
             core.setOutput('duration', duration);
@@ -321,6 +345,9 @@ jobs:
       needs.prepare.outputs.enable_android == 'true'
     runs-on: ubuntu-latest
     needs: prepare
+    defaults:
+      run:
+        working-directory: frontend  # [ai-friend]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -337,13 +364,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # .env 파일 생성
-      - name: Create .env file
+      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 비어 있으면(fork PR 등) {}로 대체]
+      - name: Create config/prod.json
+        env:
+          FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
         run: |
-          cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
-          ${{ secrets.ENV_FILE || secrets.ENV }}
-          EOF
-          echo "✅ ${{ env.ENV_FILE_PATH }} file created"
+          mkdir -p config
+          if [ -z "$FRONTEND_CONFIG_JSON" ]; then
+            echo "::warning::FRONTEND_CONFIG_JSON is empty; building with {}"
+            FRONTEND_CONFIG_JSON='{}'
+          fi
+          printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
+          python3 -m json.tool config/prod.json > /dev/null
 
       # Flutter 설정
       - name: Set up Flutter
@@ -372,7 +404,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -380,9 +412,7 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
           echo "✅ Dependencies installed"
 
       # Java 설정
@@ -397,19 +427,19 @@ jobs:
           echo "✅ Java setup completed"
           java -version
 
-      # Gradle 셋업
-      - name: Setup Gradle
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          echo "✅ Gradle wrapper permissions set"
+      # [ai-friend: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
+      # - name: Setup Gradle
+      #   working-directory: android
+      #   run: |
+      #     chmod +x gradlew
+      #     echo "✅ Gradle wrapper permissions set"
 
       # APK 빌드 (CI는 빌드 검증 목적이므로 서명 불필요한 debug 빌드 사용)
       - name: Build APK
         id: build
         run: |
           echo "📦 Flutter APK 빌드 시작 (debug)..."
-          flutter build apk --debug
+          flutter build apk --debug --dart-define-from-file=config/prod.json
           echo "✅ APK 빌드 완료"
           ls -la ./build/app/outputs/flutter-apk/ || true
 
@@ -443,6 +473,9 @@ jobs:
       needs.prepare.outputs.enable_ios == 'true'
     runs-on: macos-26
     needs: prepare
+    defaults:
+      run:
+        working-directory: frontend  # [ai-friend]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -479,13 +512,26 @@ jobs:
           echo "=== Downloading iOS platform ==="
           xcodebuild -downloadPlatform iOS
 
-      # .env 파일 생성
-      - name: Create .env file
+      # [ai-friend: disabled - 앱은 .env를 읽지 않음. config/prod.json으로 대체]
+      # - name: Create .env file
+      #   run: |
+      #     cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
+      #     ${{ secrets.ENV_FILE || secrets.ENV }}
+      #     EOF
+      #     echo "✅ ${{ env.ENV_FILE_PATH }} file created"
+
+      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json]
+      - name: Create config/prod.json
+        env:
+          FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
         run: |
-          cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
-          ${{ secrets.ENV_FILE || secrets.ENV }}
-          EOF
-          echo "✅ ${{ env.ENV_FILE_PATH }} file created"
+          mkdir -p config
+          if [ -z "$FRONTEND_CONFIG_JSON" ]; then
+            echo "::warning::FRONTEND_CONFIG_JSON is empty; building with {}"
+            FRONTEND_CONFIG_JSON='{}'
+          fi
+          printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
+          python3 -m json.tool config/prod.json > /dev/null
 
       # Flutter 설정
       - name: Set up Flutter
@@ -511,30 +557,28 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
           echo "✅ Dependencies installed"
 
-      # Ruby 및 CocoaPods 설정
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.1"
-          bundler-cache: true
-
-      - name: Install CocoaPods
-        run: |
-          gem install cocoapods
-          cd ios && pod install --repo-update || pod install
-          echo "✅ CocoaPods installed"
+      # [ai-friend: disabled - frontend/ios에 Podfile이 없는 순수 Swift Package Manager 앱]
+      # - name: Set up Ruby
+      #   uses: ruby/setup-ruby@v1
+      #   with:
+      #     ruby-version: "3.1"
+      #     bundler-cache: true
+      #
+      # - name: Install CocoaPods
+      #   run: |
+      #     gem install cocoapods
+      #     cd ios && pod install --repo-update || pod install
+      #     echo "✅ CocoaPods installed"
 
       # iOS 빌드 (서명 없이)
       - name: Build iOS
         id: build
         run: |
           echo "📦 Flutter iOS 빌드 시작..."
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json
           echo "✅ iOS 빌드 완료"
 
       # 빌드 결과 기록
@@ -562,20 +606,26 @@ jobs:
   # ===================================================================
   report:
     name: 결과 보고
-    if: always() && github.event_name == 'pull_request'
+    # [ai-friend: fork PR은 댓글 작성 토큰이 없어 403 → 같은 저장소 PR만 실행. prepare의 댓글 생성도 같은 조건이라 comment_id가 없으면 스크립트가 조용히 스킵함]
+    if: |
+      always() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     needs: [prepare, analyze, build-android, build-ios]
 
     steps:
       - name: 최종 결과 댓글 업데이트
         uses: actions/github-script@v9
+        env:
+          BRANCH_NAME: ${{ needs.prepare.outputs.branch_name }}
+          COMMIT_HASH: ${{ needs.prepare.outputs.commit_hash }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const commentId = parseInt('${{ needs.prepare.outputs.comment_id }}');
             const startTime = parseInt('${{ needs.prepare.outputs.start_time }}');
-            const branchName = '${{ needs.prepare.outputs.branch_name }}';
-            const commitHash = '${{ needs.prepare.outputs.commit_hash }}';
+            const branchName = process.env.BRANCH_NAME;
+            const commitHash = process.env.COMMIT_HASH;
             const analyzeOnly = '${{ needs.prepare.outputs.analyze_only }}' === 'true';
             const enableAndroid = '${{ needs.prepare.outputs.enable_android }}' === 'true';
             const enableIos = '${{ needs.prepare.outputs.enable_ios }}' === 'true';

@@ -59,7 +59,7 @@ on:
 # 🔧 프로젝트별 설정 (아래 값들을 수정하세요)
 # ===================================================================
 env:
-  FLUTTER_VERSION: "3.35.5"
+  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
   JAVA_VERSION: "21"
   ENV_FILE_PATH: ".env"
   FIREBASE_APP_ID: "{FIREBASE_APP_ID}"
@@ -88,11 +88,15 @@ jobs:
         id: verify_branch
         if: github.event_name == 'repository_dispatch'
         uses: actions/github-script@v9
+        # [ai-friend: client_payload 값을 env로 받아 JS 문자열 인젝션 방지]
+        env:
+          BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+          PR_NUMBER: ${{ github.event.client_payload.pr_number }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const branchName = '${{ github.event.client_payload.branch_name }}';
-            const prNumber = '${{ github.event.client_payload.pr_number }}';
+            const branchName = process.env.BRANCH_NAME;
+            const prNumber = process.env.PR_NUMBER;
             const runId = '${{ github.run_id }}';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
 
@@ -205,19 +209,31 @@ jobs:
           ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref }}
 
       - name: Pull latest changes
+        # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
+        env:
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
         run: |
-          BRANCH_NAME="${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref_name }}"
+          BRANCH_NAME="${{ github.event_name == 'repository_dispatch' }}"
+          if [ "$BRANCH_NAME" = "true" ]; then
+            BRANCH_NAME="$CP_BRANCH_NAME"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
           echo "🌿 브랜치: $BRANCH_NAME"
           git pull origin "$BRANCH_NAME" || echo "⚠️ Pull 실패 (이미 최신 상태일 수 있음)"
 
       # 브랜치명에서 이슈 번호 추출 및 GitHub API로 이슈 정보 가져오기
       - name: 브랜치명에서 이슈 정보 추출
         id: issue_info
+        # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
+        env:
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+          CP_ISSUE_NUMBER: ${{ github.event.client_payload.issue_number }}
         run: |
           # repository_dispatch인 경우 client_payload에서 브랜치명 가져오기
           if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
-            BRANCH_NAME="${{ github.event.client_payload.branch_name }}"
-            ISSUE_NUMBER="${{ github.event.client_payload.issue_number }}"
+            BRANCH_NAME="$CP_BRANCH_NAME"
+            ISSUE_NUMBER="$CP_ISSUE_NUMBER"
           else
             BRANCH_NAME="${{ github.ref_name }}"
             # 브랜치명에서 이슈 번호 추출 (#387 형식)
@@ -299,6 +315,9 @@ jobs:
     name: Android 테스트 APK 빌드
     runs-on: ubuntu-latest
     needs: prepare-test-build
+    defaults:
+      run:
+        working-directory: frontend  # [ai-friend]
 
     steps:
       - name: Checkout repository
@@ -307,15 +326,37 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref }}
 
+      # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
       - name: Pull latest changes
-        run: git pull origin ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref_name }}
-
-      - name: Create .env file
         env:
-          ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
         run: |
-          printf '%s\n' "$ENV_CONTENT" > ${{ env.ENV_FILE_PATH }}
-          echo "✅ ${{ env.ENV_FILE_PATH }} file created"
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            git pull origin "$CP_BRANCH_NAME"
+          else
+            git pull origin "${{ github.ref_name }}"
+          fi
+
+      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 테스트 빌드이므로 비어 있으면 경고 후 {}로 진행]
+      - name: Create config/prod.json
+        env:
+          FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
+        run: |
+          mkdir -p config
+          if [ -z "$FRONTEND_CONFIG_JSON" ]; then
+            echo "::warning::FRONTEND_CONFIG_JSON is empty; building with {}"
+            FRONTEND_CONFIG_JSON='{}'
+          fi
+          printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
+          python3 -m json.tool config/prod.json > /dev/null
+
+      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # - name: Create .env file
+      #   env:
+      #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
+      #   run: |
+      #     printf '%s\n' "$ENV_CONTENT" > ${{ env.ENV_FILE_PATH }}
+      #     echo "✅ ${{ env.ENV_FILE_PATH }} file created"
 
       - name: Setup Release Keystore
         env:
@@ -340,19 +381,19 @@ jobs:
           EOF
           echo "✅ key.properties 생성 완료"
 
-      # google-services.json 생성 (선택적)
-      - name: Create google-services.json
-        shell: bash
-        env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        run: |
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            mkdir -p android/app
-            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
-            echo "✅ google-services.json created"
-          else
-            echo "ℹ️ GOOGLE_SERVICES_JSON secret not provided, skipping"
-          fi
+      # [ai-friend: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
+      # - name: Create google-services.json
+      #   shell: bash
+      #   env:
+      #     GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      #   run: |
+      #     if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+      #       mkdir -p android/app
+      #       printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+      #       echo "✅ google-services.json created"
+      #     else
+      #       echo "ℹ️ GOOGLE_SERVICES_JSON secret not provided, skipping"
+      #     fi
 
       # Flutter 설정
       - name: Set up Flutter
@@ -380,7 +421,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -388,17 +429,15 @@ jobs:
       - name: Install dependencies
         run: |
           flutter pub get
-          if grep -q "build_runner" pubspec.yaml; then
-            dart run build_runner build --delete-conflicting-outputs
-          fi
+          dart run build_runner build
           echo "✅ Dependencies installed"
 
-      # Gradle 셋업
-      - name: Setup Gradle
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          echo "✅ Gradle wrapper permissions set"
+      # [ai-friend: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
+      # - name: Setup Gradle
+      #   working-directory: android
+      #   run: |
+      #     chmod +x gradlew
+      #     echo "✅ Gradle wrapper permissions set"
 
       # Java 설정
       - name: Set up Java
@@ -412,27 +451,25 @@ jobs:
           echo "✅ Java setup completed"
           java -version
 
-      # Ruby 설정
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.4.1"
-          bundler-cache: true
-
-      - name: Verify Ruby version
-        run: |
-          echo "✅ Ruby setup completed"
-          ruby -v
-
-      # Fastlane 설치 (Bundler 방식 - gem 충돌 방지)
-      - name: Install Fastlane
-        working-directory: android
-        run: |
-          # multi_json: google-apis transitive 의존성이 선언 누락한 upstream 버그 회피 (gemspec 미선언 → Gem::LoadError)
-          printf 'source "https://rubygems.org"\ngem "fastlane"\ngem "multi_json"\n' > Gemfile
-          bundle install
-          echo "✅ Fastlane installed (Bundler)"
-          bundle exec fastlane --version
+      # [ai-friend: disabled - frontend/android/fastlane/Fastfile을 커밋하지 않아 아래 Build APK 스텝이 항상 직접 빌드로 폴백함. bundler-cache: true도 루트에 Gemfile이 없어 불필요]
+      # - name: Set up Ruby
+      #   uses: ruby/setup-ruby@v1
+      #   with:
+      #     ruby-version: "3.4.1"
+      #     bundler-cache: true
+      #
+      # - name: Verify Ruby version
+      #   run: |
+      #     echo "✅ Ruby setup completed"
+      #     ruby -v
+      #
+      # - name: Install Fastlane
+      #   working-directory: android
+      #   run: |
+      #     printf 'source "https://rubygems.org"\ngem "fastlane"\ngem "multi_json"\n' > Gemfile
+      #     bundle install
+      #     echo "✅ Fastlane installed (Bundler)"
+      #     bundle exec fastlane --version
 
       # 진행상황 - 준비 완료
       - name: 진행상황 - 준비 완료
@@ -486,12 +523,15 @@ jobs:
 
       - name: Generate APK filename
         id: apk_filename
+        # [ai-friend: 이슈 제목은 GitHub 이슈 작성자가 정하는 값이라 env로 받아 셸 인젝션 방지]
+        env:
+          ISSUE_TITLE_RAW: ${{ needs.prepare-test-build.outputs.issue_title }}
         run: |
           REPO_NAME="${{ github.event.repository.name }}"
           COMMIT_SHORT="${{ needs.prepare-test-build.outputs.commit_hash }}"
           BUILD_NUMBER="${{ needs.prepare-test-build.outputs.build_number }}"
           ISSUE_NUMBER="${{ needs.prepare-test-build.outputs.issue_number }}"
-          ISSUE_TITLE="${{ needs.prepare-test-build.outputs.issue_title }}"
+          ISSUE_TITLE="$ISSUE_TITLE_RAW"
 
           # 이슈 제목 정제
           CLEAN_TITLE=""
@@ -546,10 +586,10 @@ jobs:
           if [ -f "android/fastlane/Fastfile" ]; then
             echo "📦 Fastlane을 사용하여 빌드..."
             cd android
-            bundle exec fastlane build --verbose || flutter build apk --release
+            bundle exec fastlane build --verbose || (cd .. && flutter build apk --release --dart-define-from-file=config/prod.json)
           else
             echo "📦 Flutter 직접 빌드..."
-            flutter build apk --release
+            flutter build apk --release --dart-define-from-file=config/prod.json
           fi
           ls -la ./build/app/outputs/flutter-apk/ || true
           echo "✅ APK built"
@@ -627,11 +667,19 @@ jobs:
             core.setOutput('end_time', now.toString());
 
       # 빌드 정보 파일 생성
+      # [ai-friend: 브랜치명/이슈 제목을 env로 받아 셸 인젝션 방지]
       - name: Create build info file
+        env:
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
+          ISSUE_TITLE_RAW: ${{ needs.prepare-test-build.outputs.issue_title }}
         run: |
           BUILD_NUMBER="${{ needs.prepare-test-build.outputs.build_number }}"
           PR_NUMBER="${{ needs.prepare-test-build.outputs.pr_number }}"
-          BRANCH_NAME="${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref_name }}"
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            BRANCH_NAME="$CP_BRANCH_NAME"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
           COMMIT_SHA="${{ github.sha }}"
           COMMIT_SHORT="${{ needs.prepare-test-build.outputs.commit_hash }}"
           BUILD_DATE=$(date '+%Y-%m-%d %H:%M:%S')
@@ -659,7 +707,7 @@ jobs:
           # 이슈 정보가 있으면 추가
           if [ -n "${{ needs.prepare-test-build.outputs.issue_number }}" ]; then
             ISSUE_NUMBER="${{ needs.prepare-test-build.outputs.issue_number }}"
-            ISSUE_TITLE="${{ needs.prepare-test-build.outputs.issue_title }}"
+            ISSUE_TITLE="$ISSUE_TITLE_RAW"
             ISSUE_URL="${{ needs.prepare-test-build.outputs.issue_url }}"
 
             cat >> build-info.txt << EOF
@@ -674,16 +722,23 @@ jobs:
           cat build-info.txt
 
       # 빌드 메타데이터 파일 생성 (댓글 작성 워크플로우용)
+      # [ai-friend: 브랜치명을 env로 받고 jq -n으로 JSON을 만들어 셸/JSON 인젝션 방지]
       - name: Create build metadata file
+        env:
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
         run: |
-          cat > build-metadata.json << EOF
-          {
-            "pr_number": "${{ needs.prepare-test-build.outputs.pr_number }}",
-            "build_number": "${{ needs.prepare-test-build.outputs.build_number }}",
-            "issue_number": "${{ needs.prepare-test-build.outputs.issue_number }}",
-            "branch_name": "${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref_name }}"
-          }
-          EOF
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            BRANCH_NAME="$CP_BRANCH_NAME"
+          else
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          jq -n \
+            --arg pr_number "${{ needs.prepare-test-build.outputs.pr_number }}" \
+            --arg build_number "${{ needs.prepare-test-build.outputs.build_number }}" \
+            --arg issue_number "${{ needs.prepare-test-build.outputs.issue_number }}" \
+            --arg branch_name "$BRANCH_NAME" \
+            '{pr_number: $pr_number, build_number: $build_number, issue_number: $issue_number, branch_name: $branch_name}' \
+            > build-metadata.json
           cat build-metadata.json
 
       # APK와 빌드 정보를 아티팩트로 업로드 (브랜치명 포함)
@@ -692,10 +747,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.apk_filename.outputs.artifact_name }}
+          # [ai-friend: uses: 스텝은 defaults 미적용. run: 스텝들이 frontend/ 아래에 파일을 씀]
           path: |
-            ./android/app/build/outputs/apk/release/*.apk
-            build-info.txt
-            build-metadata.json
+            ./frontend/android/app/build/outputs/apk/release/*.apk
+            frontend/build-info.txt
+            frontend/build-metadata.json
           retention-days: 7
           if-no-files-found: error
 
@@ -721,18 +777,19 @@ jobs:
           FIREBASE_SA_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
         run: |
           echo "$FIREBASE_SA_BASE64" | base64 --decode > firebase-service-account.json
-          echo "✅ Firebase 서비스 계정 JSON 파일 생성 완료"
+          echo "✅ Firebase 서비스 계정 JSON 파일 생성 완료 (frontend/firebase-service-account.json, defaults.run.working-directory 적용됨)"
 
       - name: Upload to Firebase App Distribution
         id: firebase_upload
         if: needs.prepare-test-build.outputs.firebase_available == 'true'
         continue-on-error: true
         uses: wzieba/Firebase-Distribution-Github-Action@v1
+        # [ai-friend: 이 액션은 uses: 스텝이라 defaults.run.working-directory가 적용되지 않아 frontend/ 접두사가 필요함]
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFile: firebase-service-account.json
+          serviceCredentialsFile: frontend/firebase-service-account.json
           groups: ${{ env.FIREBASE_TESTER_GROUP }}
-          file: ./android/app/build/outputs/apk/release/${{ steps.apk_filename.outputs.apk_name }}
+          file: ./frontend/android/app/build/outputs/apk/release/${{ steps.apk_filename.outputs.apk_name }}
           releaseNotes: |
             테스트 빌드 #${{ needs.prepare-test-build.outputs.build_number }}
             브랜치: ${{ needs.prepare-test-build.outputs.branch_name }}
@@ -975,13 +1032,19 @@ jobs:
       # 콘솔 알림
       - name: Notify Build Success
         if: success()
+        env:
+          CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
         run: |
           echo "✅ Android 테스트 APK 빌드 성공!"
           echo "빌드 번호: ${{ needs.prepare-test-build.outputs.build_number }}"
           if [ -n "${{ needs.prepare-test-build.outputs.pr_number }}" ]; then
             echo "PR 번호: ${{ needs.prepare-test-build.outputs.pr_number }}"
           fi
-          echo "브랜치: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref_name }}"
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            echo "브랜치: $CP_BRANCH_NAME"
+          else
+            echo "브랜치: ${{ github.ref_name }}"
+          fi
           echo "커밋: ${{ needs.prepare-test-build.outputs.commit_hash }}"
           if [ -n "${{ needs.prepare-test-build.outputs.issue_url }}" ]; then
             echo "관련 이슈: ${{ needs.prepare-test-build.outputs.issue_url }}"

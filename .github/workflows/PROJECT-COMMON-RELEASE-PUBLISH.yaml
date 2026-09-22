@@ -55,6 +55,10 @@ concurrency:
 on:
   push:
     branches: ["main"]
+    # [ai-friend: docs/rules-only 변경은 릴리스하지 않는다]
+    paths:
+      - "backend/**"
+      - "frontend/**"
   workflow_dispatch:
 
 permissions:
