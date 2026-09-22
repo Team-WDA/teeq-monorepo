@@ -32,6 +32,50 @@ ai-friend-monorepo/
 
 생성 코드(`*.g.dart`, `*.freezed.dart`)는 커밋하지 않으므로 클론 직후 `build_runner`를 한 번 실행해야 합니다.
 
+## 에뮬레이터/시뮬레이터에서 실행하기
+
+`config/dev.json`을 만든 뒤(위 "프론트엔드 실행" 1번) 진행합니다.
+
+1. 사용 가능한 기기 확인
+   ```bash
+   cd frontend
+   flutter emulators   # 설치된 에뮬레이터/시뮬레이터 목록 (예: apple_ios_simulator, Medium_Phone)
+   flutter devices     # 현재 연결/실행 중인 기기 목록
+   ```
+2. 기기 실행
+   ```bash
+   # Android 에뮬레이터
+   flutter emulators --launch <emulator id>   # 예: flutter emulators --launch Medium_Phone
+
+   # iOS 시뮬레이터 (Xcode 26 이하는 Simulator, Xcode 27+는 Device Hub)
+   open -a Simulator
+   # 또는
+   open -a DeviceHub
+   ```
+   Android Studio의 Device Manager나 Xcode의 Devices and Simulators 창에서 직접 실행해도 됩니다.
+3. 앱 실행
+   ```bash
+   flutter run --dart-define-from-file=config/dev.json          # 연결된 기기가 하나면 자동 선택
+   flutter run -d <device id> --dart-define-from-file=config/dev.json   # 여러 개면 flutter devices의 id로 지정
+   ```
+   VS Code를 쓴다면 `.vscode/launch.json`에 이미 설정된 **"ai_friend (dev)"** 구성으로 F5 실행하면 위 플래그가 자동으로 붙습니다.
+
+## 빌드
+
+```bash
+cd frontend
+
+# Android
+flutter build apk --debug --dart-define-from-file=config/dev.json      # 디버그 APK, 서명 불필요
+flutter build apk --release --dart-define-from-file=config/prod.json   # 릴리스 APK. key.properties가 없으면 debug 키로 자동 서명(스토어 제출 불가, 로컬 테스트용)
+flutter build appbundle --release --dart-define-from-file=config/prod.json   # Play Store 제출용 AAB
+
+# iOS (실기기/스토어 배포는 Xcode 서명이 필요해 로컬에서는 --no-codesign까지만 확인)
+flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json
+```
+
+실제 서명·스토어 업로드(Android release/Play, iOS TestFlight)는 로컬이 아니라 CI(GitHub Actions)에서 시크릿을 사용해 처리합니다. 어떤 시크릿이 필요한지는 `.claude/rules/80-ci-cd.md`를 참고하세요.
+
 ## 문서
 
 프로젝트 규칙과 결정 사항은 [`CLAUDE.md`](CLAUDE.md)와 `.claude/rules/`를 참고하세요.
