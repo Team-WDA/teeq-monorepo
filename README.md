@@ -35,3 +35,10 @@ ai-friend-monorepo/
 ## 문서
 
 프로젝트 규칙과 결정 사항은 [`CLAUDE.md`](CLAUDE.md)와 `.claude/rules/`를 참고하세요.
+
+---
+
+<!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->
+## 최신 버전 : v0.0.1
+
+[전체 버전 기록 보기](CHANGELOG.md)
