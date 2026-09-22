@@ -45,3 +45,10 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// [ai-friend] 플레인 jar(archunit 등과 무관한 부산물) 생성을 꺼서 build/libs/ 에 bootJar 하나만
+// 남게 한다. Dockerfile의 COPY build/libs/*.jar 가 파일 두 개(app.jar, app-plain.jar)를
+// 만나 실패하는 것을 방지한다.
+tasks.named('jar') {
+    enabled = false
+}
