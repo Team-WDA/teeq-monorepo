@@ -24,6 +24,7 @@
 - Backend keys: 현재 `spring.datasource.{url,username,password}`만 정의되어 있다. 값은 비어 있으며 사용자가 채운다.
 - Frontend keys: 현재 `API_BASE_URL` 하나다(`AppConfig` 참고).
 - 키를 추가할 때는 이 문서, `application.yml` 주석 또는 `AppConfig`, README 안내를 함께 갱신한다.
+- CI에서 쓰는 GitHub Secrets(배포용) 전체 목록은 `.claude/rules/80-ci-cd.md`를 본다. `frontend/config/prod.json`은 로컬에서는 직접 만들고, CI에서는 Secret `FRONTEND_CONFIG_JSON`(JSON 문자열)으로부터 생성한다.
 
 ## Handling rules
 
@@ -32,6 +33,8 @@
 - 값이 필요한 작업은 키 이름과 위치만 만들고 값은 사용자가 채우게 한다.
 - 실수로 시크릿이 커밋되었다면 즉시 사용자에게 알리고 해당 값을 폐기(rotate)한다.
 
-## Known mismatch with wizard
+## CI에서의 환경값 주입 (해결됨)
 
-- wizard의 Flutter 워크플로우는 `ENV_FILE`, `SECRETS_XCCONFIG`, `GOOGLE_SERVICES_JSON` 등의 secret을 전제로 한다. 적용 후 `frontend/config/prod.json`을 secret에서 생성하고 `--dart-define-from-file`을 사용하도록 워크플로우를 수정해야 한다.
+- wizard의 Flutter 워크플로우가 원래 전제하던 `ENV_FILE`, `SECRETS_XCCONFIG`, `GOOGLE_SERVICES_JSON` secret은 이 앱이 읽지 않으므로 모두 죽은 단계로 주석 처리했다.
+- 대신 각 Flutter 빌드 job에 "Create config/prod.json" 스텝을 추가해, Secret `FRONTEND_CONFIG_JSON`(JSON 문자열 전체)을 `frontend/config/prod.json`에 쓰고 `--dart-define-from-file=config/prod.json`으로 빌드한다. 배포용 job(FIREBASE/PLAYSTORE/SELFHOSTED/TF/IT)은 이 secret이 비어 있으면 즉시 실패하고, CI/TEST-APK는 포크 PR을 고려해 `{}`로 대체하고 경고만 남긴다.
+- `IOS_PROVISIONING_PROFILE_NAME` secret은 "Generate ExportOptions.plist" 스텝(ai-friend가 추가)이 소비해서 `frontend/ios/ExportOptions.plist`를 CI에서 직접 생성한다. 자세한 내용은 `.claude/rules/80-ci-cd.md`를 본다.

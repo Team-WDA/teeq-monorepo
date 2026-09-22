@@ -10,6 +10,7 @@
 - `.claude/rules/50-testing.md`: 테스트 정책 (전역 80% 규칙을 대체)
 - `.claude/rules/60-git-and-delivery.md`: 브랜치, 커밋, PR, force 금지, CI/CD(wizard)
 - `.claude/rules/70-secrets-and-env.md`: 파일별 추적/무시 기준, 시크릿 취급
+- `.claude/rules/80-ci-cd.md`: 설치된 GitHub Actions 워크플로우 목록, Secrets, 릴리스·버전 규칙
 
 ## 핵심 요약 (전체 내용은 위 rules 파일 참고)
 
@@ -20,7 +21,8 @@
 - **테스트**: 핵심 도메인 로직만 TDD, 커버리지 게이트 없음
 - **Git**: `main` 단일 + `<type>/<설명>` 브랜치 PR, 커밋은 `type: 한국어 설명`
 - **절대 금지**:
-  - force 계열 git 명령(`--force`, `git add -f` 등), `main` 직접 푸시
+  - force 계열 git 명령(`--force`, `git add -f` 등)
+  - 사용자가 그 순간 명시적으로 지시하지 않은 `main` 푸시(직접 푸시·PR 병합 모두) — wizard 적용 후 `main` 푸시는 곧 배포다
   - `application-dev.yml`, `application-prod.yml`, `frontend/config/*.json`, 키/인증서 커밋
   - `.env`, `*.example` 파일 추가
   - 클라이언트(Flutter)에 서버 시크릿 포함
