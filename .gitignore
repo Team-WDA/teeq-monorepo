@@ -83,6 +83,16 @@ key.properties
 google-services.json
 GoogleService-Info.plist
 
+### Fastlane (CI가 매 실행마다 생성. Fastfile.playstore/Fastfile만 커밋 대상) ###
+frontend/android/Gemfile
+frontend/android/Gemfile.lock
+frontend/ios/Gemfile
+frontend/ios/Gemfile.lock
+frontend/android/fastlane/Fastfile
+**/fastlane/report.xml
+**/fastlane/Preview.html
+.bundle/
+
 ### Claude Code (개인/임시) ###
 .claude/settings.local.json
 .claude/worktrees/

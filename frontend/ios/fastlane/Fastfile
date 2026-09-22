@@ -1,0 +1,66 @@
+# ai-friend: TestFlight 배포용 Fastfile.
+# PROJECT-FLUTTER-IOS-TESTFLIGHT.yaml(lane :deploy)와
+# PROJECT-FLUTTER-IOS-TEST-TESTFLIGHT.yaml(lane :upload_testflight)이 이 파일을 사용한다.
+
+default_platform(:ios)
+
+platform :ios do
+  desc "빌드를 TestFlight에 업로드하고, DEPLOY_MODE=store_submit이면 App Store 심사까지 제출한다"
+  lane :deploy do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: ENV["API_KEY_PATH"]
+    )
+
+    deploy_mode = ENV["DEPLOY_MODE"] || "store_only"
+    app_identifier = ENV["APP_IDENTIFIER"]
+    app_identifier = "com.chuseok22.aifriend" if app_identifier.nil? || app_identifier.empty?
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ENV["IPA_PATH"],
+      changelog: ENV["RELEASE_NOTES"],
+      skip_waiting_for_build_processing: ENV["SKIP_WAITING_FOR_BUILD_PROCESSING"] == "true",
+      distribute_external: false,
+      uses_non_exempt_encryption: false
+    )
+
+    if deploy_mode == "store_submit"
+      deliver(
+        api_key: api_key,
+        ipa: ENV["IPA_PATH"],
+        app_identifier: app_identifier,
+        app_version: ENV["APP_VERSION"],
+        build_number: ENV["BUILD_NUMBER"],
+        submit_for_review: true,
+        automatic_release: false,
+        force: true,
+        skip_binary_upload: true,
+        skip_metadata: true,
+        skip_screenshots: true,
+        precheck_include_in_app_purchases: false
+      )
+    elsif deploy_mode == "store_prepare"
+      UI.message("store_prepare: TestFlight 업로드까지만 진행하고 App Store 제출은 하지 않는다.")
+    end
+  end
+
+  desc "테스트 빌드를 TestFlight에만 업로드한다 (App Store 제출 없음)"
+  lane :upload_testflight do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+      key_filepath: ENV["API_KEY_PATH"]
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: ENV["IPA_PATH"],
+      changelog: ENV["RELEASE_NOTES"],
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+      uses_non_exempt_encryption: false
+    )
+  end
+end

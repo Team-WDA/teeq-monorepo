@@ -1,0 +1,45 @@
+# ai-friend: Google Play 내부 테스트/프로덕션 배포용 Fastfile.
+# PROJECT-FLUTTER-ANDROID-PLAYSTORE-CICD.yaml가 이 파일을 android/fastlane/Fastfile로 복사한 뒤
+# 환경변수(AAB_PATH, GOOGLE_PLAY_JSON_KEY, VERSION_NAME, VERSION_CODE, DEPLOY_MODE)를 설정하고 실행한다.
+
+default_platform(:android)
+
+platform :android do
+  desc "AAB를 Google Play에 업로드한다 (DEPLOY_MODE에 따라 internal/production, draft/completed 분기)"
+  lane :deploy_internal do
+    aab_path = ENV["AAB_PATH"]
+    json_key = ENV["GOOGLE_PLAY_JSON_KEY"]
+    version_name = ENV["VERSION_NAME"]
+    version_code = ENV["VERSION_CODE"]
+    deploy_mode = ENV["DEPLOY_MODE"] || "store_only"
+
+    case deploy_mode
+    when "store_only"
+      track = "internal"
+      release_status = "completed"
+    when "store_prepare"
+      track = "production"
+      release_status = "draft"
+    when "store_submit"
+      track = "production"
+      release_status = "completed"
+    else
+      UI.user_error!("알 수 없는 DEPLOY_MODE: #{deploy_mode}")
+    end
+
+    upload_to_play_store(
+      package_name: "com.chuseok22.aifriend",
+      track: track,
+      release_status: release_status,
+      aab: aab_path,
+      json_key: json_key,
+      version_code: version_code.to_i,
+      version_name: version_name,
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      metadata_path: "./fastlane/metadata/android"
+    )
+  end
+end
