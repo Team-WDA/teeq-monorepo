@@ -53,7 +53,7 @@ name: PROJECT-FLUTTER-ANDROID-FIREBASE-APPDIST-CICD
 on:
   push:
     branches: ["main"]
-    paths: ["frontend/**"]  # [ai-friend]
+    paths: ["frontend/**"]  # [teeq]
   workflow_dispatch:
 
 env:
@@ -61,9 +61,9 @@ env:
   # 🔧 프로젝트별 설정 (아래 값들을 수정하세요)
   # ============================================
   # 프로젝트 이름
-  APP_ARTIFACT_NAME: "ai-friend"  # [ai-friend]
+  APP_ARTIFACT_NAME: "teeq"  # [teeq]
   # Flutter/Java 버전
-  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
+  FLUTTER_VERSION: "3.47.5"  # [teeq]
   JAVA_VERSION: "21"
   PROJECT_TYPE: "flutter"
   # Firebase App Distribution 설정
@@ -78,7 +78,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     outputs:
       version: ${{ steps.current_version.outputs.version }}
@@ -95,7 +95,7 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # [teeq: disabled - 앱은 .env를 읽지 않음]
       # - name: Create .env file
       #   env:
       #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
@@ -124,7 +124,7 @@ jobs:
       # version_manager.py를 사용하여 현재 버전 정보 가져오기 (레포 루트 스크립트이므로 workspace 루트에서 실행)
       - name: 현재 버전 정보 가져오기
         id: current_version
-        working-directory: ${{ github.workspace }}  # [ai-friend: defaults(frontend)를 pin 해제]
+        working-directory: ${{ github.workspace }}  # [teeq: defaults(frontend)를 pin 해제]
         run: |
           # VERSION 가져오기 (x.y.z 형식)
           VERSION=$(python3 .github/scripts/version_manager.py get | tail -n 1)
@@ -152,7 +152,7 @@ jobs:
       # CHANGELOG.json에서 릴리즈 노트 추출 - changelog_manager.py 사용
       - name: 릴리즈 노트 생성
         id: release_notes
-        working-directory: ${{ github.workspace }}  # [ai-friend: defaults(frontend)를 pin 해제]
+        working-directory: ${{ github.workspace }}  # [teeq: defaults(frontend)를 pin 해제]
         run: |
           VERSION="${{ steps.current_version.outputs.version }}"
 
@@ -190,7 +190,7 @@ jobs:
           path: final_release_notes.txt
           retention-days: 1
 
-      # [ai-friend: disabled - workspace 루트 기준 경로라 pubspec.yaml/lib//assets/가 존재하지 않아 아티팩트가 만들어지지 않고, build-android의 다운로드 스텝이 실패함. build-android가 main을 다시 checkout하므로 애초에 불필요]
+      # [teeq: disabled - workspace 루트 기준 경로라 pubspec.yaml/lib//assets/가 존재하지 않아 아티팩트가 만들어지지 않고, build-android의 다운로드 스텝이 실패함. build-android가 main을 다시 checkout하므로 애초에 불필요]
       # - name: Upload project files
       #   uses: actions/upload-artifact@v7
       #   with:
@@ -207,7 +207,7 @@ jobs:
     needs: prepare-build
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     steps:
       - name: Checkout repository
@@ -219,14 +219,14 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      # [ai-friend: disabled - prepare-build의 project-files 아티팩트를 만들지 않으므로 다운로드도 불필요]
+      # [teeq: disabled - prepare-build의 project-files 아티팩트를 만들지 않으므로 다운로드도 불필요]
       # - name: Download project files
       #   uses: actions/download-artifact@v8
       #   with:
       #     name: project-files
       #     path: .
 
-      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 배포용 job이므로 비어 있으면 즉시 실패]
+      # [teeq: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 배포용 job이므로 비어 있으면 즉시 실패]
       - name: Create config/prod.json
         env:
           FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
@@ -239,7 +239,7 @@ jobs:
           printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
           python3 -m json.tool config/prod.json > /dev/null
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # [teeq: disabled - 앱은 .env를 읽지 않음]
       # - name: Create .env file
       #   env:
       #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
@@ -265,9 +265,9 @@ jobs:
           keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
           EOF
           echo "✅ key.properties 생성 완료"
-          # [ai-friend: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
+          # [teeq: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
 
-      # [ai-friend: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
+      # [teeq: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
       # - name: Create Google-services.json
       #   run: |
       #     cat << 'EOF' > android/app/google-services.json
@@ -541,7 +541,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: android-aab
-          path: frontend/build/app/outputs/bundle/release/app-release.aab  # [ai-friend: uses: 스텝은 defaults 미적용]
+          path: frontend/build/app/outputs/bundle/release/app-release.aab  # [teeq: uses: 스텝은 defaults 미적용]
           retention-days: 1
 
   deploy-firebase:
@@ -584,7 +584,7 @@ jobs:
             python3 ./.github/scripts/truncate_release_notes.py final_release_notes.txt 4000 char
           fi
 
-      # [ai-friend: 추가 - FIREBASE_APP_ID가 자리표시자 값 그대로면 즉시 실패(실제 Firebase 프로젝트는 아직 없음)]
+      # [teeq: 추가 - FIREBASE_APP_ID가 자리표시자 값 그대로면 즉시 실패(실제 Firebase 프로젝트는 아직 없음)]
       - name: Guard placeholder Firebase App ID
         run: |
           if [ "${{ env.FIREBASE_APP_ID }}" = "your-firebase-app-id" ]; then

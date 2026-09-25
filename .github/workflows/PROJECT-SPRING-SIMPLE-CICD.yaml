@@ -70,7 +70,7 @@ on:
     paths: ['backend/**']
   workflow_dispatch:  # 수동 실행 허용
 
-# [ai-friend: 연속 배포가 docker rm/run을 겹쳐 실행하지 않도록 직렬화]
+# [teeq: 연속 배포가 docker rm/run을 겹쳐 실행하지 않도록 직렬화]
 concurrency:
   group: spring-simple-cicd
   cancel-in-progress: false
@@ -80,7 +80,7 @@ concurrency:
 # ===================================================================
 env:
   # 🔧 프로젝트 설정 - 실제 프로젝트명으로 변경하세요
-  PROJECT_NAME: "ai-friend"
+  PROJECT_NAME: "teeq"
 
   # ☁️ Spring Boot 설정
   SPRING_PROFILE: "prod"
@@ -89,7 +89,7 @@ env:
 
   # 📁 경로 설정
   APPLICATION_YML_DIR: "backend/src/main/resources"
-  DOCKERFILE_PATH: "./backend/Dockerfile"  # [ai-friend: backend/ 하위]
+  DOCKERFILE_PATH: "./backend/Dockerfile"  # [teeq: backend/ 하위]
 
   # 🌐 포트 설정
   CONTAINER_INTERNAL_PORT: "8080"  # Spring Boot 내부 포트 (고정값)
@@ -104,8 +104,8 @@ env:
   # true: 볼륨 마운트 활성화 (디렉토리 없으면 자동 생성)
   # false: 볼륨 마운트 비활성화 (기본값)
   ENABLE_VOLUME_MOUNT: "true"
-  VOLUME_HOST_PATH: "/volume1/project/ai-friend/server"
-  VOLUME_CONTAINER_PATH: "/mnt/ai-friend"
+  VOLUME_HOST_PATH: "/volume1/project/teeq/server"
+  VOLUME_CONTAINER_PATH: "/mnt/teeq"
 
   # 🔐 SSH 인증 방식: "password"(Synology·일반 서버) | "key"(AWS EC2·.pem)
   #   password → SERVER_PASSWORD secret 사용
@@ -147,7 +147,7 @@ jobs:
 
       # 3. Gradle 실행 권한 부여
       - name: Gradle Wrapper 실행권한 부여
-        working-directory: backend  # [ai-friend]
+        working-directory: backend  # [teeq]
         run: chmod +x gradlew
 
       # 4. Spring Boot 운영 환경 설정 파일 생성
@@ -168,7 +168,7 @@ jobs:
       # 5. Gradle 빌드 실행
       # 테스트는 제외하고 운영 프로파일로 빌드
       - name: Build with Gradle
-        working-directory: backend  # [ai-friend]
+        working-directory: backend  # [teeq]
         run: ./gradlew clean build -x test ${{ env.GRADLE_OPTS }}
 
       # 6. Docker 빌드 환경 설정
@@ -188,7 +188,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ hashFiles('backend/Dockerfile') }}  # [ai-friend]
+          key: ${{ runner.os }}-buildx-${{ hashFiles('backend/Dockerfile') }}  # [teeq]
           restore-keys: |
             ${{ runner.os }}-buildx-
 
@@ -197,7 +197,7 @@ jobs:
       - name: Docker 이미지 빌드 및 푸시
         uses: docker/build-push-action@v5
         with:
-          context: ./backend  # [ai-friend]
+          context: ./backend  # [teeq]
           file: ${{ env.DOCKERFILE_PATH }}
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT_NAME }}:${{ github.ref_name }}

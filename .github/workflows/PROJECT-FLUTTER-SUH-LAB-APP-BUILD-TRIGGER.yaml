@@ -44,7 +44,7 @@ jobs:
   trigger-builds:
     name: 빌드 워크플로우 트리거
     # @suh-lab app build / @suh-lab apk build / @suh-lab ios build 키워드 감지 (어순 무관)
-    # [ai-friend: public 저장소이므로 OWNER/MEMBER/COLLABORATOR만 트리거 가능하게 제한]
+    # [teeq: public 저장소이므로 OWNER/MEMBER/COLLABORATOR만 트리거 가능하게 제한]
     if: |
       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
       contains(github.event.comment.body, '@suh-lab') &&
@@ -281,7 +281,7 @@ jobs:
         id: check_branch
         if: steps.source_info.outputs.found == 'true'
         uses: actions/github-script@v9
-        # [ai-friend: 댓글/브랜치명에서 파생된 값을 env로 받아 JS 문자열 인젝션 방지]
+        # [teeq: 댓글/브랜치명에서 파생된 값을 env로 받아 JS 문자열 인젝션 방지]
         env:
           BRANCH_NAME: ${{ steps.source_info.outputs.branchName }}
         with:
@@ -503,7 +503,7 @@ jobs:
             console.log('✅ iOS 빌드 워크플로우 트리거 완료');
 
       # 트리거 완료 댓글은 제거됨 - Android/iOS 각각의 진행상황 댓글이 이 역할을 대체
-      # [ai-friend: 브랜치명을 env로 받아 셸 인젝션 방지]
+      # [teeq: 브랜치명을 env로 받아 셸 인젝션 방지]
       - name: 트리거 완료 로그
         if: steps.source_info.outputs.found == 'true' && steps.check_branch.outputs.exists == 'true'
         env:

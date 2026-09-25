@@ -23,7 +23,7 @@ name: PROJECT-FLUTTER-ANDROID-PLAYSTORE-INTERNAL-CICD
 on:
   push:
     branches: ["main"]
-    paths: ["frontend/**"]  # [ai-friend]
+    paths: ["frontend/**"]  # [teeq]
   workflow_dispatch:
     inputs:
       deploy_mode:
@@ -41,9 +41,9 @@ on:
 # ============================================
 env:
   # 프로젝트 이름
-  APP_ARTIFACT_NAME: "ai-friend"  # [ai-friend]
+  APP_ARTIFACT_NAME: "teeq"  # [teeq]
   # Flutter/Java 버전
-  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
+  FLUTTER_VERSION: "3.47.5"  # [teeq]
   JAVA_VERSION: "21"
   PROJECT_TYPE: "flutter"
   # Flutter 루트 경로(레포 루트 기준). 단일레포면 ".", 모노레포면 "app" 등.
@@ -77,7 +77,7 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # [teeq: disabled - 앱은 .env를 읽지 않음]
       # - name: Create .env file
       #   env:
       #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
@@ -173,7 +173,7 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-      # [ai-friend: disabled - workspace 루트 기준 경로라 pubspec.yaml/lib//assets/가 없어 if-no-files-found: error로 매번 실패함. build-android가 main을 다시 checkout하므로 불필요]
+      # [teeq: disabled - workspace 루트 기준 경로라 pubspec.yaml/lib//assets/가 없어 if-no-files-found: error로 매번 실패함. build-android가 main을 다시 checkout하므로 불필요]
       # - name: Upload project files
       #   uses: actions/upload-artifact@v7
       #   with:
@@ -203,14 +203,14 @@ jobs:
       - name: Pull latest changes
         run: git pull origin main
 
-      # [ai-friend: disabled - prepare-build가 project-files 아티팩트를 만들지 않음]
+      # [teeq: disabled - prepare-build가 project-files 아티팩트를 만들지 않음]
       # - name: Download project files
       #   uses: actions/download-artifact@v8
       #   with:
       #     name: project-files
       #     path: .
 
-      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 배포용 job이므로 비어 있으면 즉시 실패]
+      # [teeq: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 배포용 job이므로 비어 있으면 즉시 실패]
       - name: Create config/prod.json
         env:
           FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
@@ -223,7 +223,7 @@ jobs:
           printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
           python3 -m json.tool config/prod.json > /dev/null
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # [teeq: disabled - 앱은 .env를 읽지 않음]
       # - name: Create .env file
       #   env:
       #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
@@ -249,9 +249,9 @@ jobs:
           keyPassword=${{ secrets.RELEASE_KEY_PASSWORD }}
           EOF
           echo "✅ key.properties 생성 완료"
-          # [ai-friend: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
+          # [teeq: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
 
-      # [ai-friend: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
+      # [teeq: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
       # - name: Create Google-services.json
       #   run: |
       #     cat << 'EOF' > android/app/google-services.json

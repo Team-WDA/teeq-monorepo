@@ -59,7 +59,7 @@ on:
 # 🔧 프로젝트별 설정 (아래 값들을 수정하세요)
 # ===================================================================
 env:
-  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
+  FLUTTER_VERSION: "3.47.5"  # [teeq]
   JAVA_VERSION: "21"
   ENV_FILE_PATH: ".env"
   FIREBASE_APP_ID: "{FIREBASE_APP_ID}"
@@ -88,7 +88,7 @@ jobs:
         id: verify_branch
         if: github.event_name == 'repository_dispatch'
         uses: actions/github-script@v9
-        # [ai-friend: client_payload 값을 env로 받아 JS 문자열 인젝션 방지]
+        # [teeq: client_payload 값을 env로 받아 JS 문자열 인젝션 방지]
         env:
           BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
           PR_NUMBER: ${{ github.event.client_payload.pr_number }}
@@ -209,7 +209,7 @@ jobs:
           ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref }}
 
       - name: Pull latest changes
-        # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
+        # [teeq: client_payload 값을 env로 받아 셸 인젝션 방지]
         env:
           CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
         run: |
@@ -225,7 +225,7 @@ jobs:
       # 브랜치명에서 이슈 번호 추출 및 GitHub API로 이슈 정보 가져오기
       - name: 브랜치명에서 이슈 정보 추출
         id: issue_info
-        # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
+        # [teeq: client_payload 값을 env로 받아 셸 인젝션 방지]
         env:
           CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
           CP_ISSUE_NUMBER: ${{ github.event.client_payload.issue_number }}
@@ -317,7 +317,7 @@ jobs:
     needs: prepare-test-build
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     steps:
       - name: Checkout repository
@@ -326,7 +326,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.branch_name || github.ref }}
 
-      # [ai-friend: client_payload 값을 env로 받아 셸 인젝션 방지]
+      # [teeq: client_payload 값을 env로 받아 셸 인젝션 방지]
       - name: Pull latest changes
         env:
           CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
@@ -337,7 +337,7 @@ jobs:
             git pull origin "${{ github.ref_name }}"
           fi
 
-      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 테스트 빌드이므로 비어 있으면 경고 후 {}로 진행]
+      # [teeq: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 테스트 빌드이므로 비어 있으면 경고 후 {}로 진행]
       - name: Create config/prod.json
         env:
           FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
@@ -350,7 +350,7 @@ jobs:
           printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
           python3 -m json.tool config/prod.json > /dev/null
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음]
+      # [teeq: disabled - 앱은 .env를 읽지 않음]
       # - name: Create .env file
       #   env:
       #     ENV_CONTENT: ${{ secrets.ENV_FILE || secrets.ENV }}
@@ -381,7 +381,7 @@ jobs:
           EOF
           echo "✅ key.properties 생성 완료"
 
-      # [ai-friend: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
+      # [teeq: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
       # - name: Create google-services.json
       #   shell: bash
       #   env:
@@ -432,7 +432,7 @@ jobs:
           dart run build_runner build
           echo "✅ Dependencies installed"
 
-      # [ai-friend: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
+      # [teeq: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
       # - name: Setup Gradle
       #   working-directory: android
       #   run: |
@@ -451,7 +451,7 @@ jobs:
           echo "✅ Java setup completed"
           java -version
 
-      # [ai-friend: disabled - frontend/android/fastlane/Fastfile을 커밋하지 않아 아래 Build APK 스텝이 항상 직접 빌드로 폴백함. bundler-cache: true도 루트에 Gemfile이 없어 불필요]
+      # [teeq: disabled - frontend/android/fastlane/Fastfile을 커밋하지 않아 아래 Build APK 스텝이 항상 직접 빌드로 폴백함. bundler-cache: true도 루트에 Gemfile이 없어 불필요]
       # - name: Set up Ruby
       #   uses: ruby/setup-ruby@v1
       #   with:
@@ -523,7 +523,7 @@ jobs:
 
       - name: Generate APK filename
         id: apk_filename
-        # [ai-friend: 이슈 제목은 GitHub 이슈 작성자가 정하는 값이라 env로 받아 셸 인젝션 방지]
+        # [teeq: 이슈 제목은 GitHub 이슈 작성자가 정하는 값이라 env로 받아 셸 인젝션 방지]
         env:
           ISSUE_TITLE_RAW: ${{ needs.prepare-test-build.outputs.issue_title }}
         run: |
@@ -667,7 +667,7 @@ jobs:
             core.setOutput('end_time', now.toString());
 
       # 빌드 정보 파일 생성
-      # [ai-friend: 브랜치명/이슈 제목을 env로 받아 셸 인젝션 방지]
+      # [teeq: 브랜치명/이슈 제목을 env로 받아 셸 인젝션 방지]
       - name: Create build info file
         env:
           CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
@@ -722,7 +722,7 @@ jobs:
           cat build-info.txt
 
       # 빌드 메타데이터 파일 생성 (댓글 작성 워크플로우용)
-      # [ai-friend: 브랜치명을 env로 받고 jq -n으로 JSON을 만들어 셸/JSON 인젝션 방지]
+      # [teeq: 브랜치명을 env로 받고 jq -n으로 JSON을 만들어 셸/JSON 인젝션 방지]
       - name: Create build metadata file
         env:
           CP_BRANCH_NAME: ${{ github.event.client_payload.branch_name }}
@@ -747,7 +747,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.apk_filename.outputs.artifact_name }}
-          # [ai-friend: uses: 스텝은 defaults 미적용. run: 스텝들이 frontend/ 아래에 파일을 씀]
+          # [teeq: uses: 스텝은 defaults 미적용. run: 스텝들이 frontend/ 아래에 파일을 씀]
           path: |
             ./frontend/android/app/build/outputs/apk/release/*.apk
             frontend/build-info.txt
@@ -784,7 +784,7 @@ jobs:
         if: needs.prepare-test-build.outputs.firebase_available == 'true'
         continue-on-error: true
         uses: wzieba/Firebase-Distribution-Github-Action@v1
-        # [ai-friend: 이 액션은 uses: 스텝이라 defaults.run.working-directory가 적용되지 않아 frontend/ 접두사가 필요함]
+        # [teeq: 이 액션은 uses: 스텝이라 defaults.run.working-directory가 적용되지 않아 frontend/ 접두사가 필요함]
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
           serviceCredentialsFile: frontend/firebase-service-account.json
@@ -830,7 +830,7 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 성공
         if: success() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.prepare-test-build.outputs.progress_comment_id != ''
         uses: actions/github-script@v9
-        # [ai-friend: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
+        # [teeq: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
         env:
           BRANCH_NAME: ${{ needs.prepare-test-build.outputs.branch_name }}
           PR_NUMBER: ${{ github.event.client_payload.pr_number }}
@@ -947,7 +947,7 @@ jobs:
       - name: 진행 상황 최종 업데이트 - 실패
         if: failure() && github.event_name == 'repository_dispatch' && github.event.client_payload.pr_number != '' && needs.prepare-test-build.outputs.progress_comment_id != ''
         uses: actions/github-script@v9
-        # [ai-friend: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
+        # [teeq: client_payload/branch_name 값을 env로 받아 JS 문자열 인젝션 방지]
         env:
           BRANCH_NAME: ${{ needs.prepare-test-build.outputs.branch_name }}
           PR_NUMBER: ${{ github.event.client_payload.pr_number }}

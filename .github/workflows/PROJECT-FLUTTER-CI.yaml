@@ -48,10 +48,10 @@ on:
   pull_request:
     branches: ["main"]
     types: [opened, synchronize, reopened]
-    paths: ["frontend/**"]  # [ai-friend]
+    paths: ["frontend/**"]  # [teeq]
   push:
     branches: ["main"]
-    paths: ["frontend/**"]  # [ai-friend]
+    paths: ["frontend/**"]  # [teeq]
   workflow_dispatch:
     inputs:
       analyze_only:
@@ -83,7 +83,7 @@ env:
   ENABLE_IOS: "true"        # iOS 빌드 활성화 (true/false)
 
   # 🔧 프로젝트별 설정
-  FLUTTER_VERSION: "3.47.5"  # [ai-friend]
+  FLUTTER_VERSION: "3.47.5"  # [teeq]
   JAVA_VERSION: "21"
   XCODE_VERSION: "26.0"
   ENV_FILE_PATH: ".env"     # 환경변수 파일 경로 (커스터마이징 가능)
@@ -138,7 +138,7 @@ jobs:
       # 빌드 정보 수집
       - name: 빌드 정보 수집
         id: info
-        # [ai-friend: github.head_ref(PR 브랜치명)를 env로 받아 셸 인젝션 방지]
+        # [teeq: github.head_ref(PR 브랜치명)를 env로 받아 셸 인젝션 방지]
         env:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
@@ -160,7 +160,7 @@ jobs:
       # PR인 경우 진행 상황 댓글 생성
       - name: 진행 상황 댓글 생성
         id: comment
-        # [ai-friend: fork PR은 GITHUB_TOKEN이 read-only라 댓글 작성이 403으로 실패함 → 같은 저장소 PR만 실행]
+        # [teeq: fork PR은 GITHUB_TOKEN이 read-only라 댓글 작성이 403으로 실패함 → 같은 저장소 PR만 실행]
         if: |
           github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository
@@ -244,7 +244,7 @@ jobs:
     needs: prepare
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -261,7 +261,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않고 --dart-define-from-file만 읽음. analyze/test는 dart-define도 불필요]
+      # [teeq: disabled - 앱은 .env를 읽지 않고 --dart-define-from-file만 읽음. analyze/test는 dart-define도 불필요]
       # - name: Create .env file
       #   run: |
       #     cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
@@ -304,7 +304,7 @@ jobs:
           flutter analyze --no-fatal-infos
           echo "✅ 코드 분석 완료"
 
-      # [ai-friend: 추가 - flutter test]
+      # [teeq: 추가 - flutter test]
       - name: Run Flutter Tests
         id: test
         run: |
@@ -326,7 +326,7 @@ jobs:
             const seconds = Math.floor((elapsed % 60000) / 1000);
             const duration = minutes > 0 ? `${minutes}분 ${seconds}초` : `${seconds}초`;
 
-            // [ai-friend: analyze와 test 둘 다 성공해야 success]
+            // [teeq: analyze와 test 둘 다 성공해야 success]
             const analyzeOk = '${{ steps.analyze.outcome }}' === 'success';
             const testOk = '${{ steps.test.outcome }}' === 'success';
             const status = (analyzeOk && testOk) ? 'success' : 'failure';
@@ -347,7 +347,7 @@ jobs:
     needs: prepare
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -364,7 +364,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 비어 있으면(fork PR 등) {}로 대체]
+      # [teeq: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json. 비어 있으면(fork PR 등) {}로 대체]
       - name: Create config/prod.json
         env:
           FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
@@ -427,7 +427,7 @@ jobs:
           echo "✅ Java setup completed"
           java -version
 
-      # [ai-friend: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
+      # [teeq: disabled - frontend/android/.gitignore가 gradlew를 무시함. flutter build가 wrapper를 재생성한다]
       # - name: Setup Gradle
       #   working-directory: android
       #   run: |
@@ -475,7 +475,7 @@ jobs:
     needs: prepare
     defaults:
       run:
-        working-directory: frontend  # [ai-friend]
+        working-directory: frontend  # [teeq]
 
     outputs:
       status: ${{ steps.result.outputs.status }}
@@ -512,7 +512,7 @@ jobs:
           echo "=== Downloading iOS platform ==="
           xcodebuild -downloadPlatform iOS
 
-      # [ai-friend: disabled - 앱은 .env를 읽지 않음. config/prod.json으로 대체]
+      # [teeq: disabled - 앱은 .env를 읽지 않음. config/prod.json으로 대체]
       # - name: Create .env file
       #   run: |
       #     cat << 'EOF' > ${{ env.ENV_FILE_PATH }}
@@ -520,7 +520,7 @@ jobs:
       #     EOF
       #     echo "✅ ${{ env.ENV_FILE_PATH }} file created"
 
-      # [ai-friend: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json]
+      # [teeq: FRONTEND_CONFIG_JSON secret -> frontend/config/prod.json]
       - name: Create config/prod.json
         env:
           FRONTEND_CONFIG_JSON: ${{ secrets.FRONTEND_CONFIG_JSON }}
@@ -560,7 +560,7 @@ jobs:
           dart run build_runner build
           echo "✅ Dependencies installed"
 
-      # [ai-friend: disabled - frontend/ios에 Podfile이 없는 순수 Swift Package Manager 앱]
+      # [teeq: disabled - frontend/ios에 Podfile이 없는 순수 Swift Package Manager 앱]
       # - name: Set up Ruby
       #   uses: ruby/setup-ruby@v1
       #   with:
@@ -606,7 +606,7 @@ jobs:
   # ===================================================================
   report:
     name: 결과 보고
-    # [ai-friend: fork PR은 댓글 작성 토큰이 없어 403 → 같은 저장소 PR만 실행. prepare의 댓글 생성도 같은 조건이라 comment_id가 없으면 스크립트가 조용히 스킵함]
+    # [teeq: fork PR은 댓글 작성 토큰이 없어 403 → 같은 저장소 PR만 실행. prepare의 댓글 생성도 같은 조건이라 comment_id가 없으면 스크립트가 조용히 스킵함]
     if: |
       always() && github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
