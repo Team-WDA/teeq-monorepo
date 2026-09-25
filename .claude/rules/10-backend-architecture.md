@@ -8,9 +8,9 @@ paths:
 ## High-level architecture
 
 - Module: 단일 Gradle 모듈(`backend/`)이다. 멀티모듈로 분리하지 않는다.
-- Package root: `com.chuseok22.aifriend`
+- Package root: `kr.teeq.api`
 - Structure: 도메인 우선 `<domain>/{core,application,infrastructure}`. 공통 코드는 `common/{core,application,infrastructure}`이다. 별도의 `domain` 바깥 패키지는 두지 않는다.
-- Example: `com.chuseok22.aifriend.character.core.entity.Character`
+- Example: `kr.teeq.api.character.core.entity.Character`
 
 ## Layers
 

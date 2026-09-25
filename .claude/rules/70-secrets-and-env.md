@@ -37,4 +37,4 @@
 
 - wizard의 Flutter 워크플로우가 원래 전제하던 `ENV_FILE`, `SECRETS_XCCONFIG`, `GOOGLE_SERVICES_JSON` secret은 이 앱이 읽지 않으므로 모두 죽은 단계로 주석 처리했다.
 - 대신 각 Flutter 빌드 job에 "Create config/prod.json" 스텝을 추가해, Secret `FRONTEND_CONFIG_JSON`(JSON 문자열 전체)을 `frontend/config/prod.json`에 쓰고 `--dart-define-from-file=config/prod.json`으로 빌드한다. 배포용 job(FIREBASE/PLAYSTORE/SELFHOSTED/TF/IT)은 이 secret이 비어 있으면 즉시 실패하고, CI/TEST-APK는 포크 PR을 고려해 `{}`로 대체하고 경고만 남긴다.
-- `IOS_PROVISIONING_PROFILE_NAME` secret은 "Generate ExportOptions.plist" 스텝(ai-friend가 추가)이 소비해서 `frontend/ios/ExportOptions.plist`를 CI에서 직접 생성한다. 자세한 내용은 `.claude/rules/80-ci-cd.md`를 본다.
+- `IOS_PROVISIONING_PROFILE_NAME` secret은 "Generate ExportOptions.plist" 스텝(teeq가 추가)이 소비해서 `frontend/ios/ExportOptions.plist`를 CI에서 직접 생성한다. 자세한 내용은 `.claude/rules/80-ci-cd.md`를 본다.

@@ -1,4 +1,4 @@
-# ai-friend
+# TeeQ
 
 AI 캐릭터에게 실제 전화하듯 전화를 걸고, 대화를 거듭하며 관계를 쌓는 AI 페르소나 기반 실시간 음성 동행 서비스입니다.
 평소에는 재미로 통화하고, 늦은 귀갓길에는 원할 때 지인에게 위치와 상태를 공유할 수 있습니다.
@@ -6,7 +6,7 @@ AI 캐릭터에게 실제 전화하듯 전화를 걸고, 대화를 거듭하며 
 ## 구조
 
 ```
-ai-friend-monorepo/
+teeq-monorepo/
 ├── backend/     Spring Boot 4 (Java 21, Gradle), PostgreSQL, Flyway
 ├── frontend/    Flutter (android / ios)
 ├── scripts/sql/ Flyway 파일명 검증 스크립트
@@ -58,7 +58,7 @@ ai-friend-monorepo/
    flutter run --dart-define-from-file=config/dev.json          # 연결된 기기가 하나면 자동 선택
    flutter run -d <device id> --dart-define-from-file=config/dev.json   # 여러 개면 flutter devices의 id로 지정
    ```
-   VS Code를 쓴다면 `.vscode/launch.json`에 이미 설정된 **"ai_friend (dev)"** 구성으로 F5 실행하면 위 플래그가 자동으로 붙습니다.
+   VS Code를 쓴다면 `.vscode/launch.json`에 이미 설정된 **"teeq (dev)"** 구성으로 F5 실행하면 위 플래그가 자동으로 붙습니다.
 
 ## 빌드
 

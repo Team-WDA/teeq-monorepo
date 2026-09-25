@@ -30,4 +30,4 @@
 
 - Tool: `project-auto-wizard`(npm CLI)로 GitHub Actions와 버전 관리를 구성했다. 이미 적용되어 있다. 재실행은 사용자가 직접 한다(`--dry-run`으로 먼저 확인). Claude가 임의로 실행하지 않는다.
 - 설치된 워크플로우 목록, 상태, GitHub Secrets, 채널별 재활성화 조건, 릴리스·버전 판정 규칙, wizard 재실행 시 주의는 `.claude/rules/80-ci-cd.md`를 본다.
-- Dockerfile은 사용자가 `backend/Dockerfile`에 직접 작성한다(SIMPLE-CICD가 이를 전제로 한다).
+- `backend/Dockerfile`은 작성 완료되어 있다(SIMPLE-CICD가 이를 전제로 한다).

@@ -8,9 +8,9 @@ paths:
 ## Scope
 
 - Platforms: android, ios만 지원한다. Web 타깃은 만들지 않는다.
-- Package: Dart 패키지명은 `ai_friend`이다.
-- App id: Android `applicationId`/`namespace`와 iOS bundle id는 모두 `com.chuseok22.aifriend`로 통일한다(iOS는 `_`를 쓸 수 없어 `flutter create` 기본값이 플랫폼마다 달랐다). 스토어 배포 후에는 바꾸기 어렵다.
-- App name: 사용자에게 보이는 이름은 임시로 `AI Friend`이다. 제품명이 확정되면 Android `android:label`, iOS `CFBundleDisplayName`/`CFBundleName`, `MaterialApp.title`을 함께 바꾼다.
+- Package: Dart 패키지명은 `teeq`이다.
+- App id: Android `applicationId`/`namespace`와 iOS bundle id는 모두 `kr.teeq.app`으로 통일한다(iOS는 `_`를 쓸 수 없어 `flutter create` 기본값이 플랫폼마다 달랐다). 스토어 배포 후에는 바꾸기 어렵다.
+- App name: 사용자에게 보이는 이름은 `TeeQ`이다. 바꿀 때는 Android `android:label`, iOS `CFBundleDisplayName`/`CFBundleName`, `MaterialApp.title`을 함께 바꾼다.
 - SDK: Flutter 3.47.x / Dart 3.13 이상. `pubspec.yaml`의 SDK 제약으로 명시한다(FVM은 쓰지 않는다).
 
 ## Structure

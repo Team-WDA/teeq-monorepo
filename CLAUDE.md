@@ -15,7 +15,7 @@
 ## 핵심 요약 (전체 내용은 위 rules 파일 참고)
 
 - **구조**: 모노레포. `backend/`(Spring Boot 4, Java 21, Gradle Groovy, 단일 모듈), `frontend/`(Flutter android/ios, Web 제외)
-- **백엔드 패키지**: `com.chuseok22.aifriend.<domain>.{core,application,infrastructure}`. core=엔티티·리포지토리·port, application=서비스·DTO·컨트롤러, infrastructure=adapter·config. 의존 방향은 ArchUnit으로 강제
+- **백엔드 패키지**: `kr.teeq.api.<domain>.{core,application,infrastructure}`. core=엔티티·리포지토리·port, application=서비스·DTO·컨트롤러, infrastructure=adapter·config. 의존 방향은 ArchUnit으로 강제
 - **백엔드 규칙**: PK는 UUID v7, 시간은 `Clock` 주입 + `Instant`, 에러는 도메인별 `ErrorCode` + `ProblemDetail`, DTO는 record, Lombok은 엔티티에만
 - **프론트 규칙**: Riverpod + go_router + feature-first, 환경값은 `frontend/config/*.json`(`--dart-define-from-file`), 생성 코드는 커밋하지 않음
 - **테스트**: 핵심 도메인 로직만 TDD, 커버리지 게이트 없음
