@@ -10,7 +10,7 @@
 #   - spring.datasource.password
 spring:
   application:
-    name: ai-friend-backend
+    name: teeq-backend
   profiles:
     default: dev
   threads:
