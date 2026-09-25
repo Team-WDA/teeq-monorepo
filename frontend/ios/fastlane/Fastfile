@@ -1,4 +1,4 @@
-# ai-friend: TestFlight 배포용 Fastfile.
+# teeq: TestFlight 배포용 Fastfile.
 # PROJECT-FLUTTER-IOS-TESTFLIGHT.yaml(lane :deploy)와
 # PROJECT-FLUTTER-IOS-TEST-TESTFLIGHT.yaml(lane :upload_testflight)이 이 파일을 사용한다.
 
@@ -15,7 +15,7 @@ platform :ios do
 
     deploy_mode = ENV["DEPLOY_MODE"] || "store_only"
     app_identifier = ENV["APP_IDENTIFIER"]
-    app_identifier = "com.chuseok22.aifriend" if app_identifier.nil? || app_identifier.empty?
+    app_identifier = "kr.teeq.app" if app_identifier.nil? || app_identifier.empty?
 
     upload_to_testflight(
       api_key: api_key,

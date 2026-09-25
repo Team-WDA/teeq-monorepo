@@ -2,14 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "ai_friend (dev)",
+      "name": "teeq (dev)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "args": ["--dart-define-from-file=config/dev.json"]
     },
     {
-      "name": "ai_friend (prod)",
+      "name": "teeq (prod)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",

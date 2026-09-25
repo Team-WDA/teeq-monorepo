@@ -6,7 +6,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// [ai-friend] release 서명 설정. android/key.properties가 없거나 키스토어가 비어 있으면
+// [teeq] release 서명 설정. android/key.properties가 없거나 키스토어가 비어 있으면
 // (CI에서 RELEASE_KEYSTORE_* secret이 아직 등록되지 않은 경우) debug 서명으로 자동 폴백한다.
 val keystoreProperties = Properties().apply {
     val propertiesFile = rootProject.file("key.properties")
@@ -18,7 +18,7 @@ val releaseStoreFile = keystoreProperties.getProperty("storeFile")?.let { rootPr
 val hasReleaseKey = releaseStoreFile != null && releaseStoreFile.exists() && releaseStoreFile.length() > 0
 
 android {
-    namespace = "com.chuseok22.aifriend"
+    namespace = "kr.teeq.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.chuseok22.aifriend"
+        applicationId = "kr.teeq.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

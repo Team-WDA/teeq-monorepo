@@ -1,4 +1,4 @@
-# ai-friend: Google Play 내부 테스트/프로덕션 배포용 Fastfile.
+# teeq: Google Play 내부 테스트/프로덕션 배포용 Fastfile.
 # PROJECT-FLUTTER-ANDROID-PLAYSTORE-CICD.yaml가 이 파일을 android/fastlane/Fastfile로 복사한 뒤
 # 환경변수(AAB_PATH, GOOGLE_PLAY_JSON_KEY, VERSION_NAME, VERSION_CODE, DEPLOY_MODE)를 설정하고 실행한다.
 
@@ -28,7 +28,7 @@ platform :android do
     end
 
     upload_to_play_store(
-      package_name: "com.chuseok22.aifriend",
+      package_name: "kr.teeq.app",
       track: track,
       release_status: release_status,
       aab: aab_path,

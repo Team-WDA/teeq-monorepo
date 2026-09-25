@@ -1,4 +1,4 @@
-package com.chuseok22.aifriend
+package kr.teeq.app
 
 import io.flutter.embedding.android.FlutterActivity
 

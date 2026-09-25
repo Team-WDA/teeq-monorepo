@@ -1,4 +1,4 @@
-import 'package:ai_friend/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

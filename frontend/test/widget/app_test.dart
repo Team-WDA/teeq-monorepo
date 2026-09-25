@@ -1,5 +1,5 @@
-import 'package:ai_friend/app.dart';
-import 'package:ai_friend/features/home/presentation/home_screen.dart';
+import 'package:teeq/app.dart';
+import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,6 +9,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('ai-friend'), findsOneWidget);
+    expect(find.text('TeeQ'), findsOneWidget);
   });
 }

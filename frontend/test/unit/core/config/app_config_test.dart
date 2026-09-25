@@ -1,4 +1,4 @@
-import 'package:ai_friend/core/config/app_config.dart';
+import 'package:teeq/core/config/app_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
