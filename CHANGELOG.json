@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "lastUpdated": "2026-10-15T15:26:14Z",
+    "currentVersion": "0.1.0",
+    "projectTypes": [
+      "spring",
+      "flutter"
+    ],
+    "totalReleases": 1
+  },
+  "releases": [
+    {
+      "version": "0.1.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-15",
+      "pr_number": null,
+      "raw_summary": "## [0.1.0]\n\n### ✨ 기능\n- 스토어 배포 플로우(fastlane) 구성\n\n### 🐛 수정\n- 진행 상황 댓글에 남아있던 브랜치명 JS 인젝션과 Play 업로드 옵션 수정\n- backend jar 산출물을 bootJar 하나로 단일화\n\n### 📝 문서\n- FE 규칙을 BE 에러, URL, 시각 규칙에 맞추고 Docker 안내 제거\n- 백엔드 규칙을 soft delete, 중앙 ErrorCode, 테스트 최소화 기준으로 정리\n- 규칙 문서와 README의 서비스명을 teeq로 변경\n- README에 에뮬레이터/시뮬레이터 실행 및 빌드 안내 추가\n- CI/CD 워크플로우 규칙 문서화\n- build_runner 옵션 안내 수정\n- CLAUDE.md 및 프로젝트 rules 추가\n\n### ♻️ 리팩토링\n- 에러 응답을 중앙 ErrorCode와 CustomException으로 바꾸고 BaseEntity에 soft delete 추가\n\n### 🔧 변경사항\n- 워크플로우와 배포 설정의 서비스명을 teeq로 변경\n- 프론트엔드 앱 이름과 번들 ID를 teeq로 변경\n- 백엔드 패키지와 서비스명을 teeq로 변경\n- CI/CD 워크플로우를 ai-friend 구조에 맞게 수정\n- project-auto-wizard 산출물 추가\n- 앱 식별자 통일 및 임시 앱 이름 설정\n- frontend 골격 추가\n- backend 골격 추가\n- 기본 설정 파일 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "스토어 배포 플로우(fastlane) 구성"
+          ]
+        },
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "진행 상황 댓글에 남아있던 브랜치명 JS 인젝션과 Play 업로드 옵션 수정",
+            "backend jar 산출물을 bootJar 하나로 단일화"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "FE 규칙을 BE 에러, URL, 시각 규칙에 맞추고 Docker 안내 제거",
+            "백엔드 규칙을 soft delete, 중앙 ErrorCode, 테스트 최소화 기준으로 정리",
+            "규칙 문서와 README의 서비스명을 teeq로 변경",
+            "README에 에뮬레이터/시뮬레이터 실행 및 빌드 안내 추가",
+            "CI/CD 워크플로우 규칙 문서화",
+            "build_runner 옵션 안내 수정",
+            "CLAUDE.md 및 프로젝트 rules 추가"
+          ]
+        },
+        "리팩토링": {
+          "title": "♻️ 리팩토링",
+          "items": [
+            "에러 응답을 중앙 ErrorCode와 CustomException으로 바꾸고 BaseEntity에 soft delete 추가"
+          ]
+        },
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "워크플로우와 배포 설정의 서비스명을 teeq로 변경",
+            "프론트엔드 앱 이름과 번들 ID를 teeq로 변경",
+            "백엔드 패키지와 서비스명을 teeq로 변경",
+            "CI/CD 워크플로우를 ai-friend 구조에 맞게 수정",
+            "project-auto-wizard 산출물 추가",
+            "앱 식별자 통일 및 임시 앱 이름 설정",
+            "frontend 골격 추가",
+            "backend 골격 추가",
+            "기본 설정 파일 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    }
+  ]
+}
