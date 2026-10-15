@@ -98,3 +98,5 @@ frontend/android/fastlane/Fastfile
 .claude/worktrees/
 
 image
+
+/.issue
