@@ -96,3 +96,5 @@ frontend/android/fastlane/Fastfile
 ### Claude Code (개인/임시) ###
 .claude/settings.local.json
 .claude/worktrees/
+
+image
