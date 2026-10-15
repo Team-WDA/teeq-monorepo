@@ -15,8 +15,9 @@ paths:
 ## Layers
 
 - core: JPA 엔티티, VO, enum, 도메인 이벤트, 리포지토리 인터페이스(Spring Data), 외부 연동 port 인터페이스. JPA/Spring Data 어노테이션 외의 프레임워크 의존은 두지 않는다.
+- 도메인 구성과 소유 테이블은 `22-backend-domains.md`를 따른다.
 - application: 유스케이스 서비스, DTO(`dto/{request,response}`), mapper, 컨트롤러(`controller/`), `XxxControllerDocs` 인터페이스.
-- infrastructure: port의 adapter 구현(STT/LLM/TTS 등 외부 AI, Redis, 스토리지), `@Configuration`, `@ConfigurationProperties`(`properties/`), QueryDSL 구현체.
+- infrastructure: port의 adapter 구현(AI 서버 등 외부 연동), `@Configuration`, `@ConfigurationProperties`(`properties/`), QueryDSL 구현체, 보안 설정과 필터.
 
 ## Dependency direction
 
@@ -26,7 +27,7 @@ paths:
 
 ## Ports and adapters
 
-- 교체·확장 가능성이 있는 외부 연동(STT, LLM, TTS 등 AI 제공자)만 core에 port 인터페이스를, infrastructure에 adapter를 둔다.
+- 교체·확장 가능성이 있는 외부 연동(AI 서버 등)만 core에 port 인터페이스를, infrastructure에 adapter를 둔다. STT/LLM/TTS는 AI 서버 안의 일이며 BE가 직접 호출하지 않는다.
 - 그 외 구성요소에는 인터페이스를 미리 만들지 않는다(구현체가 하나뿐인 서비스에 인터페이스 금지).
 
 ## Controller

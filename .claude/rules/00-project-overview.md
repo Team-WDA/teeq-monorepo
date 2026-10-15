@@ -20,7 +20,15 @@
   AI 위험 가능성 확인(사용자 확인 후에만 지인에게 알림).
 - Out of scope: 112 자동 신고, 경찰 연결, 사용자 확인 없는 자동 지인 연락, 완전 자동 위험 판단, 정교한 음향 위험 분류, 영상통화, Voice Cloning, Marketplace, 결제/구독, B2B/B2G.
 - Data model: User → Characters(Persona, Memory), Friends(Connection State), Call Sessions(Duration, Context, Cost), Journeys(Start/End, Shared Friends, Location Events, Risk Events).
-- Cost tracking: 통화 Session별 STT·LLM 토큰·TTS·통화시간 비용을 기록한다.
+- Cost tracking: 통화 Session별 STT·LLM 토큰·TTS·통화시간 비용을 기록한다(이번 MVP BE 범위에서는 제외, 아래 "BE implementation scope" 참고).
+
+## BE implementation scope
+
+위 Core/Safety 목록은 제품 전체 범위이고, 이번 MVP의 BE 구현은 Figma 화면에 있는 기능으로 줄인다. 상세는 `22-backend-domains.md`, 인증은 `21-backend-auth.md`.
+
+- Included: 이메일 가입·로그인(AT/RT), 닉네임, 약관 동의 이력, 계정 삭제, 온보딩 질문 7개와 캐릭터 저장, 홈 조회, 통화 사용 토큰(분 단위 한도), 통화 후 피드백과 추가 피드백.
+- AI 서버: AI 기능(캐릭터 결정, 홈 인사말, 기억, 음성 파이프라인)은 AI 개발자가 별도 서버로 만들고, BE는 API 호출만 한다. 음성 통화는 FE와 AI 서버가 직접 연결한다.
+- Excluded: 기억 열람·수정·삭제, Analytics, Cost Tracking, Safety Support 전체(귀갓길, 위치 공유, 위험 신호), 프로필 사진, 소셜 로그인, 이메일 인증, 비밀번호 찾기, 다기기 로그인.
 
 ## Glossary
 
@@ -61,5 +69,6 @@
 ## Change policy
 
 - 수정 범위: 요청받은 범위만 수정한다. 인접 코드를 개선하거나 리팩터링하지 않는다.
-- 새 의존성: 필요해지는 시점에 추가하며, 미리 넣지 않는다(마이크, 위치, 푸시, springdoc, QueryDSL, security 등).
-- 미확정 영역: 로그인 방식, 음성(STT/LLM/TTS) 파이프라인, 실시간 전송 방식(WebSocket 등)은 아직 정하지 않았다. 확정 전에는 임의로 구현하지 않는다.
+- 새 의존성: 필요해지는 시점에 추가하며, 미리 넣지 않는다(마이크, 위치, 푸시, springdoc, QueryDSL 등). 인증용 `spring-boot-starter-security`와 jjwt는 승인되어 있다(`21-backend-auth.md`).
+- 확정: 로그인은 이메일과 비밀번호이다. 음성 파이프라인과 실시간 전송은 AI 서버와 FE가 맡으므로 BE에서 구현하지 않는다.
+- 미확정 영역: AI 서버 API 명세와 인증 방식, 통화 사용 토큰 정책(한도 값, 충전·리셋), 홈 인사말 전달 방식은 아직 정하지 않았다. 확정 전에는 임의로 구현하지 않는다.

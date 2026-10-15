@@ -8,6 +8,10 @@
 #   - spring.datasource.url
 #   - spring.datasource.username
 #   - spring.datasource.password
+#   - jwt.secret-key
+#   - jwt.access-exp-millis
+#   - jwt.refresh-exp-millis
+#   - jwt.issuer
 spring:
   application:
     name: teeq-backend
