@@ -31,14 +31,16 @@ paths:
 
 ## Controller
 
-- Path: `/api/v1/<resource>` (`@RestController`, `@RequestMapping`)
+- Path: `/api/<복수형-kebab-case>` (`@RestController`, `@RequestMapping`). 버전 접두사(`/v1`)는 쓰지 않는다. 경로 변수도 kebab-case다(예: `/api/call-sessions/{call-session-id}`).
 - Return: `ResponseEntity<Dto>` 또는 `Page<Dto>` 직접 반환. 응답 envelope은 쓰지 않는다.
+- Call: 컨트롤러는 서비스만 호출한다. 리포지토리를 직접 호출하지 않는다.
 - Docs: Swagger 어노테이션은 컨트롤러가 구현하는 `XxxControllerDocs` 인터페이스에 분리한다(springdoc 도입 이후 적용).
 - Location: 컨트롤러는 각 도메인의 `application/controller`에 둔다.
 
 ## Common package
 
-- `common/core`: `ErrorCode`, `BusinessException`, `BaseEntity` 등 도메인 공통 타입
-- `common/application`: `GlobalExceptionHandler` 등 웹 공통 처리
+- `common/core`: `ErrorCode`(중앙 enum 하나), `CustomException`, `BaseEntity` 등 도메인 공통 타입
+- `common/application`: `GlobalExceptionHandler`, `ErrorResponse`(`application/exception`) 등 웹 공통 처리
+- Naming: 패키지·디렉터리 이름이 `.gitignore` 패턴과 겹치면 그 아래 소스가 추적에서 빠진다. 새 패키지명을 정할 때 `.gitignore`와 겹치는지 확인한다.
 - `common/infrastructure`: `ClockConfig`, `JpaAuditingConfig` 등 공통 설정
 - 도메인 코드는 `common`에 의존할 수 있지만 `common`은 도메인에 의존하지 않는다.

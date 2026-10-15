@@ -39,7 +39,7 @@
 | Backend | Java 21, Spring Boot 4.1.x (`spring-boot-starter-webmvc`, 가상 스레드), Gradle Groovy DSL, 단일 모듈 |
 | Database | PostgreSQL 17 단일 DB, Spring Data JPA, Flyway |
 | Frontend | Flutter (android/ios), Riverpod, go_router, dio, freezed |
-| Test | JUnit 6, Testcontainers(`postgres:17`), ArchUnit / flutter_test |
+| Test | JUnit 6, Mockito, ArchUnit / flutter_test |
 | CI/CD | `project-auto-wizard`(사용자가 나중에 적용), trunk-based(`main` 단일) |
 
 ## Important directories
