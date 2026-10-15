@@ -51,7 +51,7 @@
 
 ## Main commands
 
-- Backend build/test: `cd backend && ./gradlew build` (Docker 필요)
+- Backend build/test: `cd backend && ./gradlew build`
 - Backend run: `cd backend && ./gradlew bootRun` (`application-dev.yml`을 채운 뒤)
 - Frontend 준비: `cd frontend && flutter pub get && dart run build_runner build`
 - Frontend 검증: `cd frontend && flutter analyze && flutter test`

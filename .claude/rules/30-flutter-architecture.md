@@ -34,8 +34,13 @@ paths:
 ## Network
 
 - dio 인스턴스는 `lib/core/network`의 provider 하나로 만들고, base URL은 `AppConfig`에서 가져온다.
-- API 경로는 백엔드의 `/api/v1/...`와 일치시킨다.
-- 에러 응답은 `ProblemDetail`(RFC 9457) 형식이다. `dio` 예외를 도메인 오류로 변환해서 presentation에 전달한다.
+- API 경로는 백엔드의 `/api/<복수형-kebab-case>`와 일치시킨다(버전 접두사 없음, 예: `/api/call-sessions/{call-session-id}`).
+- 에러 응답은 `{ "errorCode": "<ErrorCode enum 이름>", "errorMessage": "<한국어 메시지>" }` 두 필드다. HTTP 상태는 응답 상태 줄로만 온다. `dio` 예외를 `errorCode` 기준의 도메인 오류로 변환해서 presentation에 전달하고, 분기는 `errorMessage`가 아니라 `errorCode`로 한다.
+- 알려진 `errorCode`: `INVALID_REQUEST`(400), `MALFORMED_REQUEST_BODY`(400), `RESOURCE_NOT_FOUND`(404), `METHOD_NOT_ALLOWED`(405), `UNSUPPORTED_MEDIA_TYPE`(415), `STATE_CONFLICT`(409), `INTERNAL_SERVER_ERROR`(500). 백엔드가 `ErrorCode`에 도메인 코드를 추가하면 클라이언트도 함께 반영한다. 모르는 코드는 `INTERNAL_SERVER_ERROR`와 같은 일반 오류로 처리한다.
+- 성공 응답은 envelope 없이 DTO를 그대로 받는다. 목록은 `Page<Dto>`이며, 실제 JSON 구조는 첫 목록 API가 생길 때 확인해 이 문서에 기록한다.
+- 시각: 응답의 시각은 ISO-8601 UTC(`...Z`)이다. 파싱은 `DateTime.parse`로 UTC로 받고, 화면에 보일 때만 로컬 시간으로 변환한다. 요청에 보내는 시각도 UTC로 보낸다.
+- ID: 모든 엔티티 ID는 UUID(v7) 문자열이다. 순번 ID로 가정하지 않는다.
+- 삭제: 백엔드는 soft delete이며 `deleted`, `deletedAt`은 API로 노출하지 않는 것을 기본으로 한다. 삭제된 데이터는 조회 응답에 오지 않는다고 가정한다.
 
 ## Layer rules
 

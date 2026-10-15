@@ -14,7 +14,7 @@ paths:
 
 ## Models and generated code
 
-- Models: `freezed`(불변)와 `json_serializable`을 사용한다.
+- Models: `freezed`(불변)와 `json_serializable`을 사용한다. 필드 이름은 백엔드 응답 DTO(record)의 필드 이름(camelCase)과 맞춘다.
 - Generated files: `*.g.dart`, `*.freezed.dart`는 gitignore이며 커밋하지 않는다.
 - Generate: `cd frontend && dart run build_runner build`. 클론 직후와 어노테이션을 바꾼 뒤에 실행한다.
 

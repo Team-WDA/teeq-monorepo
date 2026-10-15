@@ -15,7 +15,7 @@ teeq-monorepo/
 
 ## 필요한 도구
 
-- JDK 21, Docker(Testcontainers 테스트), PostgreSQL 17
+- JDK 21, PostgreSQL 17
 - Flutter 3.47.x (Dart 3.13), iOS는 Xcode, Android는 Android Studio
 
 ## 백엔드 실행
