@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-15T15:26:14Z",
-    "currentVersion": "0.1.0",
+    "lastUpdated": "2026-10-15T16:19:49Z",
+    "currentVersion": "0.1.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 1
+    "totalReleases": 2
   },
   "releases": [
+    {
+      "version": "0.1.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-15",
+      "pr_number": null,
+      "raw_summary": "## [0.1.1]\n\n### 📝 문서\n- BE MVP 범위, 인증, 도메인 규칙 추가",
+      "parsed_changes": {
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "BE MVP 범위, 인증, 도메인 규칙 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.1.0",
       "project_types": [
