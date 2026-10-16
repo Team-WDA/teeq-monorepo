@@ -21,7 +21,7 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 | auth | 가입, 로그인, 토큰, 비밀번호 변경, 계정 삭제, 보안 설정 | refresh_token |
 | character | 온보딩 응답, 캐릭터 | character, onboarding_answer |
 | home | 홈 조회, 오늘의 한마디 | daily_message(하루 한 건) |
-| call | 통화 한도 검사, 통화 사용 시간 기록 | 통화 사용 기록 테이블 |
+| call | 통화 한도 검사, 통화 사용 시간 기록 | call_history |
 | feedback | 통화 후 필수 피드백, 상세 피드백 | feedback_mandatory, feedback_detail |
 | setting | 관리자가 수정하는 동적 설정(`setting_config`) | setting_config |
 
@@ -55,11 +55,17 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 ## Call
 
 - Scope: 통화 세션 생성, LiveKit 토큰 발급, 통화 시간 계산은 AI 서버가 한다. BE는 통화 시작 전 한도 검사와 AI 서버가 알려 주는 사용 시간 기록만 맡는다.
-- Unit: 한도의 단위는 초다(teeq-docs PRD §7). 값은 `setting_config`의 동적 설정으로 둔다(아래 "Dynamic settings"). 키는 통화 한도 이슈에서 `SettingKey`에 추가한다. 1회 통화 1,200초, 사용자별 하루 1,800초, 남은 시간이 60초 미만이면 통화 시작을 거절한다.
+- Unit: 한도의 단위는 초다(teeq-docs PRD §7). 값은 `setting_config`의 동적 설정으로 둔다(아래 "Dynamic settings"). 1회 통화 1,200초, 사용자별 하루 1,800초, 남은 시간이 60초 미만이면 통화 시작을 거절한다.
 - Reset: 하루 한도는 KST 0시에 리셋되고 통화 시작일 기준으로 센다. 시각은 `Clock` + `Instant`로 다룬다.
 - Purpose: AI 무제한 호출을 막기 위한 사용자별 한도다.
 - Out of scope: 잔액·충전(관리자 페이지에서 추가할 기능), 서비스 전체 월간 풀은 이번 범위에서 제외한다.
-- Open: 한도 값 최종 확정, 에러 코드 이름(후보 `CALL_LIMIT_INSUFFICIENT`), 통화 세션 식별자 발급 주체, 동시 통화 1개 제한 담당, 사용 시간 수신 형식과 중복 수신 방지, 정리되지 않은 통화 처리는 통화 한도 이슈(#8) 구현 때 정한다.
+- Keys: 한도는 `SettingKey`의 `CALL_MAX_SECONDS_PER_SESSION`(1회, 기본 1200), `CALL_MAX_SECONDS_PER_DAY`(하루, 기본 1800), `CALL_MIN_START_SECONDS`(시작 최소 잔여, 기본 60)다. 모두 INT이고 최소 1이다. 남은 시간은 `max(0, 하루 한도 - 오늘 사용량)`이고 1회 허용 시간은 `min(1회 한도, 남은 시간)`이며 남은 시간이 시작 최소치 이상일 때만 통화를 시작할 수 있다. 세 키 사이의 값 관계는 검증하지 않으므로 운영자가 직접 맞춘다(예: 1회 한도가 시작 최소치보다 작으면 안 된다).
+- Error: 남은 시간이 부족하면 `CALL_LIMIT_INSUFFICIENT`(403)이다. 존재하지 않거나 삭제된 회원은 `MEMBER_NOT_FOUND`다.
+- Record: 통화 1회가 `call_history` 1행이다. 통화 세션 ID(`callSessionId`)는 AI 서버가 발급하고, AI 서버가 `callSessionId`, `memberId`, `startedAt`, `durationSeconds`를 보고한다. `durationSeconds`가 1회 한도를 넘으면 1회 한도로 잘라 저장한다.
+- Idempotency: 같은 `callSessionId`를 다시 받으면 오류 없이 저장된 기존 행을 그대로 돌려준다(신규 201, 중복 200).
+- API: `GET /api/call-limits/today`(사용자 토큰), `POST /api/internal/call-limit-checks`(본문 `{memberId}`, 허용 200 `{allowedSeconds}`), `POST /api/internal/call-histories`. `/api/internal/**`는 서버 간 인증(#7) 적용 전까지 일반 인증만 적용된다.
+- AI server duty: 동시 통화 1개 제한, 정리되지 않은 통화 처리, 진행 중 통화 추적은 BE가 하지 않고 AI 서버가 맡는다.
+- Open: 피드백의 통화 순번 기준은 `call_history` 행 수로 하며 세부는 피드백 이슈(#9)에서 정한다.
 
 ## Feedback
 
@@ -71,7 +77,7 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 ## Dynamic settings
 
 - Table: `setting_config`(`config_key` 활성 행 unique, `config_value` 문자열, `value_type` INT/BOOLEAN/STRING). 키 생성·삭제 API는 없다.
-- Keys: 키는 코드 enum `SettingKey`가 정의한다(타입, 기본값, 설명, INT 최소·최대). 상수는 필요한 기능을 구현할 때 추가하며 지금은 0개다. 시드 값은 마이그레이션에 넣지 않는다.
+- Keys: 키는 코드 enum `SettingKey`가 정의한다(타입, 기본값, 설명, INT 최소·최대). 상수는 필요한 기능을 구현할 때 추가하며 지금은 통화 한도 3개(`CALL_*`)다. 시드 값은 마이그레이션에 넣지 않는다.
 - Read: 캐시 없이 읽을 때마다 DB를 조회하고, 행이 없으면 enum 기본값을 쓴다. 소비처는 `SettingConfigService.getInt/getBoolean/getString`을 쓴다(INT는 `long` 반환).
 - Update: 관리자 API만 쓴다. `GET /api/admin/setting-configs`, `PATCH /api/admin/setting-configs/{key}`(본문 `{value}`). 정의되지 않은 키는 `SETTING_CONFIG_NOT_FOUND`, 타입·범위 위반은 `INVALID_SETTING_VALUE`다. 수정자와 이력은 저장하지 않는다.
 - Candidate review: 새 도메인을 구현할 때 하드코딩하거나 `@ConfigurationProperties`로 둘 값(한도, 임계값, 기능 on/off, 고정 문구 등) 중 운영 중 바꿀 만한 것이 있는지 검토해 `SettingKey` 후보로 추천한다. 추가는 사용자 확인 후에 한다.
