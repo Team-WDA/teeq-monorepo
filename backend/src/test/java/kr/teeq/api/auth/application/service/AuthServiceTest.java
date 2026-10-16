@@ -26,6 +26,7 @@ import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.member.core.constant.Role;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.port.AiCharacterExistencePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,9 @@ class AuthServiceTest {
     @Mock
     private TokenProvider tokenProvider;
 
+    @Mock
+    private AiCharacterExistencePort aiCharacterExistencePort;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
@@ -61,7 +65,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder, clock);
+        authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder, clock,
+            aiCharacterExistencePort);
     }
 
     private Member memberWithPassword(String rawPassword) {
@@ -131,7 +136,8 @@ class AuthServiceTest {
         assertThat(passwordEncoder.matches("abcd1234", saved.getPassword())).isTrue();
         assertThat(saved.getRole()).isEqualTo(Role.USER);
         verify(refreshTokenRepository).save(any(RefreshToken.class));
-        assertThat(response).isEqualTo(new AuthResponse("access-token", "refresh-token", MEMBER_ID, "소연"));
+        assertThat(response)
+            .isEqualTo(new AuthResponse("access-token", "refresh-token", MEMBER_ID, "소연", false));
     }
 
     @Test
@@ -174,6 +180,18 @@ class AuthServiceTest {
         assertThat(existing.getExpiresAt()).isEqualTo(REFRESH_EXPIRES_AT);
         verify(refreshTokenRepository, never()).save(any());
         assertThat(response.accessToken()).isEqualTo("access-token");
+    }
+
+    @Test
+    void login_reportsWhetherTheMemberHasAnAiCharacter() {
+        Member member = memberWithPassword("abcd1234");
+        given(memberRepository.findByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(Optional.of(member));
+        stubTokenIssue("access-token", "new-refresh");
+        given(aiCharacterExistencePort.existsByMemberId(MEMBER_ID)).willReturn(true);
+
+        AuthResponse response = authService.login(new LoginRequest("soyeon@teeq.com", "abcd1234"));
+
+        assertThat(response.hasAiCharacter()).isTrue();
     }
 
     // ---------- refresh ----------

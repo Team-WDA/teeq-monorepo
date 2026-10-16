@@ -15,6 +15,7 @@ import kr.teeq.api.auth.core.repository.RefreshTokenRepository;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.port.AiCharacterExistencePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -35,6 +36,7 @@ public class AuthService {
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
+    private final AiCharacterExistencePort aiCharacterExistencePort;
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
@@ -117,7 +119,8 @@ public class AuthService {
                 .token(issued.token())
                 .expiresAt(issued.expiresAt())
                 .build()));
-        return AuthResponse.of(accessToken, issued.token(), member);
+        return AuthResponse.of(accessToken, issued.token(), member,
+            aiCharacterExistencePort.existsByMemberId(member.getId()));
     }
 
     private String normalizeEmail(String email) {

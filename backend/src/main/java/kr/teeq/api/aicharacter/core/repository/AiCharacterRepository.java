@@ -1,0 +1,15 @@
+package kr.teeq.api.aicharacter.core.repository;
+
+import java.util.Optional;
+import java.util.UUID;
+import kr.teeq.api.aicharacter.core.entity.AiCharacter;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+// hard delete 전제라 deleted 조건 없이 member_id로 조회한다(unique도 전체 행에 걸린다)
+public interface AiCharacterRepository extends JpaRepository<AiCharacter, UUID> {
+
+    Optional<AiCharacter> findByMemberId(UUID memberId);
+
+    boolean existsByMemberId(UUID memberId);
+
+}

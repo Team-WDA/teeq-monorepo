@@ -13,6 +13,7 @@ import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.teeq.api.member.application.dto.response.MemberResponse;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.port.AiCharacterExistencePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,11 +32,14 @@ class MemberServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+    @Mock
+    private AiCharacterExistencePort aiCharacterExistencePort;
+
     private MemberService memberService;
 
     @BeforeEach
     void setUp() {
-        memberService = new MemberService(memberRepository);
+        memberService = new MemberService(memberRepository, aiCharacterExistencePort);
     }
 
     private Member member(UUID id, String nickname) {

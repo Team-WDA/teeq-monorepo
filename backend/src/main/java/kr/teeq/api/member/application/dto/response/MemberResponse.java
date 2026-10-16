@@ -12,11 +12,14 @@ public record MemberResponse(
     String email,
 
     @Schema(description = "닉네임", example = "티큐")
-    String nickname
+    String nickname,
+
+    @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")
+    boolean hasAiCharacter
 ) {
 
-    public static MemberResponse from(Member member) {
-        return new MemberResponse(member.getId(), member.getEmail(), member.getNickname());
+    public static MemberResponse from(Member member, boolean hasAiCharacter) {
+        return new MemberResponse(member.getId(), member.getEmail(), member.getNickname(), hasAiCharacter);
     }
 
 }

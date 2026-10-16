@@ -15,11 +15,14 @@ public record AuthResponse(
     UUID memberId,
 
     @Schema(description = "닉네임", example = "티큐")
-    String nickname
+    String nickname,
+
+    @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")
+    boolean hasAiCharacter
 ) {
 
-    public static AuthResponse of(String accessToken, String refreshToken, Member member) {
-        return new AuthResponse(accessToken, refreshToken, member.getId(), member.getNickname());
+    public static AuthResponse of(String accessToken, String refreshToken, Member member, boolean hasAiCharacter) {
+        return new AuthResponse(accessToken, refreshToken, member.getId(), member.getNickname(), hasAiCharacter);
     }
 
 }

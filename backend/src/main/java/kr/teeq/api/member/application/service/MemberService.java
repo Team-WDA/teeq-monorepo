@@ -6,6 +6,7 @@ import kr.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.teeq.api.member.application.dto.response.MemberResponse;
 import kr.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.port.AiCharacterExistencePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -20,6 +21,7 @@ public class MemberService {
     private static final String NICKNAME_INDEX_NAME = "uq_member_nickname_active";
 
     private final MemberRepository memberRepository;
+    private final AiCharacterExistencePort aiCharacterExistencePort;
 
     @Transactional(readOnly = true)
     public NicknameAvailabilityResponse checkNicknameAvailability(String nickname) {
@@ -27,8 +29,9 @@ public class MemberService {
         return new NicknameAvailabilityResponse(!taken);
     }
 
+    @Transactional(readOnly = true)
     public MemberResponse getMe(Member member) {
-        return MemberResponse.from(member);
+        return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()));
     }
 
     // 컨트롤러가 넘긴 엔티티는 분리 상태라 수정 전에 id로 다시 조회한다. 자신의 닉네임을 대소문자만 바꾸는 것은 중복이 아니다
@@ -51,7 +54,7 @@ public class MemberService {
             }
             throw exception;
         }
-        return MemberResponse.from(member);
+        return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()));
     }
 
 }
