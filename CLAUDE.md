@@ -1,34 +1,24 @@
 # CLAUDE.md
 
-이 파일은 진입점이며, 상세 규칙은 `.claude/rules/*.md`에 있습니다. 작업 시작 전 반드시 아래 파일들을 읽고 이해한 뒤 진행하세요.
+이 파일은 진입점이며, 상세 규칙은 `.claude/rules/*.md`에 있습니다. 작업 시작 전 아래 파일들을 읽고 진행하세요.
 
-- `.claude/rules/00-project-overview.md`: 제품 요약, MVP 범위, 용어집, 스택, 주요 명령
-- `.claude/rules/10-backend-architecture.md`: 백엔드 패키지 구조, 레이어 역할, 의존 방향
-- `.claude/rules/20-backend-conventions.md`: 엔티티·DTO·예외·시간·DB·Flyway·설정 규칙
-- `.claude/rules/21-backend-auth.md`: 인증·보안 설정 공통 원칙, 서버 간 인증
-- `.claude/rules/22-backend-domains.md`: 도메인 공통 원칙, AI 서버 연동 경계, 동적 설정
-- `.claude/rules/30-flutter-architecture.md`: Flutter 구조, 상태관리, 라우팅, 네트워크
-- `.claude/rules/40-flutter-conventions.md`: 모델, 생성 코드, 환경값(`AppConfig`), 클라이언트 시크릿 원칙
-- `.claude/rules/50-testing.md`: 테스트 정책 (전역 80% 규칙을 대체)
-- `.claude/rules/60-git-and-delivery.md`: 브랜치, 커밋, PR, force 금지, CI/CD(wizard)
-- `.claude/rules/70-secrets-and-env.md`: 파일별 추적/무시 기준, 시크릿 취급
-- `.claude/rules/80-ci-cd.md`: 설치된 GitHub Actions 워크플로우 목록, Secrets, 릴리스·버전 규칙
+- `.claude/rules/00-project-overview.md`: 제품 요약, 스택, 주요 명령, 프로젝트 제약, 변경 정책
+- `.claude/rules/10-architecture-and-boundaries.md`: 구조, 계층 경계, AI 서버 연동 경계, 폴더 규칙
+- `.claude/rules/20-team-conventions.md`: 네이밍, 코드 스타일, 책임 분리, 시크릿, 리뷰 기준
+- `.claude/rules/30-testing-and-verification.md`: 테스트 정책(전역 80% 규칙을 대체), 검증 명령, 증거
+- `.claude/rules/40-delivery-and-review.md`: 보고서 형식, 브랜치·커밋·PR, force 금지, 배포·CI/CD 주의
 
-## 핵심 요약 (전체 내용은 위 rules 파일 참고)
+## 문서 운영
 
-- **구조**: 모노레포. `backend/`(Spring Boot 4, Java 21, Gradle Groovy, 단일 모듈), `frontend/`(Flutter android/ios, Web 제외)
-- **백엔드 패키지**: `kr.teeq.api.<domain>.{core,application,infrastructure}`. core=엔티티·리포지토리·port, application=서비스·DTO·컨트롤러, infrastructure=adapter·config. 의존 방향은 ArchUnit으로 강제
-- **백엔드 규칙**: PK는 UUID v7, 시간은 `Clock` 주입 + `Instant`, soft delete(`deleted`/`deleted_at`, 조회 필터는 명시적), 에러는 중앙 `ErrorCode` enum + `CustomException` + `{errorCode, errorMessage}`, URL `/api/<복수형-kebab>`(버전 접두사 없음), DTO는 record 우선, `@Data` 금지
-- **동적 설정**: `setting` 도메인의 `setting_config` 테이블 + 코드 enum `SettingKey`(키 정의), 관리자 API `/api/admin/setting-configs`(ADMIN 전용), 캐시 없음. 새 도메인 구현 시 설정 후보를 검토해 추천한다(`22-backend-domains.md`)
-- **백엔드 MVP 범위**: 이메일 로그인, 온보딩·캐릭터, 홈, 통화 한도 검사(초), 피드백. AI 기능과 음성, 통화 세션·시간 계산은 별도 AI 서버가 맡고 BE는 API 연동과 한도 검사만 한다. 기억 열람, Analytics, Cost Tracking, Safety, 다기기 로그인은 제외
-- **프론트 규칙**: Riverpod + go_router + feature-first, 환경값은 `frontend/config/*.json`(`--dart-define-from-file`), 생성 코드는 커밋하지 않음
-- **테스트**: 꼭 필요한 부분만(핵심 도메인 로직 TDD), Testcontainers/H2/DB 통합 테스트 없음, 커버리지 게이트 없음
-- **Git**: `main` 단일 + `<type>/<설명>` 브랜치 PR, 커밋은 `type: 한국어 설명`
-- **문서 운영**: 규칙 문서는 공통 원칙만 둔다. 도메인 상세(엔드포인트, 필드, 에러 코드, 상태, 정책 값)는 코드와 이슈 결정 코멘트가 원천이고, 문서와 어긋나면 코드가 맞다
-- **절대 금지**:
-  - force 계열 git 명령(`--force`, `git add -f` 등)
-  - 사용자가 그 순간 명시적으로 지시하지 않은 `main` 푸시(직접 푸시·PR 병합 모두) — wizard 적용 후 `main` 푸시는 곧 배포다
-  - `application-dev.yml`, `application-prod.yml`, `frontend/config/*.json`, 키/인증서 커밋
-  - `.env`, `*.example` 파일 추가
-  - 클라이언트(Flutter)에 서버 시크릿 포함
-  - 약어 사용(`id`, `url`, `dto` 제외)
+- 규칙 문서는 변하지 않는 공통 원칙만 둔다. 도메인 상세(엔드포인트, 필드, 에러 코드, 상태, 정책 값)는 적지 않고, 각 이슈 구현 전 브레인스토밍에서 결정한다.
+- 도메인 상세의 원천은 코드이고 결정 이력은 vault(second-brain) 기록이다. 문서와 코드가 어긋나면 코드가 맞다.
+- 이슈 본문은 브레인스토밍을 시작할 때 맥락으로 한 번 가볍게 읽는 용도다. 이슈를 갱신하거나 근거 문서로 쓰지 않는다.
+
+## 절대 금지
+
+- force 계열 git 명령(`--force`, `git add -f` 등)
+- 사용자가 그 순간 명시적으로 지시하지 않은 `main` 푸시(직접 푸시·PR 병합 모두). `main` 푸시는 곧 배포다
+- `application-dev.yml`, `application-prod.yml`, `frontend/config/*.json`, 키/인증서 커밋
+- `.env`, `*.example` 파일 추가
+- 클라이언트(Flutter)에 서버 시크릿 포함
+- 약어 사용(`id`, `url`, `dto` 제외)

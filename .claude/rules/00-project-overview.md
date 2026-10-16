@@ -2,73 +2,44 @@
 
 ## Purpose
 
-- Product: AI 페르소나 기반 실시간 음성 동행 서비스. 사용자가 AI 캐릭터에게 실제 전화하듯 통화하고, 통화 → 기억 → 관계 → 재통화 루프로 관계를 쌓는다.
-- Core vs Support: AI Companion이 Core Product이다. 귀갓길 Safety Support(지인 공유, 위치 공유, 위험 신호)는 Core 경험을 보강하는 보조 레이어이며, 서비스를 "안전 앱"으로 정의하지 않는다.
-- Target: 20~30대 여성. 첫 핵심 사용 맥락은 "늦은 밤 혼자 집으로 이동하는 시간".
-- North Star: Weekly Returning Callers (일주일 내 2회 이상 통화한 사용자 수/비율).
-- Principles: 전화가 가장 먼저 보여야 한다 / Safety는 필요할 때 자연스럽게 나타난다 / 기능 수보다 반복 행동을 검증한다.
-- Priority: Voice Latency > Conversation Quality > Persona Consistency > Memory > Context Awareness > Safety Support 신뢰성.
-- Client scope: 기획서는 10월 Web MVP, 11월 Web+App을 서술하지만, 이 저장소의 클라이언트는 Flutter(android/ios)이며 Web은 범위 밖이다. 회사 대표 사이트(기능 없음)가 필요해지면 Spring MVC + Thymeleaf로 추가한다.
-- Source of truth: 원문 기획서(`project.md`)는 저장소에 두지 않는다. 이 요약이 기준이다.
-
-## MVP scope
-
-- Core(P0): 간편 로그인(Google/Apple/카카오), 캐릭터 선택(든든한 언니, 찐친, 다정한 연인)과 최소 커스터마이즈(이름, 호칭, 말투),
-  실시간 음성통화(STT → LLM → TTS, turn-taking, 사용자 끼어들기), Persona 일관성, Minimal Memory(통화 종료 후 구조화),
-  최소 Context(현재 시간, 사용자가 선택한 상황), 통화 종료/재통화, Analytics, Cost Tracking.
-- Safety Support(P0.5): 지인 등록/초대(초대받은 사람은 가입 없이 공유 세션 열람), 귀갓길 공유, 실시간 위치 공유, 사용자 직접 위험 신호,
-  AI 위험 가능성 확인(사용자 확인 후에만 지인에게 알림).
-- Out of scope: 112 자동 신고, 경찰 연결, 사용자 확인 없는 자동 지인 연락, 완전 자동 위험 판단, 정교한 음향 위험 분류, 영상통화, Voice Cloning, Marketplace, 결제/구독, B2B/B2G.
-- Data model: User → Characters(Persona, Memory), Friends(Connection State), Call Sessions(Duration, Context, Cost), Journeys(Start/End, Shared Friends, Location Events, Risk Events).
-- Cost tracking: 통화 Session별 STT·LLM 토큰·TTS·통화시간 비용을 기록한다(이번 MVP BE 범위에서는 제외, 아래 "BE implementation scope" 참고).
-
-## BE implementation scope
-
-위 Core/Safety 목록은 제품 전체 범위이고, 이번 MVP의 BE 구현은 Figma 화면에 있는 기능으로 줄인다. 도메인별 상세는 코드와 각 이슈의 결정 코멘트가 원천이고, 공통 원칙은 `22-backend-domains.md`, `21-backend-auth.md`를 따른다.
-
-- Included: 이메일 가입·로그인과 계정 관리, 온보딩과 캐릭터 저장, 홈 조회, 통화 한도 검사와 통화 기록, 통화 후 피드백.
-- AI 서버: AI 기능(홈 인사말, 기억, 음성 파이프라인)은 AI 개발자가 별도 서버로 만들고, 통화 세션 생성·LiveKit 토큰·통화 시간 계산도 AI 서버가 한다. BE는 API 호출과 한도 검사·사용 시간 기록만 한다.
-- Excluded: 기억 열람·수정·삭제, Analytics, Cost Tracking, Safety Support 전체(귀갓길, 위치 공유, 위험 신호), 프로필 사진, 소셜 로그인, 이메일 인증, 비밀번호 찾기, 다기기 로그인.
-
-## Glossary
-
-- Character: 사용자가 선택하는 AI 통화 상대(관계 설정 포함).
-- Persona: 캐릭터의 관계, 말투, 성격, 사용자 호칭 등 일관성을 유지할 설정.
-- Memory: 통화 종료 후 구조화하는 사용자·관계 기억. 다음 통화에서 대화가 이어지게 한다.
-- Call Session: 한 번의 AI 통화 기록(시간, Context, 비용, 재통화 여부).
-- Journey: 귀갓길 공유 세션(시작/종료, 공유 지인, 위치 이벤트, 위험 신호).
-- Friend: 귀갓길을 공유하는 실제 지인 관계.
-- Context: 통화에 전달하는 상황 정보(시간, 이동 수단 등).
+- 목적: AI 페르소나 기반 실시간 음성 동행 서비스. 사용자가 AI 캐릭터에게 실제 전화하듯 통화하고, 통화 → 기억 → 관계 → 재통화 루프로 관계를 쌓는다. AI Companion이 Core이고 귀갓길 Safety Support는 보조 레이어다.
+- 해결하려는 문제: 늦은 밤 혼자 이동하는 시간에 곁에 있어 주는 대화 상대.
+- 사용자: 20~30대 여성. North Star는 Weekly Returning Callers(일주일 내 2회 이상 통화).
+- 우선순위: Voice Latency > Conversation Quality > Persona Consistency > Memory > Context Awareness > Safety Support 신뢰성.
+- 범위: 클라이언트는 Flutter(android/ios), Web은 범위 밖. 이번 MVP의 BE는 Figma 화면에 있는 기능(가입·로그인, 온보딩·캐릭터, 홈, 통화 한도·기록, 피드백)만 한다. AI 기능과 음성 파이프라인은 AI 개발자의 별도 AI 서버가 맡는다.
 
 ## Primary Stack
 
-| 영역 | 기술 |
-| --- | --- |
-| Backend | Java 21, Spring Boot 4.1.x (`spring-boot-starter-webmvc`, 가상 스레드), Gradle Groovy DSL, 단일 모듈 |
-| Database | PostgreSQL 17 단일 DB, Spring Data JPA, Flyway |
-| Frontend | Flutter (android/ios), Riverpod, go_router, dio, freezed |
-| Test | JUnit 6, Mockito, ArchUnit / flutter_test |
-| CI/CD | `project-auto-wizard`(사용자가 나중에 적용), trunk-based(`main` 단일) |
+- Backend: Java 21, Spring Boot 4.1.x(`spring-boot-starter-webmvc`, 가상 스레드), Gradle Groovy DSL, 단일 모듈
+- Database: PostgreSQL 17, Spring Data JPA, Flyway
+- Frontend: Flutter(android/ios), Riverpod, go_router, dio, freezed
+- CI/CD: `project-auto-wizard`로 구성한 GitHub Actions, trunk-based(`main` 단일)
 
 ## Important directories
 
-- `backend/`: Spring Boot 앱. 소스 루트 `backend/src/main/java/kr/teeq/api`
-- `frontend/`: Flutter 앱. `lib/core`, `lib/features`, 환경값 `frontend/config/`(gitignore)
+- `backend/`: Spring Boot 앱, 소스 루트 `backend/src/main/java/kr/teeq/api`
+- `frontend/`: Flutter 앱(`lib/core`, `lib/features`), 환경값 `frontend/config/`(gitignore)
 - `scripts/sql/`: Flyway 파일명 검증 스크립트
-- `.claude/rules/`: 프로젝트 규칙
+- `.report/`: 작업 보고서(gitignore)
 
 ## Main commands
 
-- Backend build/test: `cd backend && ./gradlew build`
-- Backend run: `cd backend && ./gradlew bootRun` (`application-dev.yml`을 채운 뒤)
-- Frontend 준비: `cd frontend && flutter pub get && dart run build_runner build`
-- Frontend 검증: `cd frontend && flutter analyze && flutter test`
-- Frontend run: `cd frontend && flutter run --dart-define-from-file=config/dev.json`
+- BE build/test: `cd backend && ./gradlew build`
+- BE run: `cd backend && ./gradlew bootRun` (`application-dev.yml`을 채운 뒤)
+- FE 준비: `cd frontend && flutter pub get && dart run build_runner build`
+- FE 검증: `cd frontend && flutter analyze && flutter test`
+- FE run: `cd frontend && flutter run --dart-define-from-file=config/dev.json`
 - Flyway 파일명 검증: `scripts/sql/check_flyway_filenames.sh`
+
+## Project-specific constraints
+
+- 도메인 상세(엔드포인트, 필드, 에러 코드, 상태, 정책 값)는 문서에 적지 않는다. 원천은 코드이고 결정은 각 이슈 구현 전 브레인스토밍에서 확정한다. 확정 전에는 임의로 구현하지 않는다. 결정 이력은 vault(second-brain)에 남긴다. 문서와 코드가 어긋나면 코드가 맞다.
+- 이슈 본문은 브레인스토밍 시작 때 맥락으로 한 번 가볍게 읽는 용도다. 이슈를 갱신하거나 근거 문서로 쓰지 않는다.
+- 새 의존성은 필요해지는 시점에 추가한다(마이크, 위치, 푸시, QueryDSL 등은 미리 넣지 않는다). 인증용 `spring-boot-starter-security`와 jjwt는 승인되어 있다.
+- 서버 시크릿은 클라이언트(Flutter)에 넣지 않는다.
 
 ## Change policy
 
-- 수정 범위: 요청받은 범위만 수정한다. 인접 코드를 개선하거나 리팩터링하지 않는다.
-- 새 의존성: 필요해지는 시점에 추가하며, 미리 넣지 않는다(마이크, 위치, 푸시, QueryDSL 등). 인증용 `spring-boot-starter-security`와 jjwt는 승인되어 있다(`21-backend-auth.md`).
-- 확정: 로그인은 이메일과 비밀번호이다. 음성 파이프라인과 실시간 전송은 AI 서버와 FE가 맡으므로 BE에서 구현하지 않는다.
-- 도메인 상세 결정: 각 이슈 구현 때 브레인스토밍으로 확정하고 결정 코멘트를 이슈에 남긴다. 확정 전에는 임의로 구현하지 않는다.
+- 요청받은 범위만 수정한다. 인접 코드를 개선하거나 리팩터링하지 않는다.
+- 커밋 금지: `application-dev.yml`, `application-prod.yml`, `frontend/config/*.json`, 키·인증서. `.env`, `*.example` 파일을 추가하지 않는다.
+- MVP BE 제외: 기억 열람·수정·삭제, Analytics, Cost Tracking, Safety Support, 프로필 사진, 소셜 로그인, 이메일 인증, 비밀번호 찾기, 다기기 로그인.
