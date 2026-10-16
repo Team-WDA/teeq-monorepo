@@ -1,4 +1,4 @@
-package kr.teeq.api.call.infrastructure.config;
+package kr.teeq.api.common.infrastructure.config;
 
 import java.net.http.HttpClient;
 import java.time.Duration;

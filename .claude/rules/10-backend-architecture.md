@@ -15,7 +15,7 @@ paths:
 ## Layers
 
 - core: JPA 엔티티, VO, enum, 도메인 이벤트, 리포지토리 인터페이스(Spring Data), 외부 연동 port 인터페이스. JPA/Spring Data 어노테이션 외의 프레임워크 의존은 두지 않는다.
-- 도메인 구성과 소유 테이블은 `22-backend-domains.md`를 따른다.
+- 도메인별 기능과 정책 상세는 문서에 두지 않는다. 원천은 코드와 이슈 코멘트이고, 공통 원칙과 AI 연동 경계는 `22-backend-domains.md`를 따른다.
 - application: 유스케이스 서비스, DTO(`dto/{request,response}`), mapper, 컨트롤러(`controller/`), `XxxControllerDocs` 인터페이스.
 - infrastructure: port의 adapter 구현(AI 서버 등 외부 연동), `@Configuration`, `@ConfigurationProperties`(`properties/`), QueryDSL 구현체, 보안 설정과 필터.
 
