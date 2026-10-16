@@ -1,14 +1,34 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-16T11:15:51Z",
-    "currentVersion": "0.5.1",
+    "lastUpdated": "2026-10-16T12:01:48Z",
+    "currentVersion": "0.5.2",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 7
+    "totalReleases": 8
   },
   "releases": [
+    {
+      "version": "0.5.2",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-16",
+      "pr_number": null,
+      "raw_summary": "## [0.5.2]\n\n### 📝 문서\n- 삭제된 규칙 문서 참조 정리\n- 규칙 문서를 5개 파일 구조로 경량화",
+      "parsed_changes": {
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "삭제된 규칙 문서 참조 정리",
+            "규칙 문서를 5개 파일 구조로 경량화"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.5.1",
       "project_types": [
