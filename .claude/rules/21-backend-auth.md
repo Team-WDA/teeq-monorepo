@@ -66,7 +66,10 @@ paths:
 
 ## Server-to-server
 
-- AI 서버가 BE를 호출하는 엔드포인트(통화 종료 보고 등)는 사용자 토큰이 아닌 서버 간 인증을 쓴다. 인증 방식은 AI 서버가 구성된 뒤에 정한다(미정).
+- Prefix: AI 서버가 BE를 호출하는 엔드포인트(통화 종료 보고 등)는 모두 `/api/ai-server/**` 아래에 둔다. 사용자 JWT가 필요한 경로는 이 접두사를 쓰지 않는다.
+- Auth: 이 접두사는 JWT가 아니라 공유 헤더로만 인증한다. 헤더 이름과 값은 `ai-server.auth-header-name`, `ai-server.auth-header-value`(`application-{dev,prod}.yml`)이며 이름은 `X-Teeq-Server-Key`다. BE→AI 서버 호출도 같은 헤더·값을 쓴다(양방향 공유, 한쪽이 유출되면 양쪽이 뚫리는 점은 MVP에서 허용).
+- Chain: `/api/ai-server/**` 전용 `SecurityFilterChain`을 따로 둔다(`securityMatcher`로 경로 한정, JWT 필터 없음). 기존 JWT 체인은 이 경로를 매칭하지 않으며 `SecurityPaths` 공개 경로에도 넣지 않는다. 헤더 값은 상수 시간 비교(`MessageDigest.isEqual`)로 검증하고, 없거나 다르면 401 `UNAUTHENTICATED`를 `ErrorResponse`로 응답한다. 이 경로에서는 사용자 JWT를 받아도 인증되지 않는다.
+- Config: `ai-server.{base-url,auth-header-name,auth-header-value,timeout-millis}`를 `@ConfigurationProperties`로 바인딩하고, 비어 있으면 기동 시 실패시킨다(`JwtProperties`와 같은 방식). 값은 문서와 로그에 남기지 않는다.
 
 ## Dependencies
 
