@@ -36,7 +36,7 @@ paths:
 - Path: `/api/<복수형-kebab-case>` (`@RestController`, `@RequestMapping`). 버전 접두사(`/v1`)는 쓰지 않는다. 경로 변수도 kebab-case다(예: `/api/call-sessions/{call-session-id}`).
 - Return: `ResponseEntity<Dto>` 또는 `Page<Dto>` 직접 반환. 응답 envelope은 쓰지 않는다.
 - Call: 컨트롤러는 서비스만 호출한다. 리포지토리를 직접 호출하지 않는다.
-- Docs: Swagger 어노테이션은 컨트롤러가 구현하는 `XxxControllerDocs` 인터페이스에 분리한다(springdoc 도입 이후 적용).
+- Docs: Swagger 어노테이션은 컨트롤러가 구현하는 `XxxControllerDocs` 인터페이스에 분리하고 같은 `application/controller` 패키지에 둔다. 설명은 한국어로 쓰고 엔드포인트가 실제로 던지는 `ErrorCode` 이름과 발생 조건을 명시한다(요청 매핑 어노테이션은 컨트롤러에 두고, `@Valid`·`@Pattern` 같은 검증 어노테이션은 컨트롤러와 Docs 인터페이스에 똑같이 선언한다. 구현 메서드가 인터페이스에 없는 파라미터 제약을 추가하면 Hibernate Validator가 HV000151로 거부해 500이 난다).
 - Location: 컨트롤러는 각 도메인의 `application/controller`에 둔다.
 
 ## Common package
