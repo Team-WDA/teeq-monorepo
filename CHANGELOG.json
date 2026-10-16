@@ -1,14 +1,39 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-16T10:55:14Z",
-    "currentVersion": "0.5.0",
+    "lastUpdated": "2026-10-16T11:15:51Z",
+    "currentVersion": "0.5.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 6
+    "totalReleases": 7
   },
   "releases": [
+    {
+      "version": "0.5.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-16",
+      "pr_number": null,
+      "raw_summary": "## [0.5.1]\n\n### 📝 문서\n- 규칙 문서를 공통 원칙 중심으로 슬림화\n\n### ♻️ 리팩토링\n- AI 서버 RestClient 설정을 common으로 이동",
+      "parsed_changes": {
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "규칙 문서를 공통 원칙 중심으로 슬림화"
+          ]
+        },
+        "리팩토링": {
+          "title": "♻️ 리팩토링",
+          "items": [
+            "AI 서버 RestClient 설정을 common으로 이동"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.5.0",
       "project_types": [
