@@ -42,6 +42,11 @@ public class OnboardingAnswerService {
         }
     }
 
+    // 저장하지 않고 검증만 한다. 다른 호출(AI 서버 등) 전에 잘못된 답변을 걸러낼 때 쓴다
+    public void validateAnswers(UUID memberId, List<OnboardingAnswerGroupRequest> groups) {
+        validateAndToAnswers(memberId, groups);
+    }
+
     @Transactional(readOnly = true)
     public OnboardingAnswersResponse getAnswers(UUID memberId) {
         Map<OnboardingQuestion, Set<OnboardingOption>> optionsByQuestion = new EnumMap<>(OnboardingQuestion.class);
