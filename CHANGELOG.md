@@ -1,7 +1,23 @@
 # Changelog
 
-**현재 버전:** 0.2.0  
-**마지막 업데이트:** 2026-10-16T01:33:23Z  
+**현재 버전:** 0.3.0  
+**마지막 업데이트:** 2026-10-16T05:15:55Z  
+
+---
+
+## [0.3.0] - 2026-10-16
+
+**✨ 기능**
+- 요청·응답 DTO와 ErrorResponse에 Schema 설명 추가
+- 인증·계정·회원 컨트롤러에 ControllerDocs 인터페이스 적용
+- springdoc 의존성과 OpenAPI 설정, Swagger 공개 경로 추가
+
+**📝 문서**
+- springdoc 도입과 ControllerDocs 작성 규칙 반영
+- 통화 한도(초 단위)와 AI 서버 역할 분담, 피드백·홈 인사말 규칙 반영
+
+**🔧 변경사항**
+- application.yml에 springdoc 경로와 프록시 헤더 설정 반영
 
 ---
 
