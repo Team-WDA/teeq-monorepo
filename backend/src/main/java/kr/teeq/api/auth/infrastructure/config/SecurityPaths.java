@@ -9,6 +9,10 @@ public final class SecurityPaths {
         "/api/auth/refresh",
         "/api/members/nickname-availability",
         "/actuator/health",
+        "/docs/swagger",
+        "/docs/swagger-ui/**",
+        "/swagger-ui/**",
+        "/v3/api-docs/**",
         "/error"
     };
 

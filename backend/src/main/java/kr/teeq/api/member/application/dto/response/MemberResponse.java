@@ -1,9 +1,19 @@
 package kr.teeq.api.member.application.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
 import kr.teeq.api.member.core.entity.Member;
 
-public record MemberResponse(UUID memberId, String email, String nickname) {
+public record MemberResponse(
+    @Schema(description = "회원 id(UUID)", example = "0192f3a4-5b6c-7d8e-9f01-23456789abcd")
+    UUID memberId,
+
+    @Schema(description = "이메일(소문자로 정규화된 값)", example = "user@example.com")
+    String email,
+
+    @Schema(description = "닉네임", example = "티큐")
+    String nickname
+) {
 
     public static MemberResponse from(Member member) {
         return new MemberResponse(member.getId(), member.getEmail(), member.getNickname());
