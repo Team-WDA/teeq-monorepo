@@ -28,6 +28,9 @@ public enum ErrorCode {
 
     // 통화
     CALL_LIMIT_INSUFFICIENT(403, "오늘 사용할 수 있는 통화 시간이 부족합니다."),
+    CALL_ALREADY_IN_PROGRESS(409, "이미 진행 중인 통화가 있습니다."),
+    AI_SERVER_UNAVAILABLE(502, "AI 서버와 통신할 수 없습니다."),
+    CALL_SESSION_NOT_FOUND(404, "통화 세션을 찾을 수 없습니다."),
 
     // 동적 설정
     SETTING_CONFIG_NOT_FOUND(404, "설정을 찾을 수 없습니다."),

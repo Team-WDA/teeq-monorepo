@@ -35,3 +35,6 @@ springdoc:
 
 server:
   forward-headers-strategy: framework
+
+# AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value,timeout-millis}
+# 값은 application-{dev,prod}.yml에 둔다
