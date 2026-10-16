@@ -35,7 +35,7 @@ paths:
 
 - dio 인스턴스는 `lib/core/network`의 provider 하나로 만들고, base URL은 `AppConfig`에서 가져온다.
 - 인증: 이메일과 비밀번호로 로그인하고 Access Token(1일), Refresh Token(30일)을 받는다. 요청은 `Authorization: Bearer` 헤더로 보낸다. 재발급할 때마다 Refresh Token이 새로 오며 이전 것은 무효가 된다. 다기기 로그인은 고려하지 않는다.
-- 통화: 음성은 FE가 AI 서버에 직접 연결한다. 통화 시작 전에 BE에 시작을 요청해 사용 토큰(분 단위 한도) 잔여를 확인하고, 종료와 사용량은 AI 서버가 BE에 보고한다. 연결 실패와 재연결, 시간 경고 화면은 FE와 AI 서버 사이의 일이다.
+- 통화: 음성은 FE가 AI 서버에 직접 연결한다. 통화 시작 전에 BE에 한도(초 단위) 잔여를 확인하고, 사용 시간은 AI 서버가 계산해 BE에 보고한다. 연결 실패와 재연결, 시간 경고 화면은 FE와 AI 서버 사이의 일이다.
 - 온보딩: 질문과 선택지 문구는 FE가 하드코딩하고, 서버 enum 코드로 한 번에 제출한다. 캐릭터 번호는 BE가 AI 서버에서 받아 저장해 응답한다.
 - API 경로는 백엔드의 `/api/<복수형-kebab-case>`와 일치시킨다(버전 접두사 없음, 예: `/api/call-sessions/{call-session-id}`).
 - 에러 응답은 `{ "errorCode": "<ErrorCode enum 이름>", "errorMessage": "<한국어 메시지>" }` 두 필드다. HTTP 상태는 응답 상태 줄로만 온다. `dio` 예외를 `errorCode` 기준의 도메인 오류로 변환해서 presentation에 전달하고, 분기는 `errorMessage`가 아니라 `errorCode`로 한다.
