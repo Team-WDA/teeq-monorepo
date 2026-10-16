@@ -10,6 +10,8 @@ import java.util.List;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.setting.application.dto.request.SettingConfigUpdateRequest;
+import kr.teeq.api.setting.application.dto.response.SettingConfigResponse;
+import kr.teeq.api.setting.core.constant.SettingKey;
 import kr.teeq.api.setting.core.repository.SettingConfigRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,10 +41,17 @@ class SettingConfigServiceTest {
     }
 
     @Test
-    void getAll_withoutDefinedKeys_returnsEmptyList() {
+    void getAll_withoutStoredRows_returnsEnumDefaults() {
         given(settingConfigRepository.findAllByDeletedFalse()).willReturn(List.of());
 
-        assertThat(settingConfigService.getAll()).isEmpty();
+        List<SettingConfigResponse> responses = settingConfigService.getAll();
+
+        assertThat(responses).hasSize(SettingKey.values().length);
+        assertThat(responses).allSatisfy(response -> {
+            SettingKey settingKey = SettingKey.find(response.key()).orElseThrow();
+            assertThat(response.value()).isEqualTo(settingKey.defaultValue());
+            assertThat(response.updatedAt()).isNull();
+        });
         verify(settingConfigRepository).findAllByDeletedFalse();
     }
 
