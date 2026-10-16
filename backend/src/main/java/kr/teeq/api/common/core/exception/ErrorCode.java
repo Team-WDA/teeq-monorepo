@@ -32,6 +32,13 @@ public enum ErrorCode {
     AI_SERVER_UNAVAILABLE(502, "AI 서버와 통신할 수 없습니다."),
     CALL_SESSION_NOT_FOUND(404, "통화 세션을 찾을 수 없습니다."),
 
+    // 피드백
+    CALL_NOT_FEEDBACKABLE(409, "피드백을 남길 수 없는 통화입니다."),
+    FEEDBACK_ALREADY_SUBMITTED(409, "이미 제출한 피드백입니다."),
+    REQUIRED_FEEDBACK_NOT_SUBMITTED(409, "필수 피드백을 먼저 제출해야 합니다."),
+    DETAILED_FEEDBACK_NOT_INVITED(409, "상세 피드백 대상이 아닌 통화입니다."),
+    INVALID_FEEDBACK_ANSWER(400, "피드백 답변이 올바르지 않습니다."),
+
     // 온보딩
     ONBOARDING_ANSWER_INCOMPLETE(400, "온보딩 질문에 모두 답해야 합니다."),
     ONBOARDING_ANSWER_DUPLICATED(400, "온보딩 답변에 중복된 질문 또는 선택지가 있습니다."),
