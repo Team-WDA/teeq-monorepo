@@ -24,7 +24,11 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(409, "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
-    MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다.");
+    MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
+
+    // 동적 설정
+    SETTING_CONFIG_NOT_FOUND(404, "설정을 찾을 수 없습니다."),
+    INVALID_SETTING_VALUE(400, "설정 값이 올바르지 않습니다.");
 
     private final int httpStatus;
     private final String message;
