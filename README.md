@@ -74,7 +74,7 @@ flutter build appbundle --release --dart-define-from-file=config/prod.json   # P
 flutter build ios --release --no-codesign --dart-define-from-file=config/prod.json
 ```
 
-실제 서명·스토어 업로드(Android release/Play, iOS TestFlight)는 로컬이 아니라 CI(GitHub Actions)에서 시크릿을 사용해 처리합니다. 어떤 시크릿이 필요한지는 `.claude/rules/80-ci-cd.md`를 참고하세요.
+실제 서명·스토어 업로드(Android release/Play, iOS TestFlight)는 로컬이 아니라 CI(GitHub Actions)에서 시크릿을 사용해 처리합니다. 어떤 시크릿이 필요한지는 `.github/workflows/`와 GitHub Settings를 참고하세요.
 
 ## 문서
 
