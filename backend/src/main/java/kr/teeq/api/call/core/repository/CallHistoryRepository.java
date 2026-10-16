@@ -17,6 +17,13 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
 
     Optional<CallHistory> findByIdAndDeletedFalse(UUID id);
 
+    // 잠금 없이 통화 세션으로 조회한다(읽기 전용 조회용)
+    Optional<CallHistory> findByCallSessionIdAndDeletedFalse(String callSessionId);
+
+    // 회원의 활성 기록 중 status가 아니고 시작 시각이 startedAt 이하인 건수(통화 순번 계산용)
+    long countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
+        UUID memberId, CallStatus status, Instant startedAt);
+
     // 종료 보고의 동시 중복 처리를 직렬화하기 위해 행을 잠그고 조회한다
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<CallHistory> findWithLockByCallSessionIdAndDeletedFalse(String callSessionId);
