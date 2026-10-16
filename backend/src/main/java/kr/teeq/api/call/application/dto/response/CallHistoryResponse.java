@@ -3,6 +3,7 @@ package kr.teeq.api.call.application.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
+import kr.teeq.api.call.core.constant.CallStatus;
 import kr.teeq.api.call.core.entity.CallHistory;
 
 public record CallHistoryResponse(
@@ -16,12 +17,15 @@ public record CallHistoryResponse(
     Instant startedAt,
 
     @Schema(description = "저장된 통화 시간(초)", example = "300")
-    int durationSeconds
+    int durationSeconds,
+
+    @Schema(description = "통화 기록 상태", example = "ENDED")
+    CallStatus status
 ) {
 
     public static CallHistoryResponse from(CallHistory callHistory) {
         return new CallHistoryResponse(callHistory.getCallSessionId(), callHistory.getMemberId(),
-            callHistory.getStartedAt(), callHistory.getDurationSeconds());
+            callHistory.getStartedAt(), callHistory.getDurationSeconds(), callHistory.getStatus());
     }
 
 }
