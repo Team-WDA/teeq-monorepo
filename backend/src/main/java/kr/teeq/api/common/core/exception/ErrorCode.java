@@ -44,6 +44,9 @@ public enum ErrorCode {
     ONBOARDING_ANSWER_DUPLICATED(400, "온보딩 답변에 중복된 질문 또는 선택지가 있습니다."),
     INVALID_ONBOARDING_OPTION(400, "질문에 맞지 않거나 선택 가능한 개수를 넘은 선택지입니다."),
 
+    // AI 캐릭터
+    AI_CHARACTER_NOT_FOUND(404, "AI 캐릭터를 찾을 수 없습니다."),
+
     // 동적 설정
     SETTING_CONFIG_NOT_FOUND(404, "설정을 찾을 수 없습니다."),
     INVALID_SETTING_VALUE(400, "설정 값이 올바르지 않습니다.");
