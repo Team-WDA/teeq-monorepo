@@ -6,6 +6,8 @@ import kr.teeq.api.common.core.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -90,6 +92,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException exception) {
         log.warn("Unsupported media type: {}", exception.getContentType());
         return toResponse(ErrorResponse.of(ErrorCode.UNSUPPORTED_MEDIA_TYPE), ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    // 인증·인가 예외는 캐치올이 500으로 삼키지 않도록 그대로 던져 보안 필터 체인의 핸들러가 401/403 ErrorResponse로 처리하게 한다
+    @ExceptionHandler({AccessDeniedException.class, AuthenticationException.class})
+    public void rethrowSecurityException(Exception exception) throws Exception {
+        throw exception;
     }
 
     @ExceptionHandler(Exception.class)

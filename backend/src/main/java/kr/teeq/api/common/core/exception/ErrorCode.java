@@ -13,7 +13,18 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(405, "지원하지 않는 HTTP 메서드입니다."),
     UNSUPPORTED_MEDIA_TYPE(415, "지원하지 않는 미디어 타입입니다."),
     STATE_CONFLICT(409, "현재 상태에서는 처리할 수 없습니다."),
-    INTERNAL_SERVER_ERROR(500, "서버 내부 오류가 발생했습니다.");
+    INTERNAL_SERVER_ERROR(500, "서버 내부 오류가 발생했습니다."),
+
+    // 인증과 계정
+    UNAUTHENTICATED(401, "인증이 필요합니다."),
+    EXPIRED_TOKEN(401, "토큰이 만료되었습니다."),
+    INVALID_CREDENTIALS(401, "이메일 또는 비밀번호가 올바르지 않습니다."),
+    INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
+    ACCESS_DENIED(403, "접근 권한이 없습니다."),
+    DUPLICATE_EMAIL(409, "이미 사용 중인 이메일입니다."),
+    DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
+    INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
+    MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다.");
 
     private final int httpStatus;
     private final String message;

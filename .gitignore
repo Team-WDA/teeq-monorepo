@@ -100,3 +100,11 @@ frontend/android/fastlane/Fastfile
 image
 
 /.issue
+docs
+.docs
+report
+.report
+issue
+.issue
+superpowers
+.superpowers

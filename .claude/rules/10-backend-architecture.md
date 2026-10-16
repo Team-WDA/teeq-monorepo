@@ -21,7 +21,7 @@ paths:
 
 ## Dependency direction
 
-- Allowed: `application → core`, `infrastructure → core`, `core → common.core`
+- Allowed: `application → core`, `infrastructure → core`, `core → common.core`, `infrastructure → common.application`(예: 보안 처리기가 `ErrorResponse`를 쓴다)
 - 금지: core가 application 또는 infrastructure를 참조하는 것, application이 infrastructure를 직접 import하는 것(외부 연동은 core의 port 인터페이스를 통한다), 도메인 간 순환 의존.
 - Enforcement: `LayerDependencyTest`(ArchUnit)가 위 규칙을 검증한다. 규칙 위반 시 테스트를 완화하지 말고 코드 구조를 고친다.
 
@@ -29,6 +29,7 @@ paths:
 
 - 교체·확장 가능성이 있는 외부 연동(AI 서버 등)만 core에 port 인터페이스를, infrastructure에 adapter를 둔다. STT/LLM/TTS는 AI 서버 안의 일이며 BE가 직접 호출하지 않는다.
 - 그 외 구성요소에는 인터페이스를 미리 만들지 않는다(구현체가 하나뿐인 서비스에 인터페이스 금지).
+- 예외: 토큰 발급과 검증(`TokenProvider`)은 구현체가 하나뿐이지만 `application`이 `infrastructure`를 import할 수 없어 port를 둔다(`21-backend-auth.md`).
 
 ## Controller
 

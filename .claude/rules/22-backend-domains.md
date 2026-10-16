@@ -17,13 +17,14 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 
 | 도메인 | 책임 | 소유 테이블(후보) |
 | --- | --- | --- |
-| member | 계정, 닉네임, 약관 동의 | member, terms_agreement |
-| auth | 로그인, 토큰, 보안 설정 | refresh_token |
+| member | 프로필(닉네임), 계정 엔티티 | member(약관 동의는 컬럼) |
+| auth | 가입, 로그인, 토큰, 비밀번호 변경, 계정 삭제, 보안 설정 | refresh_token |
 | character | 온보딩 응답, 캐릭터 | character, onboarding_answer |
 | home | 홈 조회 | 없음(조회 전용) |
 | call | 통화 세션, 통화 사용 토큰 | call_session, 사용 토큰 테이블 |
 | feedback | 통화 후 피드백, 추가 피드백 | call_feedback, extra_feedback, extra_feedback_suggestion |
 
+- 가입, 비밀번호 변경, 계정 삭제는 토큰 폐기와 얽혀 있어 `auth`에서 처리하며 `member`는 `auth`를 참조하지 않는다(`21-backend-auth.md`).
 - 테이블 이름과 컬럼은 후보이며 Flyway 마이그레이션을 쓸 때 확정한다.
 - 도메인 패키지는 구현할 때 만든다. 빈 패키지를 미리 만들지 않는다.
 
@@ -48,7 +49,7 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 
 - Read: 홈은 캐릭터 정보와 BE에 저장된 인사말을 조회해서 돌려준다. 홈을 열 때마다 AI 서버를 호출하지 않는다.
 - Greeting: 인사말은 통화 종료 시 AI 서버가 BE를 호출해 전달하는 것으로 가정한다. 종료 호출에 포함할지와 저장 위치는 AI 명세 후 정한다.
-- Login response: 로그인 응답과 내 정보 조회에서 캐릭터 보유 여부를 알려, FE가 온보딩과 홈 중 갈 곳을 정하게 한다.
+- Login response: 로그인 응답과 내 정보 조회에서 캐릭터 보유 여부를 알려, FE가 온보딩과 홈 중 갈 곳을 정하게 한다. (character 도메인을 구현할 때 추가한다. 이번 이슈의 응답에는 없다)
 
 ## Call
 
