@@ -43,8 +43,9 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 ## AI server integration
 
 - Port: AI 서버 호출은 `core`에 port 인터페이스를 두고 `infrastructure`에 adapter를 둔다(`10-backend-architecture.md`).
-- Status: AI 서버가 아직 구성되지 않았다. API 명세, 서버 간 인증 방식, 타임아웃, 에러 형식(AI 명세는 `{code, message}`, BE는 `{errorCode, errorMessage}`), BE DB와 AI DB의 데이터 소유 경계는 AI 서버 연결 때 정한다. 확정 전에는 adapter를 임의로 구현하지 않는다.
-- Inbound: AI 서버가 BE를 호출한다(통화 사용 시간 등). 서버 간 인증은 `21-backend-auth.md`의 Server-to-server를 따른다. 참고: teeq-docs AI 명세는 Standard Webhooks(HMAC) 방식이다.
+- Status: AI 서버 호출 계약은 BE가 정의했고(아래 Call의 AI contract) AI 서버 명세가 오면 adapter만 수정한다. 서버 간 인증은 공유 헤더, 타임아웃은 5초로 확정했다. AI의 에러 형식 `{code, message}`는 BE 로그에만 쓰고 앱에는 BE의 `{errorCode, errorMessage}`만 내린다. BE DB와 AI DB의 데이터 소유 경계는 AI 서버 연결 때 정한다.
+- Inbound: AI 서버가 BE를 호출한다(통화 사용 시간 등). 경로는 `/api/ai-server/**`이고 서버 간 인증은 `21-backend-auth.md`의 Server-to-server(공유 헤더 `X-Teeq-Server-Key`)를 따른다. 참고: teeq-docs AI 명세는 Standard Webhooks(HMAC) 방식이지만 팀이 공유 헤더로 정했다.
+- Outbound: BE→AI 호출은 같은 헤더를 쓰고 타임아웃은 `ai-server.timeout-millis`(5초), 재시도는 하지 않는다(세션 생성은 멱등이 아니다). 실패·타임아웃·응답 이상은 모두 502 `AI_SERVER_UNAVAILABLE`이며 AI의 `{code,message}`는 로그에만 남기고 앱에는 노출하지 않는다.
 
 ## Home
 
@@ -54,17 +55,21 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 
 ## Call
 
-- Scope: 통화 세션 생성, LiveKit 토큰 발급, 통화 시간 계산은 AI 서버가 한다. BE는 통화 시작 전 한도 검사와 AI 서버가 알려 주는 사용 시간 기록만 맡는다.
+- Scope: 통화 세션 생성, LiveKit 토큰 발급, 통화 시간 계산은 AI 서버가 한다. BE는 앱의 통화 시작 요청을 받아 인증과 한도 검사를 한 뒤 AI 서버에 세션 생성을 요청하고, AI 서버가 알려 주는 사용 시간을 기록한다.
+- Flow: `앱 → POST /api/calls → BE(JWT 인증 → 한도 검사) → AI 서버(userId, 허용 시간 포함, 한 번만 호출) → BE → 앱`. AI 서버 응답(LiveKit 정보 등)은 BE가 그대로 앱에 내려준다. 캐릭터 정보는 이번 범위에서 제외하며 #5 구현 후 추가한다.
 - Unit: 한도의 단위는 초다(teeq-docs PRD §7). 값은 `setting_config`의 동적 설정으로 둔다(아래 "Dynamic settings"). 1회 통화 1,200초, 사용자별 하루 1,800초, 남은 시간이 60초 미만이면 통화 시작을 거절한다.
 - Reset: 하루 한도는 KST 0시에 리셋되고 통화 시작일 기준으로 센다. 시각은 `Clock` + `Instant`로 다룬다.
 - Purpose: AI 무제한 호출을 막기 위한 사용자별 한도다.
 - Out of scope: 잔액·충전(관리자 페이지에서 추가할 기능), 서비스 전체 월간 풀은 이번 범위에서 제외한다.
 - Keys: 한도는 `SettingKey`의 `CALL_MAX_SECONDS_PER_SESSION`(1회, 기본 1200), `CALL_MAX_SECONDS_PER_DAY`(하루, 기본 1800), `CALL_MIN_START_SECONDS`(시작 최소 잔여, 기본 60)다. 모두 INT이고 최소 1이다. 남은 시간은 `max(0, 하루 한도 - 오늘 사용량)`이고 1회 허용 시간은 `min(1회 한도, 남은 시간)`이며 남은 시간이 시작 최소치 이상일 때만 통화를 시작할 수 있다. 세 키 사이의 값 관계는 검증하지 않으므로 운영자가 직접 맞춘다(예: 1회 한도가 시작 최소치보다 작으면 안 된다).
-- Error: 남은 시간이 부족하면 `CALL_LIMIT_INSUFFICIENT`(403)이다. 존재하지 않거나 삭제된 회원은 `MEMBER_NOT_FOUND`다.
-- Record: 통화 1회가 `call_history` 1행이다. 통화 세션 ID(`callSessionId`)는 AI 서버가 발급하고, AI 서버가 `callSessionId`, `memberId`, `startedAt`, `durationSeconds`를 보고한다. `durationSeconds`가 1회 한도를 넘으면 1회 한도로 잘라 저장한다.
-- Idempotency: 같은 `callSessionId`를 다시 받으면 오류 없이 저장된 기존 행을 그대로 돌려준다(신규 201, 중복 200).
-- API: `GET /api/call-limits/today`(사용자 토큰), `POST /api/internal/call-limit-checks`(본문 `{memberId}`, 허용 200 `{allowedSeconds}`), `POST /api/internal/call-histories`. `/api/internal/**`는 서버 간 인증(#7) 적용 전까지 일반 인증만 적용된다.
-- AI server duty: 동시 통화 1개 제한, 정리되지 않은 통화 처리, 진행 중 통화 추적은 BE가 하지 않고 AI 서버가 맡는다.
+- Error: 남은 시간이 부족하면 `CALL_LIMIT_INSUFFICIENT`(403), 진행 중인 통화가 있으면 `CALL_ALREADY_IN_PROGRESS`(409), AI 서버 호출 실패·타임아웃·응답 이상은 `AI_SERVER_UNAVAILABLE`(502)이다. 존재하지 않는 통화 세션 보고는 `CALL_SESSION_NOT_FOUND`(404)이고, 삭제된 회원의 토큰은 JWT 필터가 401로 처리한다.
+- Allowed seconds: BE는 AI 서버에 허용 시간(`min(1회 한도, 남은 시간)`, 필드명은 `max_duration_seconds`로 확정)을 넘기고, 이를 넘기면 통화를 끝내는 책임은 AI 서버다.
+- Record: 통화 1회가 통화 기록 1행이다(기존 `call_history`를 확장한다). 통화 세션 ID(`callSessionId`)는 AI 서버가 발급하고 BE가 저장한다. 상태는 `PENDING`(AI 호출 전 선삽입), `IN_PROGRESS`(세션 생성 성공), `FAILED`(AI 호출 실패, 한도 집계에서 제외), `EXPIRED`(종료 보고 없이 만료), `ENDED`(종료 보고 수신)로 둔다. 종료 시각 컬럼은 `ended_at`이다. 행 삽입·갱신과 AI 호출은 별도 트랜잭션이라 AI 호출 동안 DB 트랜잭션을 열어 두지 않는다.
+- Concurrency: 회원당 진행 중(`PENDING`/`IN_PROGRESS`) 통화는 1건만 허용한다(partial unique index). 진행 중 행이 있으면 새 요청은 409다.
+- Expiry: `startedAt + 1회 한도`가 지난 진행 중 행은 새 통화 요청이 올 때 BE가 `EXPIRED`로 바꾸고 사용 시간은 0초로 둔다. 스케줄러와 만료 여유 시간은 두지 않는다. 늦게 온 종료 보고는 `EXPIRED` 행을 그 값으로 덮어쓴다.
+- Usage report: AI 서버가 `POST /api/ai-server/calls/{callSessionId}/usage`로 `{usedSeconds, endedAt}`를 보고한다. 같은 세션의 중복 보고는 처음 값만 반영하고 200을 응답한다(`EXPIRED`가 덮어쓰이는 경우만 예외). `usedSeconds`가 1회 한도를 넘으면 1회 한도로 잘라 저장한다.
+- API: `POST /api/calls`(사용자 토큰), `GET /api/call-limits/today`(사용자 토큰), `POST /api/ai-server/calls/{callSessionId}/usage`(공유 헤더 인증, `21-backend-auth.md` Server-to-server). `POST /api/calls`는 201과 `{callSessionId, maxDurationSeconds, connection}`을 반환하고 `connection`은 AI 서버 응답의 나머지 필드를 그대로 담는다. 종료 보고는 200과 통화 기록 응답을 반환한다.
+- AI contract: BE→AI 호출 계약은 BE가 정의했고 AI 개발자가 여기에 맞춘다. `POST {ai-server.base-url}/calls`, 요청 `{user_id, max_duration_seconds}`, 응답 `{call_session_id, ...그 외 필드}`. AI 서버 명세가 오면 `AiServerCallSessionAdapter`만 고친다. usage 보고에서 404(`CALL_SESSION_NOT_FOUND`)를 받으면 AI 서버는 해당 세션을 즉시 종료한다(activate 실패로 `FAILED`가 된 기록의 AI 세션 정리).
 - Open: 피드백의 통화 순번 기준은 `call_history` 행 수로 하며 세부는 피드백 이슈(#9)에서 정한다.
 
 ## Feedback

@@ -21,7 +21,7 @@
 
 ## Key list
 
-- Backend keys: `spring.datasource.{url,username,password}`와 `jwt.{secret-key,access-exp-millis,refresh-exp-millis,issuer}`이다(`21-backend-auth.md`). 값은 사용자가 `application-{dev,prod}.yml`에 채운다.
+- Backend keys: `spring.datasource.{url,username,password}`와 `jwt.{secret-key,access-exp-millis,refresh-exp-millis,issuer}`, `ai-server.{base-url,auth-header-name,auth-header-value,timeout-millis}`이다(`21-backend-auth.md`, `22-backend-domains.md`). `ai-server.base-url`은 AI 서버가 구성되면 채운다. 값은 사용자가 `application-{dev,prod}.yml`에 채운다.
 - Frontend keys: 현재 `API_BASE_URL` 하나다(`AppConfig` 참고).
 - 키를 추가할 때는 이 문서, `application.yml` 주석 또는 `AppConfig`, README 안내를 함께 갱신한다.
 - CI에서 쓰는 GitHub Secrets(배포용) 전체 목록은 `.claude/rules/80-ci-cd.md`를 본다. `frontend/config/prod.json`은 로컬에서는 직접 만들고, CI에서는 Secret `FRONTEND_CONFIG_JSON`(JSON 문자열)으로부터 생성한다.
