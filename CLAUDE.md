@@ -19,6 +19,7 @@
 - **구조**: 모노레포. `backend/`(Spring Boot 4, Java 21, Gradle Groovy, 단일 모듈), `frontend/`(Flutter android/ios, Web 제외)
 - **백엔드 패키지**: `kr.teeq.api.<domain>.{core,application,infrastructure}`. core=엔티티·리포지토리·port, application=서비스·DTO·컨트롤러, infrastructure=adapter·config. 의존 방향은 ArchUnit으로 강제
 - **백엔드 규칙**: PK는 UUID v7, 시간은 `Clock` 주입 + `Instant`, soft delete(`deleted`/`deleted_at`, 조회 필터는 명시적), 에러는 중앙 `ErrorCode` enum + `CustomException` + `{errorCode, errorMessage}`, URL `/api/<복수형-kebab>`(버전 접두사 없음), DTO는 record 우선, `@Data` 금지
+- **동적 설정**: `setting` 도메인의 `setting_config` 테이블 + 코드 enum `SettingKey`(키 정의), 관리자 API `/api/admin/setting-configs`(ADMIN 전용), 캐시 없음. 새 도메인 구현 시 설정 후보를 검토해 추천한다(`22-backend-domains.md`)
 - **백엔드 MVP 범위**: 이메일 로그인(AT 1일/RT 30일), 온보딩·캐릭터, 홈, 통화 한도 검사(초), 피드백. AI 기능과 음성, 통화 세션·시간 계산은 별도 AI 서버가 맡고 BE는 API 연동과 한도 검사만 한다. 기억 열람, Analytics, Cost Tracking, Safety, 다기기 로그인은 제외
 - **프론트 규칙**: Riverpod + go_router + feature-first, 환경값은 `frontend/config/*.json`(`--dart-define-from-file`), 생성 코드는 커밋하지 않음
 - **테스트**: 꼭 필요한 부분만(핵심 도메인 로직 TDD), Testcontainers/H2/DB 통합 테스트 없음, 커버리지 게이트 없음

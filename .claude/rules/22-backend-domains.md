@@ -23,6 +23,7 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 | home | 홈 조회, 오늘의 한마디 | daily_message(하루 한 건) |
 | call | 통화 한도 검사, 통화 사용 시간 기록 | 통화 사용 기록 테이블 |
 | feedback | 통화 후 필수 피드백, 상세 피드백 | feedback_mandatory, feedback_detail |
+| setting | 관리자가 수정하는 동적 설정(`setting_config`) | setting_config |
 
 - 가입, 비밀번호 변경, 계정 삭제는 토큰 폐기와 얽혀 있어 `auth`에서 처리하며 `member`는 `auth`를 참조하지 않는다(`21-backend-auth.md`).
 - 테이블 이름과 컬럼은 후보이며 Flyway 마이그레이션을 쓸 때 확정한다.
@@ -54,7 +55,7 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 ## Call
 
 - Scope: 통화 세션 생성, LiveKit 토큰 발급, 통화 시간 계산은 AI 서버가 한다. BE는 통화 시작 전 한도 검사와 AI 서버가 알려 주는 사용 시간 기록만 맡는다.
-- Unit: 한도의 단위는 초다(teeq-docs PRD §7). 값은 설정(`@ConfigurationProperties`)으로 둔다. 1회 통화 1,200초, 사용자별 하루 1,800초, 남은 시간이 60초 미만이면 통화 시작을 거절한다.
+- Unit: 한도의 단위는 초다(teeq-docs PRD §7). 값은 `setting_config`의 동적 설정으로 둔다(아래 "Dynamic settings"). 키는 통화 한도 이슈에서 `SettingKey`에 추가한다. 1회 통화 1,200초, 사용자별 하루 1,800초, 남은 시간이 60초 미만이면 통화 시작을 거절한다.
 - Reset: 하루 한도는 KST 0시에 리셋되고 통화 시작일 기준으로 센다. 시각은 `Clock` + `Instant`로 다룬다.
 - Purpose: AI 무제한 호출을 막기 위한 사용자별 한도다.
 - Out of scope: 잔액·충전(관리자 페이지에서 추가할 기능), 서비스 전체 월간 풀은 이번 범위에서 제외한다.
@@ -66,3 +67,11 @@ MVP BE의 도메인, 소유 테이블, 도메인별 규칙이다. 구조는 `10-
 - Mandatory: 통화마다 한 건이고 건너뛸 수 없다. 별점 1~5, 재통화 의향(`no`/`neutral`/`yes`), 이전 통화 기억 여부(`remembered`/`unsure`/`no`, 통화 순번 2 이상에서만), 어색했던 순간(복수 선택: `cut`/`slow`/`context`/`repeat`/`none`, `none`은 단독 선택)이다.
 - Detail: 통화 순번 3, 6, 9… 마다 초대한다. 타이밍, 성향 적합, 기억, 공감·신뢰(5점 척도 + 선택 사유), 자유 서술, 개인정보 편안함, 저장 편안함(5점 척도), 통화를 시작한 이유(복수 선택, 기타는 100자 이내)이다.
 - Open: 통화 순번을 세는 기준, 상세 피드백 거절 기록과 재제안 규칙, 최종 문구와 선택지 코드는 피드백 이슈(#9) 구현 때 정한다.
+
+## Dynamic settings
+
+- Table: `setting_config`(`config_key` 활성 행 unique, `config_value` 문자열, `value_type` INT/BOOLEAN/STRING). 키 생성·삭제 API는 없다.
+- Keys: 키는 코드 enum `SettingKey`가 정의한다(타입, 기본값, 설명, INT 최소·최대). 상수는 필요한 기능을 구현할 때 추가하며 지금은 0개다. 시드 값은 마이그레이션에 넣지 않는다.
+- Read: 캐시 없이 읽을 때마다 DB를 조회하고, 행이 없으면 enum 기본값을 쓴다. 소비처는 `SettingConfigService.getInt/getBoolean/getString`을 쓴다(INT는 `long` 반환).
+- Update: 관리자 API만 쓴다. `GET /api/admin/setting-configs`, `PATCH /api/admin/setting-configs/{key}`(본문 `{value}`). 정의되지 않은 키는 `SETTING_CONFIG_NOT_FOUND`, 타입·범위 위반은 `INVALID_SETTING_VALUE`다. 수정자와 이력은 저장하지 않는다.
+- Candidate review: 새 도메인을 구현할 때 하드코딩하거나 `@ConfigurationProperties`로 둘 값(한도, 임계값, 기능 on/off, 고정 문구 등) 중 운영 중 바꿀 만한 것이 있는지 검토해 `SettingKey` 후보로 추천한다. 추가는 사용자 확인 후에 한다.

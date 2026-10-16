@@ -40,6 +40,10 @@ paths:
 - Exposure: 엔티티를 API 응답으로 직접 노출하지 않는다.
 - Mapping: 수동 매핑(`XxxResponse.from(entity)`)을 쓴다. MapStruct는 도입하지 않으며, 도입하더라도 생성 코드를 커밋하지 않는다.
 
+## Admin API
+
+- Path: 관리자 전용 엔드포인트는 `/api/admin/<복수형-kebab-case>`에 두고 컨트롤러(또는 메서드)에 `@PreAuthorize("hasRole('ADMIN')")`를 선언한다. 일반 사용자는 403 `ACCESS_DENIED`다.
+
 ## Repository and service
 
 - Repository: 리포지토리 인터페이스(`JpaRepository`)는 `core`에 둔다. QueryDSL 등 구현체는 `infrastructure`에 둔다.
