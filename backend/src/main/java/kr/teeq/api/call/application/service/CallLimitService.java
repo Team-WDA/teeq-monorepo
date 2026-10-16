@@ -9,7 +9,6 @@ import kr.teeq.api.call.application.dto.response.CallLimitStatusResponse;
 import kr.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
-import kr.teeq.api.member.core.repository.MemberRepository;
 import kr.teeq.api.setting.application.service.SettingConfigService;
 import kr.teeq.api.setting.core.constant.SettingKey;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class CallLimitService {
 
     private final CallHistoryRepository callHistoryRepository;
-    private final MemberRepository memberRepository;
     private final SettingConfigService settingConfigService;
     private final Clock clock;
     private final ZoneId koreaZoneId;
@@ -49,8 +47,6 @@ public class CallLimitService {
     // 통화를 시작할 수 있으면 이번 통화의 허용 시간(초)을 돌려주고, 부족하면 CALL_LIMIT_INSUFFICIENT로 거부한다
     @Transactional(readOnly = true)
     public long checkStartable(UUID memberId) {
-        memberRepository.findByIdAndDeletedFalse(memberId)
-            .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
         CallLimitStatusResponse status = getTodayStatus(memberId);
         if (!status.canStart()) {
             throw new CustomException(ErrorCode.CALL_LIMIT_INSUFFICIENT);

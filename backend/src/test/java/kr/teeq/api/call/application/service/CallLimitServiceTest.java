@@ -9,14 +9,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import java.util.UUID;
 import kr.teeq.api.call.application.dto.response.CallLimitStatusResponse;
 import kr.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
-import kr.teeq.api.member.core.entity.Member;
-import kr.teeq.api.member.core.repository.MemberRepository;
 import kr.teeq.api.setting.application.service.SettingConfigService;
 import kr.teeq.api.setting.core.constant.SettingKey;
 import org.junit.jupiter.api.Test;
@@ -38,16 +35,10 @@ class CallLimitServiceTest {
     private CallHistoryRepository callHistoryRepository;
 
     @Mock
-    private MemberRepository memberRepository;
-
-    @Mock
     private SettingConfigService settingConfigService;
 
-    @Mock
-    private Member member;
-
     private CallLimitService createService(Instant now) {
-        return new CallLimitService(callHistoryRepository, memberRepository, settingConfigService,
+        return new CallLimitService(callHistoryRepository, settingConfigService,
             Clock.fixed(now, ZoneOffset.UTC), KOREA_ZONE_ID);
     }
 
@@ -140,7 +131,6 @@ class CallLimitServiceTest {
 
     @Test
     void checkStartable_enoughTime_returnsAllowedSeconds() {
-        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.of(member));
         stubSettings();
         stubUsedSeconds(1500);
 
@@ -151,22 +141,12 @@ class CallLimitServiceTest {
 
     @Test
     void checkStartable_insufficient_throwsCallLimitInsufficient() {
-        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.of(member));
         stubSettings();
         stubUsedSeconds(1741);
 
         assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_LIMIT_INSUFFICIENT));
-    }
-
-    @Test
-    void checkStartable_unknownMember_throwsMemberNotFound() {
-        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
     }
 
 }
