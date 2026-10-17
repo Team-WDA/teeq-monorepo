@@ -38,3 +38,4 @@ server:
 
 # AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value,timeout-millis}
 # 값은 application-{dev,prod}.yml에 둔다
+# 인사말 호출 타임아웃(3초)은 코드 상수(GreetingRestClientConfig)이며 설정 키가 아니다
