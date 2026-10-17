@@ -37,7 +37,7 @@ public class SettingConfigService {
     public SettingConfigResponse update(String key, SettingConfigUpdateRequest request) {
         SettingKey settingKey = SettingKey.find(key)
             .orElseThrow(() -> new CustomException(ErrorCode.SETTING_CONFIG_NOT_FOUND));
-        settingKey.valueType().validate(request.value(), settingKey.minimum(), settingKey.maximum());
+        settingKey.validate(request.value());
         SettingConfig settingConfig = settingConfigRepository.findByConfigKeyAndDeletedFalse(settingKey.name())
             .map(stored -> {
                 stored.changeValue(request.value());
