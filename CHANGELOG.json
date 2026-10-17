@@ -1,14 +1,47 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-17T07:14:46Z",
-    "currentVersion": "0.10.0",
+    "lastUpdated": "2026-10-17T10:55:46Z",
+    "currentVersion": "0.11.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 13
+    "totalReleases": 14
   },
   "releases": [
+    {
+      "version": "0.11.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-17",
+      "pr_number": null,
+      "raw_summary": "## [0.11.0]\n\n### ✨ 기능\n- 프로필 사진 등록·삭제 API 추가\n- Apple 소셜 로그인 추가\n- 로그인 방식과 프로필 사진 저장 구조 추가\n\n### 📝 문서\n- MVP BE 제외 목록에서 프로필 사진과 소셜 로그인 제거\n\n### ✅ 테스트\n- 소셜 로그인과 프로필 사진 테스트 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "프로필 사진 등록·삭제 API 추가",
+            "Apple 소셜 로그인 추가",
+            "로그인 방식과 프로필 사진 저장 구조 추가"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "MVP BE 제외 목록에서 프로필 사진과 소셜 로그인 제거"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "소셜 로그인과 프로필 사진 테스트 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.10.0",
       "project_types": [
