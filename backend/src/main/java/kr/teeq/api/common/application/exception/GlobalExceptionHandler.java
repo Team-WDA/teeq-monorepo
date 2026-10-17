@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -67,6 +70,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ErrorResponse> handleBadRequestParameter(Exception exception) {
         log.warn("Bad request parameter: {}", exception.getMessage());
+        return toResponse(ErrorResponse.of(ErrorCode.INVALID_REQUEST), ErrorCode.INVALID_REQUEST);
+    }
+
+    // 크기 제한은 프로필 사진 업로드에만 쓰이므로 해당 에러 코드로 변환한다
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
+        log.warn("Upload size exceeded: {}", exception.getMessage());
+        return toResponse(ErrorResponse.of(ErrorCode.PROFILE_IMAGE_TOO_LARGE), ErrorCode.PROFILE_IMAGE_TOO_LARGE);
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
+    public ResponseEntity<ErrorResponse> handleBadMultipartRequest(Exception exception) {
+        log.warn("Bad multipart request: {}", exception.getMessage());
         return toResponse(ErrorResponse.of(ErrorCode.INVALID_REQUEST), ErrorCode.INVALID_REQUEST);
     }
 

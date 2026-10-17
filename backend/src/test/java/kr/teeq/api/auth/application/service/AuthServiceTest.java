@@ -5,29 +5,39 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import kr.teeq.api.auth.application.dto.request.ChangePasswordRequest;
 import kr.teeq.api.auth.application.dto.request.LoginRequest;
 import kr.teeq.api.auth.application.dto.request.RefreshRequest;
 import kr.teeq.api.auth.application.dto.request.SignUpRequest;
+import kr.teeq.api.auth.application.dto.request.SocialLoginRequest;
 import kr.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.teeq.api.auth.core.entity.RefreshToken;
+import kr.teeq.api.auth.core.constant.SocialType;
 import kr.teeq.api.auth.core.port.IssuedRefreshToken;
+import kr.teeq.api.auth.core.port.SocialIdentity;
+import kr.teeq.api.auth.core.port.SocialIdentityVerifier;
 import kr.teeq.api.auth.core.port.TokenProvider;
 import kr.teeq.api.auth.core.repository.RefreshTokenRepository;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
+import kr.teeq.api.member.core.constant.LoginType;
 import kr.teeq.api.member.core.constant.Role;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.entity.ProfileImage;
 import kr.teeq.api.member.core.port.AiCharacterExistencePort;
+import kr.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
+import kr.teeq.api.member.core.repository.ProfileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +68,15 @@ class AuthServiceTest {
     @Mock
     private AiCharacterExistencePort aiCharacterExistencePort;
 
+    @Mock
+    private SocialIdentityVerifier socialIdentityVerifier;
+
+    @Mock
+    private ProfileImageRepository profileImageRepository;
+
+    @Mock
+    private ProfileImageStoragePort profileImageStoragePort;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
@@ -65,8 +84,12 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
+        AuthTokenIssuer authTokenIssuer =
+            new AuthTokenIssuer(refreshTokenRepository, tokenProvider, aiCharacterExistencePort,
+                profileImageRepository, profileImageStoragePort);
         authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder, clock,
-            aiCharacterExistencePort);
+            authTokenIssuer, new SocialLoginCommandService(memberRepository, authTokenIssuer),
+            List.of(socialIdentityVerifier), profileImageRepository);
     }
 
     private Member memberWithPassword(String rawPassword) {
@@ -137,7 +160,7 @@ class AuthServiceTest {
         assertThat(saved.getRole()).isEqualTo(Role.USER);
         verify(refreshTokenRepository).save(any(RefreshToken.class));
         assertThat(response)
-            .isEqualTo(new AuthResponse("access-token", "refresh-token", MEMBER_ID, "소연", false));
+            .isEqualTo(new AuthResponse("access-token", "refresh-token", MEMBER_ID, "소연", false, LoginType.EMAIL, null));
     }
 
     @Test
@@ -280,6 +303,230 @@ class AuthServiceTest {
         assertThat(member.isDeleted()).isTrue();
         assertThat(member.getDeletedAt()).isEqualTo(NOW);
         verify(refreshTokenRepository).deleteByMemberId(MEMBER_ID);
+    }
+
+    @Test
+    void deleteAccount_softDeletesActiveProfileImage() {
+        Member member = memberWithPassword("abcd1234");
+        ProfileImage image = ProfileImage.of(MEMBER_ID, "key.jpg", "image/jpeg", 10L);
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
+        given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(image));
+
+        authService.deleteAccount(member);
+
+        assertThat(image.isDeleted()).isTrue();
+        assertThat(image.getDeletedAt()).isEqualTo(NOW);
+        verifyNoInteractions(profileImageStoragePort);
+    }
+
+    @Test
+    void login_withActiveProfileImage_responseCarriesImageUrl() {
+        Member member = memberWithPassword("abcd1234");
+        given(memberRepository.findByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(Optional.of(member));
+        stubTokenIssue("access-token", "refresh-token");
+        given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
+        given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
+            .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.jpg", "image/jpeg", 10L)));
+        given(profileImageStoragePort.urlFor("key.jpg")).willReturn("/media/profile-images/key.jpg");
+
+        AuthResponse response = authService.login(new LoginRequest("soyeon@teeq.com", "abcd1234"));
+
+        assertThat(response.profileImageUrl()).isEqualTo("/media/profile-images/key.jpg");
+    }
+
+    // ---------- login / changePassword with social account ----------
+
+    private Member socialMember() {
+        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연", true, true);
+        ReflectionTestUtils.setField(member, "id", MEMBER_ID);
+        return member;
+    }
+
+    @Test
+    void login_forSocialAccount_throwsLoginMethodMismatchWithoutPasswordCheck() {
+        given(memberRepository.findByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(Optional.of(socialMember()));
+
+        assertFailsWith(() -> authService.login(new LoginRequest("soyeon@teeq.com", "abcd1234")),
+            ErrorCode.LOGIN_METHOD_MISMATCH);
+        verifyNoInteractions(tokenProvider);
+    }
+
+    @Test
+    void changePassword_forSocialAccount_throwsStateConflict() {
+        Member member = socialMember();
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
+
+        assertFailsWith(() -> authService.changePassword(member,
+            new ChangePasswordRequest("abcd1234", "newpass123")), ErrorCode.STATE_CONFLICT);
+        verifyNoInteractions(tokenProvider);
+    }
+
+    // ---------- socialLogin ----------
+
+    private static final SocialIdentity APPLE_IDENTITY =
+        new SocialIdentity(LoginType.APPLE, "apple-subject", " Soyeon@Teeq.com ");
+
+    private void stubVerifier() {
+        given(socialIdentityVerifier.loginType()).willReturn(LoginType.APPLE);
+        given(socialIdentityVerifier.verify("apple-token")).willReturn(APPLE_IDENTITY);
+    }
+
+    private SocialLoginRequest socialRequest(String nickname, Boolean termsAgreed, Boolean privacyAgreed) {
+        return new SocialLoginRequest(SocialType.APPLE, "apple-token", nickname, termsAgreed, privacyAgreed);
+    }
+
+    private void stubSocialSignUpPath() {
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+            .willReturn(Optional.empty());
+        given(memberRepository.existsByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(false);
+    }
+
+    @Test
+    void socialLogin_newMember_signsUpWithNormalizedEmailAndNoPassword() {
+        stubVerifier();
+        stubSocialSignUpPath();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연")).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willAnswer(invocation -> {
+            Member saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", MEMBER_ID);
+            return saved;
+        });
+        stubTokenIssue("access-token", "refresh-token");
+        given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
+
+        SocialLoginResult result = authService.socialLogin(socialRequest("소연", true, true));
+
+        ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
+        verify(memberRepository).saveAndFlush(captor.capture());
+        Member saved = captor.getValue();
+        assertThat(saved.getEmail()).isEqualTo("soyeon@teeq.com");
+        assertThat(saved.getPassword()).isNull();
+        assertThat(saved.getLoginType()).isEqualTo(LoginType.APPLE);
+        assertThat(saved.getSocialUserId()).isEqualTo("apple-subject");
+        assertThat(saved.getRole()).isEqualTo(Role.USER);
+        assertThat(result.created()).isTrue();
+        assertThat(result.response())
+            .isEqualTo(new AuthResponse("access-token", "refresh-token", MEMBER_ID, "소연", false, LoginType.APPLE, null));
+    }
+
+    @Test
+    void socialLogin_existingMember_logsInAndIgnoresSignUpFields() {
+        stubVerifier();
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+            .willReturn(Optional.of(socialMember()));
+        stubTokenIssue("access-token", "refresh-token");
+        given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
+
+        SocialLoginResult result = authService.socialLogin(socialRequest(null, null, null));
+
+        assertThat(result.created()).isFalse();
+        assertThat(result.response().memberId()).isEqualTo(MEMBER_ID);
+        verify(memberRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void socialLogin_sameEmailActiveMember_throwsDuplicateEmail() {
+        stubVerifier();
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+            .willReturn(Optional.empty());
+        given(memberRepository.existsByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(true);
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, true)), ErrorCode.DUPLICATE_EMAIL);
+    }
+
+    @Test
+    void socialLogin_newMemberWithoutNicknameOrAgreement_throwsSocialSignupRequired() {
+        stubVerifier();
+        stubSocialSignUpPath();
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest(null, true, true)),
+            ErrorCode.SOCIAL_SIGNUP_REQUIRED);
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", null, true)),
+            ErrorCode.SOCIAL_SIGNUP_REQUIRED);
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, null)),
+            ErrorCode.SOCIAL_SIGNUP_REQUIRED);
+    }
+
+    @Test
+    void socialLogin_newMemberWithAgreementFalse_throwsInvalidRequest() {
+        stubVerifier();
+        stubSocialSignUpPath();
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", false, true)), ErrorCode.INVALID_REQUEST);
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, false)), ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    void socialLogin_duplicateNickname_throwsDuplicateNickname() {
+        stubVerifier();
+        stubSocialSignUpPath();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연"))
+            .willReturn(Optional.of(memberWithPassword("abcd1234")));
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, true)),
+            ErrorCode.DUPLICATE_NICKNAME);
+    }
+
+    @Test
+    void socialLogin_raceOnSocialIndex_retriesAndLogsIn() {
+        stubVerifier();
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+            .willReturn(Optional.empty(), Optional.of(socialMember()));
+        given(memberRepository.existsByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(false);
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연")).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
+            "constraint", new RuntimeException("duplicate key value violates unique constraint \"uq_member_social_active\"")));
+        stubTokenIssue("access-token", "refresh-token");
+        given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
+
+        SocialLoginResult result = authService.socialLogin(socialRequest("소연", true, true));
+
+        assertThat(result.created()).isFalse();
+        verify(memberRepository, times(2))
+            .findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject");
+    }
+
+    @Test
+    void socialLogin_raceOnEmailIndex_mapsToDuplicateEmail() {
+        stubVerifier();
+        stubSocialSignUpPath();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연")).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
+            "constraint", new RuntimeException("duplicate key value violates unique constraint \"uq_member_email_active\"")));
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, true)), ErrorCode.DUPLICATE_EMAIL);
+    }
+
+    @Test
+    void socialLogin_afterWithdrawal_treatsDeletedAccountAsNewMember() {
+        stubVerifier();
+        stubSocialSignUpPath();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연")).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willAnswer(invocation -> {
+            Member saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", MEMBER_ID);
+            return saved;
+        });
+        stubTokenIssue("access-token", "refresh-token");
+        given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
+
+        assertThat(authService.socialLogin(socialRequest("소연", true, true)).created()).isTrue();
+    }
+
+    @Test
+    void socialLogin_withoutMatchingVerifier_throwsInvalidRequest() {
+        given(socialIdentityVerifier.loginType()).willReturn(LoginType.EMAIL);
+
+        assertFailsWith(() -> authService.socialLogin(socialRequest("소연", true, true)), ErrorCode.INVALID_REQUEST);
+    }
+
+    @Test
+    void socialLogin_트랜잭션은_제공자_호출을_포함하지_않도록_명령_서비스에만_선언된다() throws NoSuchMethodException {
+        assertThat(AuthService.class.getMethod("socialLogin", SocialLoginRequest.class)
+            .isAnnotationPresent(org.springframework.transaction.annotation.Transactional.class)).isFalse();
+        assertThat(SocialLoginCommandService.class
+            .getMethod("loginOrSignUp", SocialIdentity.class, SocialLoginRequest.class)
+            .isAnnotationPresent(org.springframework.transaction.annotation.Transactional.class)).isTrue();
     }
 
 }

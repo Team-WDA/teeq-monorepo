@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 class GlobalExceptionHandlerTest {
 
@@ -35,6 +38,28 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().errorCode()).isEqualTo("INTERNAL_SERVER_ERROR");
         assertThat(response.getBody().errorMessage()).isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR.message());
         assertThat(response.getBody().errorMessage()).doesNotContain("internal-host");
+    }
+
+    @Test
+    void handleMaxUploadSizeExceeded_mapsToProfileImageTooLarge() {
+        ResponseEntity<ErrorResponse> response =
+            handler.handleMaxUploadSizeExceeded(new MaxUploadSizeExceededException(200L * 1024 * 1024));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(413);
+        assertThat(response.getBody().errorCode()).isEqualTo("PROFILE_IMAGE_TOO_LARGE");
+    }
+
+    @Test
+    void handleBadMultipartRequest_mapsMissingPartAndNonMultipartToInvalidRequest() {
+        ResponseEntity<ErrorResponse> missingPart =
+            handler.handleBadMultipartRequest(new MissingServletRequestPartException("image"));
+        ResponseEntity<ErrorResponse> notMultipart =
+            handler.handleBadMultipartRequest(new MultipartException("not multipart"));
+
+        assertThat(missingPart.getStatusCode().value()).isEqualTo(400);
+        assertThat(missingPart.getBody().errorCode()).isEqualTo("INVALID_REQUEST");
+        assertThat(notMultipart.getStatusCode().value()).isEqualTo(400);
+        assertThat(notMultipart.getBody().errorCode()).isEqualTo("INVALID_REQUEST");
     }
 
     @Test
