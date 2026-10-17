@@ -32,7 +32,7 @@
 - Swagger 어노테이션은 컨트롤러가 구현하는 `XxxControllerDocs` 인터페이스(같은 `controller` 패키지)에 둔다. 에러 코드와 발생 조건을 한국어로 적고, `@Valid` 같은 검증 어노테이션은 컨트롤러와 Docs에 똑같이 선언한다(다르면 HV000151로 500).
 - 패키지·디렉터리 이름이 `.gitignore` 패턴과 겹치면 소스가 추적에서 빠진다. 새 패키지명을 정할 때 확인한다.
 - 도메인 패키지는 구현할 때 만든다. 빈 패키지를 미리 만들지 않는다.
-- FE: `lib/features/<feature>/{data,domain,presentation}`, 공유는 `lib/core/{config,router,network}`. presentation → domain, data → domain 방향만 허용하고 domain은 Flutter·dio에 의존하지 않는다.
+- FE: `lib/features/<feature>/{data,domain,presentation}`, 공유는 `lib/core/{config,router,network,design,error,ui,auth}`. presentation → domain, data → domain 방향만 허용하고 domain은 Flutter·dio에 의존하지 않는다.
 
 ## Extension points
 
