@@ -13,8 +13,11 @@ import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.teeq.api.member.application.dto.response.MemberResponse;
 import kr.teeq.api.member.core.entity.Member;
+import kr.teeq.api.member.core.entity.ProfileImage;
 import kr.teeq.api.member.core.port.AiCharacterExistencePort;
+import kr.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
+import kr.teeq.api.member.core.repository.ProfileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,11 +38,18 @@ class MemberServiceTest {
     @Mock
     private AiCharacterExistencePort aiCharacterExistencePort;
 
+    @Mock
+    private ProfileImageRepository profileImageRepository;
+
+    @Mock
+    private ProfileImageStoragePort profileImageStoragePort;
+
     private MemberService memberService;
 
     @BeforeEach
     void setUp() {
-        memberService = new MemberService(memberRepository, aiCharacterExistencePort);
+        memberService = new MemberService(memberRepository, aiCharacterExistencePort, profileImageRepository,
+            profileImageStoragePort);
     }
 
     private Member member(UUID id, String nickname) {
@@ -92,6 +102,24 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.changeNickname(me, new ChangeNicknameRequest("새닉네임")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_NICKNAME));
+    }
+
+    @Test
+    void getMe_withActiveProfileImage_returnsImageUrl() {
+        Member me = member(MEMBER_ID, "soyeon");
+        given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
+            .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.png", "image/png", 10L)));
+        given(profileImageStoragePort.urlFor("key.png")).willReturn("/media/profile-images/key.png");
+
+        assertThat(memberService.getMe(me).profileImageUrl()).isEqualTo("/media/profile-images/key.png");
+    }
+
+    @Test
+    void getMe_withoutProfileImage_returnsNullUrl() {
+        Member me = member(MEMBER_ID, "soyeon");
+        given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.empty());
+
+        assertThat(memberService.getMe(me).profileImageUrl()).isNull();
     }
 
     @Test
