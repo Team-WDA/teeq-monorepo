@@ -3,6 +3,7 @@ package kr.co.teeq.api.member.application.service;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
+import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -41,14 +42,41 @@ public class MemberService {
     // 컨트롤러가 넘긴 엔티티는 분리 상태라 수정 전에 id로 다시 조회한다. 자신의 닉네임을 대소문자만 바꾸는 것은 중복이 아니다
     @Transactional
     public MemberResponse changeNickname(Member authenticatedMember, ChangeNicknameRequest request) {
-        Member member = memberRepository.findByIdAndDeletedFalse(authenticatedMember.getId())
+        Member member = findActiveMember(authenticatedMember);
+        validateNicknameNotTaken(member, request.nickname());
+        member.changeNickname(request.nickname());
+        flushNicknameChange(member);
+        return toResponse(member);
+    }
+
+    // 소셜 첫 로그인으로 만들어진 닉네임 NULL 회원만 완료할 수 있다. 약관 동의는 요청 검증에서 true로 보장된다
+    @Transactional
+    public MemberResponse completeSignup(Member authenticatedMember, SignupCompletionRequest request) {
+        Member member = findActiveMember(authenticatedMember);
+        if (member.isSignupCompleted()) {
+            throw new CustomException(ErrorCode.STATE_CONFLICT);
+        }
+        validateNicknameNotTaken(member, request.nickname());
+        member.completeSignup(request.nickname());
+        flushNicknameChange(member);
+        return toResponse(member);
+    }
+
+    private Member findActiveMember(Member authenticatedMember) {
+        return memberRepository.findByIdAndDeletedFalse(authenticatedMember.getId())
             .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-        memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(request.nickname())
+    }
+
+    private void validateNicknameNotTaken(Member member, String nickname) {
+        memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(nickname)
             .filter(found -> !found.getId().equals(member.getId()))
             .ifPresent(found -> {
                 throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
             });
-        member.changeNickname(request.nickname());
+    }
+
+    // 중복 검사와 저장 사이에 다른 회원이 선점하면 partial unique index 위반을 닉네임 중복으로 바꾼다
+    private void flushNicknameChange(Member member) {
         try {
             memberRepository.saveAndFlush(member);
         } catch (DataIntegrityViolationException exception) {
@@ -58,7 +86,6 @@ public class MemberService {
             }
             throw exception;
         }
-        return toResponse(member);
     }
 
     private MemberResponse toResponse(Member member) {

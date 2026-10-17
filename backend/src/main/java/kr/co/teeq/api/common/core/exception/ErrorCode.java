@@ -21,6 +21,7 @@ public enum ErrorCode {
     INVALID_CREDENTIALS(401, "이메일 또는 비밀번호가 올바르지 않습니다."),
     INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
     ACCESS_DENIED(403, "접근 권한이 없습니다."),
+    SIGNUP_NOT_COMPLETED(403, "가입을 완료해야 이용할 수 있습니다."),
     DUPLICATE_EMAIL(409, "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
