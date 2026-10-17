@@ -2,7 +2,9 @@ package kr.teeq.api.setting.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -38,6 +40,15 @@ class SettingConfigServiceTest {
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SETTING_CONFIG_NOT_FOUND));
         verifyNoMoreInteractions(settingConfigRepository);
+    }
+
+    @Test
+    void update_greetingDefaultWithoutPlaceholder_throwsInvalidSettingValue() {
+        assertThatThrownBy(() -> settingConfigService.update("GREETING_DEFAULT_MESSAGE_CASUAL",
+            new SettingConfigUpdateRequest("오늘 하루 어땠어?")))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_SETTING_VALUE));
+        verify(settingConfigRepository, never()).saveAndFlush(any());
     }
 
     @Test
