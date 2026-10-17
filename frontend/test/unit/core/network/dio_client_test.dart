@@ -11,7 +11,8 @@ void main() {
           const AppConfig(
             apiBaseUrl: 'https://api.example.test',
             appleServiceId: 'kr.co.teeq.app.service',
-            appleRedirectUri: 'https://api.example.test/api/auth/apple/callback',
+            appleRedirectUri:
+                'https://api.example.test/api/auth/apple/callback',
           ),
         ),
       ],

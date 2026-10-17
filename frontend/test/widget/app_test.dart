@@ -9,8 +9,17 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fake_auth_status_controller.dart';
 
 void main() {
-  testWidgets('기본(signedOut) 상태에서는 로그인 화면을 보여 준다', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: App()));
+  testWidgets('signedOut 상태에서는 로그인 화면을 보여 준다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authStatusControllerProvider.overrideWith(
+            () => FakeAuthStatusController(AuthStatus.signedOut),
+          ),
+        ],
+        child: const App(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(LoginScreen), findsOneWidget);
