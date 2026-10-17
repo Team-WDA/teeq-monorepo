@@ -3,6 +3,7 @@
 ## High-level architecture
 
 - 모노레포. `backend/`(단일 Gradle 모듈)와 `frontend/`(Flutter).
+  - 모노레포로 둔 이유: Claude 에이전트가 FE와 BE의 코드를 서로 쉽게 확인하게 하려는 것이다. FE 작업은 `backend/`의 컨트롤러·DTO·`ErrorCode`를, BE 작업은 `frontend/`의 호출부를 직접 읽어 계약을 확인한다. 계약의 원천은 문서가 아니라 코드이며, 다른 쪽 코드를 고치는 일은 사용자 요청 범위 안에서만 한다.
 - BE 패키지: `kr.teeq.api.<domain>.{core,application,infrastructure}`, 공통은 `common/{core,application,infrastructure}`.
   - core: 엔티티, enum, 리포지토리 인터페이스, 외부 연동 port
   - application: 서비스, DTO(`dto/{request,response}`), 컨트롤러와 `XxxControllerDocs`
