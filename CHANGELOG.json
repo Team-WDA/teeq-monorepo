@@ -1,14 +1,45 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-16T16:38:13Z",
-    "currentVersion": "0.8.0",
+    "lastUpdated": "2026-10-17T05:45:16Z",
+    "currentVersion": "0.9.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 11
+    "totalReleases": 12
   },
   "releases": [
+    {
+      "version": "0.9.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-17",
+      "pr_number": null,
+      "raw_summary": "## [0.9.0]\n\n### ✨ 기능\n- 홈_조회_API_추가 — 홈 조회 API와 오늘의 한마디 저장 추가\n- 홈_조회_API_추가 — 대기 중인 피드백 조회 추가\n- 홈_조회_API_추가 — 온보딩 말투 선택지 조회 추가\n- 홈_조회_API_추가 — 오늘의 한마디 기본 문구 설정 키와 검증 규칙 추가\n\n### ✅ 테스트\n- 홈 조회와 오늘의 한마디 테스트 추가\n- 대기 중인 피드백 조회 테스트 추가\n- 온보딩 말투 조회 테스트 추가\n- 오늘의 한마디 기본 문구 설정 검증 테스트 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "홈_조회_API_추가 — 홈 조회 API와 오늘의 한마디 저장 추가",
+            "홈_조회_API_추가 — 대기 중인 피드백 조회 추가",
+            "홈_조회_API_추가 — 온보딩 말투 선택지 조회 추가",
+            "홈_조회_API_추가 — 오늘의 한마디 기본 문구 설정 키와 검증 규칙 추가"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "홈 조회와 오늘의 한마디 테스트 추가",
+            "대기 중인 피드백 조회 테스트 추가",
+            "온보딩 말투 조회 테스트 추가",
+            "오늘의 한마디 기본 문구 설정 검증 테스트 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.8.0",
       "project_types": [
