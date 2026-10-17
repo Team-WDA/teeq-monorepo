@@ -171,6 +171,7 @@ class AuthSecurityTest {
             post("/api/auth/login"),
             post("/api/auth/refresh"),
             post("/api/auth/social-login"),
+            post("/api/auth/apple/callback"),
             get("/api/members/nickname-availability")
         }) {
             int httpStatus = mockMvc.perform(request).andReturn().getResponse().getStatus();

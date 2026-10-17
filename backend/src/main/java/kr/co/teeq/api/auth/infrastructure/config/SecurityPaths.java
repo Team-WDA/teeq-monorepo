@@ -24,7 +24,8 @@ public final class SecurityPaths {
 
     // 가입은 POST만 연다. 같은 경로의 다른 메서드는 인증이 필요하다
     public static final String[] PUBLIC_POST_PATHS = {
-        "/api/members"
+        "/api/members",
+        "/api/auth/apple/callback"
     };
 
     // 가입 미완료 회원(닉네임 NULL)이 공개 경로 밖에서 호출할 수 있는 요청(메서드와 경로 쌍).
