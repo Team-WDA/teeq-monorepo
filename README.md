@@ -83,6 +83,6 @@ flutter build ios --release --no-codesign --dart-define-from-file=config/prod.js
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->
-## 최신 버전 : v0.8.0 (2026-10-17)
+## 최신 버전 : v0.9.0 (2026-10-17)
 
 [전체 버전 기록 보기](CHANGELOG.md)
