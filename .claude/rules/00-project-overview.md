@@ -42,4 +42,4 @@
 
 - 요청받은 범위만 수정한다. 인접 코드를 개선하거나 리팩터링하지 않는다.
 - 커밋 금지: `application-dev.yml`, `application-prod.yml`, `frontend/config/*.json`, 키·인증서. `.env`, `*.example` 파일을 추가하지 않는다.
-- MVP BE 제외: 기억 열람·수정·삭제, Analytics, Cost Tracking, Safety Support, 프로필 사진, 소셜 로그인, 이메일 인증, 비밀번호 찾기, 다기기 로그인.
+- MVP BE 제외: 기억 열람·수정·삭제, Analytics, Cost Tracking, Safety Support, 이메일 인증, 비밀번호 찾기, 다기기 로그인.
