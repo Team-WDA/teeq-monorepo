@@ -29,7 +29,7 @@ extension ErrorCodeUserMessage on ErrorCode {
     ErrorCode.socialTokenInvalid => '소셜 로그인에 실패했어요. 다시 시도해 주세요.',
     ErrorCode.socialServerUnavailable =>
       '소셜 로그인 서버와 연결할 수 없어요. 잠시 후 다시 시도해 주세요.',
-    ErrorCode.socialSignupRequired => '가입에 필요한 정보가 더 필요해요.',
+    ErrorCode.signupNotCompleted => '가입을 먼저 완료해 주세요.',
     ErrorCode.loginMethodMismatch => '가입한 로그인 방식으로 로그인해 주세요.',
     ErrorCode.callLimitInsufficient => '오늘 쓸 수 있는 통화 시간이 부족해요.',
     ErrorCode.callServiceLimitExceeded => '지금은 통화를 이용할 수 없어요. 잠시 후 다시 시도해 주세요.',
