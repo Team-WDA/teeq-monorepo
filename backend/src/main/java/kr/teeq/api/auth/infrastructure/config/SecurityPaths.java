@@ -7,6 +7,7 @@ public final class SecurityPaths {
     public static final String[] PUBLIC_PATHS = {
         "/api/auth/login",
         "/api/auth/refresh",
+        "/api/auth/social-login",
         "/api/members/nickname-availability",
         "/actuator/health",
         "/docs/swagger",

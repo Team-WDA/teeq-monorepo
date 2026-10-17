@@ -25,6 +25,10 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
     MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
+    SOCIAL_TOKEN_INVALID(401, "소셜 로그인 인증 정보가 올바르지 않습니다."),
+    SOCIAL_SERVER_UNAVAILABLE(502, "소셜 로그인 서버와 통신할 수 없습니다."),
+    SOCIAL_SIGNUP_REQUIRED(409, "소셜 로그인 가입에 필요한 정보가 없습니다."),
+    LOGIN_METHOD_MISMATCH(401, "가입한 로그인 방식이 다릅니다."),
 
     // 통화
     CALL_LIMIT_INSUFFICIENT(403, "오늘 사용할 수 있는 통화 시간이 부족합니다."),
@@ -48,6 +52,10 @@ public enum ErrorCode {
 
     // AI 캐릭터
     AI_CHARACTER_NOT_FOUND(404, "AI 캐릭터를 찾을 수 없습니다."),
+
+    // 프로필 사진
+    PROFILE_IMAGE_INVALID(400, "프로필 사진으로 사용할 수 없는 파일입니다. JPEG, PNG, WebP 이미지만 올릴 수 있습니다."),
+    PROFILE_IMAGE_TOO_LARGE(413, "프로필 사진은 5MB 이하만 올릴 수 있습니다."),
 
     // 동적 설정
     SETTING_CONFIG_NOT_FOUND(404, "설정을 찾을 수 없습니다."),

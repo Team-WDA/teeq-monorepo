@@ -1,22 +1,25 @@
 package kr.teeq.api.auth.application.service;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import kr.teeq.api.auth.application.dto.request.ChangePasswordRequest;
 import kr.teeq.api.auth.application.dto.request.LoginRequest;
 import kr.teeq.api.auth.application.dto.request.RefreshRequest;
 import kr.teeq.api.auth.application.dto.request.SignUpRequest;
+import kr.teeq.api.auth.application.dto.request.SocialLoginRequest;
 import kr.teeq.api.auth.application.dto.response.AuthResponse;
-import kr.teeq.api.auth.core.entity.RefreshToken;
-import kr.teeq.api.auth.core.port.IssuedRefreshToken;
+import kr.teeq.api.auth.core.port.SocialIdentity;
+import kr.teeq.api.auth.core.port.SocialIdentityVerifier;
 import kr.teeq.api.auth.core.port.TokenProvider;
 import kr.teeq.api.auth.core.repository.RefreshTokenRepository;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
+import kr.teeq.api.member.core.constant.LoginType;
 import kr.teeq.api.member.core.entity.Member;
-import kr.teeq.api.member.core.port.AiCharacterExistencePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
+import kr.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,13 +33,17 @@ public class AuthService {
     // 마이그레이션의 partial unique index 이름과 같아야 한다. 동시 가입으로 인덱스가 먼저 걸린 경우 409로 바꾼다
     private static final String EMAIL_INDEX_NAME = "uq_member_email_active";
     private static final String NICKNAME_INDEX_NAME = "uq_member_nickname_active";
+    private static final String SOCIAL_INDEX_NAME = "uq_member_social_active";
 
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
-    private final AiCharacterExistencePort aiCharacterExistencePort;
+    private final AuthTokenIssuer authTokenIssuer;
+    private final SocialLoginCommandService socialLoginCommandService;
+    private final List<SocialIdentityVerifier> socialIdentityVerifiers;
+    private final ProfileImageRepository profileImageRepository;
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
@@ -65,9 +72,34 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         Member member = memberRepository.findByEmailAndDeletedFalse(normalizeEmail(request.email()))
-            .filter(found -> passwordEncoder.matches(request.password(), found.getPassword()))
             .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS));
+        // 소셜 계정은 비밀번호가 없다. 앱이 올바른 로그인 방식으로 안내할 수 있도록 구분해 응답한다
+        if (member.getLoginType() != LoginType.EMAIL) {
+            throw new CustomException(ErrorCode.LOGIN_METHOD_MISMATCH);
+        }
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
+        }
         return issueTokens(member);
+    }
+
+    // 제공자 서버 호출 중에는 DB 커넥션을 잡지 않도록 이 메서드에는 트랜잭션을 걸지 않는다
+    public SocialLoginResult socialLogin(SocialLoginRequest request) {
+        LoginType loginType = request.socialType().toLoginType();
+        SocialIdentityVerifier verifier = socialIdentityVerifiers.stream()
+            .filter(candidate -> candidate.loginType() == loginType)
+            .findFirst()
+            .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
+        SocialIdentity identity = verifier.verify(request.credential());
+        try {
+            return socialLoginCommandService.loginOrSignUp(identity, request);
+        } catch (DataIntegrityViolationException exception) {
+            if (!isViolationOf(exception, SOCIAL_INDEX_NAME)) {
+                throw toDuplicateException(exception);
+            }
+            // 같은 계정의 첫 로그인이 동시에 들어와 다른 요청이 먼저 가입한 경우다. 새 트랜잭션에서 한 번 더 시도하면 로그인으로 처리된다
+            return socialLoginCommandService.loginOrSignUp(identity, request);
+        }
     }
 
     @Transactional
@@ -89,6 +121,9 @@ public class AuthService {
     @Transactional
     public AuthResponse changePassword(Member authenticatedMember, ChangePasswordRequest request) {
         Member member = findActiveMember(authenticatedMember);
+        if (member.getLoginType() != LoginType.EMAIL) {
+            throw new CustomException(ErrorCode.STATE_CONFLICT);
+        }
         if (!passwordEncoder.matches(request.currentPassword(), member.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_CURRENT_PASSWORD);
         }
@@ -100,6 +135,9 @@ public class AuthService {
     public void deleteAccount(Member authenticatedMember) {
         Member member = findActiveMember(authenticatedMember);
         member.delete(clock);
+        // 사진 파일은 지우지 않고 활성 행만 soft delete 한다
+        profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
+            .ifPresent(image -> image.delete(clock));
         refreshTokenRepository.deleteByMemberId(member.getId());
     }
 
@@ -110,17 +148,7 @@ public class AuthService {
     }
 
     private AuthResponse issueTokens(Member member) {
-        String accessToken = tokenProvider.issueAccessToken(member.getId());
-        IssuedRefreshToken issued = tokenProvider.issueRefreshToken(member.getId());
-        refreshTokenRepository.findByMemberId(member.getId()).ifPresentOrElse(
-            existing -> existing.rotate(issued.token(), issued.expiresAt()),
-            () -> refreshTokenRepository.save(RefreshToken.builder()
-                .memberId(member.getId())
-                .token(issued.token())
-                .expiresAt(issued.expiresAt())
-                .build()));
-        return AuthResponse.of(accessToken, issued.token(), member,
-            aiCharacterExistencePort.existsByMemberId(member.getId()));
+        return authTokenIssuer.issue(member);
     }
 
     private String normalizeEmail(String email) {
@@ -128,14 +156,17 @@ public class AuthService {
     }
 
     private RuntimeException toDuplicateException(DataIntegrityViolationException exception) {
-        String message = String.valueOf(exception.getMostSpecificCause().getMessage());
-        if (message.contains(EMAIL_INDEX_NAME)) {
+        if (isViolationOf(exception, EMAIL_INDEX_NAME)) {
             return new CustomException(ErrorCode.DUPLICATE_EMAIL, exception);
         }
-        if (message.contains(NICKNAME_INDEX_NAME)) {
+        if (isViolationOf(exception, NICKNAME_INDEX_NAME)) {
             return new CustomException(ErrorCode.DUPLICATE_NICKNAME, exception);
         }
         return exception;
+    }
+
+    private boolean isViolationOf(DataIntegrityViolationException exception, String indexName) {
+        return String.valueOf(exception.getMostSpecificCause().getMessage()).contains(indexName);
     }
 
 }

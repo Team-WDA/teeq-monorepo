@@ -2,6 +2,7 @@ package kr.teeq.api.member.application.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.UUID;
+import kr.teeq.api.member.core.constant.LoginType;
 import kr.teeq.api.member.core.entity.Member;
 
 public record MemberResponse(
@@ -15,11 +16,18 @@ public record MemberResponse(
     String nickname,
 
     @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")
-    boolean hasAiCharacter
+    boolean hasAiCharacter,
+
+    @Schema(description = "로그인 방식(EMAIL, APPLE)", example = "EMAIL")
+    LoginType loginType,
+
+    @Schema(description = "프로필 사진 URL. 사진이 없으면 null", example = "/media/profile-images/0192f3a4.jpg", nullable = true)
+    String profileImageUrl
 ) {
 
-    public static MemberResponse from(Member member, boolean hasAiCharacter) {
-        return new MemberResponse(member.getId(), member.getEmail(), member.getNickname(), hasAiCharacter);
+    public static MemberResponse from(Member member, boolean hasAiCharacter, String profileImageUrl) {
+        return new MemberResponse(member.getId(), member.getEmail(), member.getNickname(), hasAiCharacter,
+            member.getLoginType(), profileImageUrl);
     }
 
 }

@@ -7,7 +7,9 @@ import kr.teeq.api.member.application.dto.response.MemberResponse;
 import kr.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.teeq.api.member.core.entity.Member;
 import kr.teeq.api.member.core.port.AiCharacterExistencePort;
+import kr.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.teeq.api.member.core.repository.MemberRepository;
+import kr.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final AiCharacterExistencePort aiCharacterExistencePort;
+    private final ProfileImageRepository profileImageRepository;
+    private final ProfileImageStoragePort profileImageStoragePort;
 
     @Transactional(readOnly = true)
     public NicknameAvailabilityResponse checkNicknameAvailability(String nickname) {
@@ -31,7 +35,7 @@ public class MemberService {
 
     @Transactional(readOnly = true)
     public MemberResponse getMe(Member member) {
-        return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()));
+        return toResponse(member);
     }
 
     // 컨트롤러가 넘긴 엔티티는 분리 상태라 수정 전에 id로 다시 조회한다. 자신의 닉네임을 대소문자만 바꾸는 것은 중복이 아니다
@@ -54,7 +58,14 @@ public class MemberService {
             }
             throw exception;
         }
-        return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()));
+        return toResponse(member);
+    }
+
+    private MemberResponse toResponse(Member member) {
+        String profileImageUrl = profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
+            .map(image -> profileImageStoragePort.urlFor(image.getStorageKey()))
+            .orElse(null);
+        return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()), profileImageUrl);
     }
 
 }

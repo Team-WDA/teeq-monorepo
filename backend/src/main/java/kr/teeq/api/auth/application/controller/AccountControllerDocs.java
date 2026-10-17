@@ -50,6 +50,9 @@ public interface AccountControllerDocs {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
             description = "`MEMBER_NOT_FOUND`: 인증 직후 회원이 삭제된 경우(드묾)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409",
+            description = "`STATE_CONFLICT`: 소셜 로그인 계정은 비밀번호가 없어 변경할 수 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<AuthResponse> changePassword(
