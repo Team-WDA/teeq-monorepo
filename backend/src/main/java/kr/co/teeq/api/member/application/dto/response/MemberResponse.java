@@ -12,7 +12,7 @@ public record MemberResponse(
     @Schema(description = "이메일(소문자로 정규화된 값)", example = "user@example.com")
     String email,
 
-    @Schema(description = "닉네임", example = "티큐")
+    @Schema(description = "닉네임. NULL이면 가입 완료 화면으로 보낸다", example = "티큐", nullable = true)
     String nickname,
 
     @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")

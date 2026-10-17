@@ -92,13 +92,13 @@ public class AuthService {
             .orElseThrow(() -> new CustomException(ErrorCode.INVALID_REQUEST));
         SocialIdentity identity = verifier.verify(request.credential());
         try {
-            return socialLoginCommandService.loginOrSignUp(identity, request);
+            return socialLoginCommandService.loginOrSignUp(identity);
         } catch (DataIntegrityViolationException exception) {
             if (!isViolationOf(exception, SOCIAL_INDEX_NAME)) {
                 throw toDuplicateException(exception);
             }
             // 같은 계정의 첫 로그인이 동시에 들어와 다른 요청이 먼저 가입한 경우다. 새 트랜잭션에서 한 번 더 시도하면 로그인으로 처리된다
-            return socialLoginCommandService.loginOrSignUp(identity, request);
+            return socialLoginCommandService.loginOrSignUp(identity);
         }
     }
 

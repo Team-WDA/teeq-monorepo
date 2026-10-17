@@ -73,7 +73,7 @@ class AuthControllerSocialLoginTest {
 
     private SocialLoginResult result(boolean created) {
         return new SocialLoginResult(
-            new AuthResponse("access", "refresh", MEMBER_ID, "소연", false, LoginType.APPLE, null), created);
+            new AuthResponse("access", "refresh", MEMBER_ID, null, false, LoginType.APPLE, null), created);
     }
 
     private void assertInvalidRequest(String body) throws Exception {
@@ -88,8 +88,7 @@ class AuthControllerSocialLoginTest {
         given(authService.socialLogin(any())).willReturn(result(true));
 
         mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"socialType\":\"APPLE\",\"credential\":\"token\",\"nickname\":\"소연\","
-                    + "\"serviceTermsAgreed\":true,\"privacyPolicyAgreed\":true}"))
+                .content("{\"socialType\":\"APPLE\",\"credential\":\"token\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.loginType").value("APPLE"))
             .andExpect(jsonPath("$.profileImageUrl").doesNotExist());
@@ -106,12 +105,12 @@ class AuthControllerSocialLoginTest {
 
     @Test
     void serviceError_isConvertedToErrorResponse() throws Exception {
-        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.SOCIAL_SIGNUP_REQUIRED));
+        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.DUPLICATE_EMAIL));
 
         mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"socialType\":\"APPLE\",\"credential\":\"token\"}"))
             .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.errorCode").value("SOCIAL_SIGNUP_REQUIRED"));
+            .andExpect(jsonPath("$.errorCode").value("DUPLICATE_EMAIL"));
     }
 
     @Test
@@ -123,13 +122,6 @@ class AuthControllerSocialLoginTest {
     @Test
     void tooLongCredential_returns400() throws Exception {
         assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\"" + "a".repeat(4097) + "\"}");
-    }
-
-    @Test
-    void invalidNicknameOrAgreementFalse_returns400() throws Exception {
-        assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\"token\",\"nickname\":\"a\"}");
-        assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\"token\",\"serviceTermsAgreed\":false}");
-        assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\"token\",\"privacyPolicyAgreed\":false}");
     }
 
     @Test

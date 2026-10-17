@@ -27,7 +27,6 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
     SOCIAL_TOKEN_INVALID(401, "소셜 로그인 인증 정보가 올바르지 않습니다."),
     SOCIAL_SERVER_UNAVAILABLE(502, "소셜 로그인 서버와 통신할 수 없습니다."),
-    SOCIAL_SIGNUP_REQUIRED(409, "소셜 로그인 가입에 필요한 정보가 없습니다."),
     LOGIN_METHOD_MISMATCH(401, "가입한 로그인 방식이 다릅니다."),
 
     // 통화

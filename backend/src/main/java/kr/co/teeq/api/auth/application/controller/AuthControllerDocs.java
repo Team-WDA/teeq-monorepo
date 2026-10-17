@@ -43,10 +43,9 @@ public interface AuthControllerDocs {
         description = """
             소셜 제공자(현재 Apple)가 발급한 토큰을 서버에서 검증해 로그인하고, 처음 로그인하면 가입까지 처리한 뒤
             Access Token(1일)과 Refresh Token(30일)을 발급한다. 새 로그인은 기존 Refresh Token을 대체한다(다기기 로그인 없음).
-            이미 가입한 소셜 계정이면 로그인(200)하며 `nickname`과 약관 동의 값은 무시한다.
-            처음 로그인하는 계정은 `nickname`과 두 약관 동의가 모두 있어야 가입(201)된다. 하나라도 없으면 `SOCIAL_SIGNUP_REQUIRED`(409)로
-            응답하므로 앱은 닉네임·약관 입력 화면을 거쳐 같은 `credential`로 다시 요청한다(토큰이 만료되었으면 제공자 로그인을 다시 한다).
-            약관 동의 값을 보낸다면 true여야 하며, 이미 가입한 회원의 로그인 요청이라도 false를 보내면 400이다.
+            이미 가입한 소셜 계정이면 로그인(200)한다. 처음 로그인하는 계정은 회원을 만들고(201) 토큰을 발급한다.
+            신규 회원은 닉네임 NULL, 약관 미동의 상태로 만들어지며 응답의 `nickname`이 null이면 앱은 가입 완료 화면으로 보내고
+            `POST /api/members/me/signup-completion`으로 완료한다.
             제공자가 준 이메일과 같은 이메일의 활성 계정이 이미 있으면 자동으로 연동하지 않고 `DUPLICATE_EMAIL`로 응답한다.
             탈퇴한 소셜 계정으로 다시 로그인하면 신규 가입으로 처리한다.""")
     @SecurityRequirements
@@ -54,13 +53,13 @@ public interface AuthControllerDocs {
         @ApiResponse(responseCode = "200", description = "기존 소셜 계정으로 로그인 성공"),
         @ApiResponse(responseCode = "201", description = "신규 가입 후 로그인 성공"),
         @ApiResponse(responseCode = "400",
-            description = "`INVALID_REQUEST`: 제공자·인증 정보가 비어 있거나 4096자 초과, 닉네임 규칙 위반, 약관 동의 값이 false 등 입력 검증 실패(`errorMessage`에 사유). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아니거나 알 수 없는 제공자",
+            description = "`INVALID_REQUEST`: 제공자·인증 정보가 비어 있거나 4096자 초과 등 입력 검증 실패(`errorMessage`에 사유). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아니거나 알 수 없는 제공자",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`SOCIAL_TOKEN_INVALID`: 토큰이 위조·만료되었거나 대상 앱이 다르거나 이메일을 확인할 수 없음",
+            description = "`SOCIAL_TOKEN_INVALID`: 토큰이 위조·만료되었거나 대상 앱이 다르거나 신규 가입인데 토큰에 이메일이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
-            description = "`SOCIAL_SIGNUP_REQUIRED`: 신규 가입에 필요한 닉네임 또는 약관 동의가 없음. `DUPLICATE_EMAIL`: 같은 이메일의 계정이 이미 있음. `DUPLICATE_NICKNAME`: 이미 사용 중인 닉네임(대소문자 구분 없음)",
+            description = "`DUPLICATE_EMAIL`: 같은 이메일의 계정이 이미 있음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "502",
             description = "`SOCIAL_SERVER_UNAVAILABLE`: 소셜 제공자의 공개키를 조회할 수 없음. 잠시 후 다시 시도한다",
