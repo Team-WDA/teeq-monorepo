@@ -1,0 +1,89 @@
+import 'package:dio/dio.dart';
+import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/error/error_messages.dart';
+
+/// 앱 전체에서 쓰는 정규화된 예외. 사용자에게는 [userMessage]만 보여 준다.
+sealed class AppException implements Exception {
+  const AppException();
+
+  /// 사용자에게 보여 줄 한국어 문구.
+  String get userMessage;
+
+  /// 어떤 오류 객체든 [AppException]으로 정규화한다.
+  /// [DioException]은 인터셉터가 담아 둔 [AppException]을 꺼내고, 없으면 유형으로 판단한다.
+  factory AppException.from(Object error) {
+    if (error is AppException) {
+      return error;
+    }
+    if (error is DioException) {
+      final wrapped = error.error;
+      if (wrapped is AppException) {
+        return wrapped;
+      }
+      return switch (error.type) {
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.receiveTimeout => const NetworkException(
+          NetworkFailureKind.timeout,
+        ),
+        DioExceptionType.connectionError => const NetworkException(
+          NetworkFailureKind.connection,
+        ),
+        _ => UnexpectedException(error),
+      };
+    }
+    return UnexpectedException(error);
+  }
+}
+
+/// 서버가 `{errorCode, errorMessage}`로 응답한 오류.
+final class ApiException extends AppException {
+  const ApiException({
+    required this.errorCode,
+    required this.httpStatus,
+    this.developerMessage,
+  });
+
+  final ErrorCode errorCode;
+  final int? httpStatus;
+
+  /// 서버 `errorMessage`. 로그 전용이며 사용자에게 절대 보여 주지 않는다.
+  final String? developerMessage;
+
+  @override
+  String get userMessage => errorCode.userMessage;
+
+  @override
+  String toString() =>
+      'ApiException(errorCode: ${errorCode.serverName}, httpStatus: $httpStatus)';
+}
+
+/// 네트워크 실패의 종류.
+enum NetworkFailureKind { connection, timeout }
+
+/// 연결 실패 또는 타임아웃.
+final class NetworkException extends AppException {
+  const NetworkException(this.kind);
+
+  final NetworkFailureKind kind;
+
+  @override
+  String get userMessage => networkErrorMessage;
+
+  @override
+  String toString() => 'NetworkException(kind: ${kind.name})';
+}
+
+/// 분류할 수 없는 예상 밖 오류.
+final class UnexpectedException extends AppException {
+  const UnexpectedException(this.cause);
+
+  /// 로그 전용 원인 객체.
+  final Object cause;
+
+  @override
+  String get userMessage => unknownErrorMessage;
+
+  @override
+  String toString() => 'UnexpectedException(cause: $cause)';
+}
