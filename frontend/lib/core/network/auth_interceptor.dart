@@ -91,7 +91,7 @@ class AuthInterceptor extends Interceptor {
       return;
     }
     if (tokens == null) {
-      // 저장된 토큰이 없다(이미 로그아웃). 원래 오류를 그대로 넘긴다.
+      // 저장된 토큰이 없거나(이미 로그아웃) 갱신 도중 세션이 바뀌었다. 원래 오류를 그대로 넘긴다.
       handler.next(err);
       return;
     }
@@ -124,7 +124,7 @@ class AuthInterceptor extends Interceptor {
         !_isExempt(options);
   }
 
-  /// 재시도에 쓸 토큰. 저장된 토큰이 없으면 null.
+  /// 재시도에 쓸 토큰. 저장된 토큰이 없거나 갱신 도중 세션이 바뀌었으면 null.
   /// 확인과 갱신 시작 사이에 await가 없어, 동시에 도착한 요청도 갱신을 한 번만 시작한다.
   Future<AuthTokens?> _tokensForRetry(RequestOptions options) async {
     final requestAccessToken = _requestAccessToken(options);
@@ -148,9 +148,14 @@ class AuthInterceptor extends Interceptor {
     return attempt.result;
   }
 
-  Future<AuthTokens> _refreshAndSave(AuthTokens expiredTokens) async {
+  /// 갱신한 토큰을 저장하고 돌려준다. 갱신 도중 로그아웃이나 다른 회원 로그인으로 세션이
+  /// 바뀌었으면 저장하지 않고 null을 돌려준다(호출 측은 원래 오류를 그대로 넘긴다).
+  Future<AuthTokens?> _refreshAndSave(AuthTokens expiredTokens) async {
     try {
       final tokens = await _tokenRefresher.refresh(expiredTokens.refreshToken);
+      if (!await _isCurrentSession(expiredTokens)) {
+        return null;
+      }
       await _tokenStorage.save(tokens);
       return tokens;
     } on Object catch (error) {
@@ -159,12 +164,19 @@ class AuthInterceptor extends Interceptor {
         _latestRefresh = null;
       }
       // 네트워크·5xx 실패는 토큰을 그대로 두고, 인증 오류일 때만 세션을 끝낸다.
-      if (error is DioException && _endsSession(error.error)) {
+      // 이미 바뀐 세션(새 회원의 토큰)은 지우지 않는다.
+      if (error is DioException &&
+          _endsSession(error.error) &&
+          await _isCurrentSession(expiredTokens)) {
         await _expireSession();
       }
       rethrow;
     }
   }
+
+  /// 이 갱신을 시작한 세션이 아직 저장소의 현재 세션인지.
+  Future<bool> _isCurrentSession(AuthTokens expiredTokens) async =>
+      (await _tokenStorage.read())?.accessToken == expiredTokens.accessToken;
 
   bool _endsSession(Object? cause) =>
       cause is ApiException && _sessionEndingCodes.contains(cause.errorCode);
@@ -209,5 +221,7 @@ final class _RefreshAttempt {
   });
 
   final String expiredAccessToken;
-  final Future<AuthTokens> result;
+
+  /// 갱신 결과. 갱신 도중 세션이 바뀌었으면 null.
+  final Future<AuthTokens?> result;
 }

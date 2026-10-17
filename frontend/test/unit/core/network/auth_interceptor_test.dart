@@ -285,6 +285,77 @@ void main() {
     },
   );
 
+  group('세션이 갱신 도중 바뀌면 갱신 결과를 저장하지 않는다', () {
+    const otherUserTokens = AuthTokens(
+      accessToken: 'other-access',
+      refreshToken: 'other-refresh',
+    );
+
+    Future<(_Harness, DioException)> expireDuringRefresh(
+      AuthTokens? tokensAfterChange, {
+      ScriptedReply? refreshReply,
+    }) async {
+      final harness = _Harness(storedTokens: _oldTokens);
+      harness.adapter
+        ..on('/api/members/me', [_error(401, 'EXPIRED_TOKEN')])
+        ..on(_refreshPath, [
+          refreshReply ?? _refreshed(delay: const Duration(milliseconds: 30)),
+        ]);
+
+      final pending = _captureError(
+        harness.dio.get<dynamic>('/api/members/me'),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      // 갱신이 진행 중일 때 로그아웃(null) 또는 다른 회원 로그인(새 토큰)이 일어났다.
+      harness.storage.storedTokens = tokensAfterChange;
+      return (harness, await pending);
+    }
+
+    test('signedOutDuringRefresh_doesNotSaveOrRetry', () async {
+      final (harness, error) = await expireDuringRefresh(null);
+
+      expect((error.error as ApiException).errorCode, ErrorCode.expiredToken);
+      expect(harness.storage.storedTokens, isNull);
+      expect(harness.storage.savedTokens, isNull);
+      expect(harness.adapter.callCount('/api/members/me'), 1);
+      expect(harness.storage.clearCount, 0);
+      expect(harness.sessionExpiredCount, 0);
+    });
+
+    test('otherUserSignedInDuringRefresh_keepsOtherUserTokens', () async {
+      final (harness, error) = await expireDuringRefresh(otherUserTokens);
+
+      expect((error.error as ApiException).errorCode, ErrorCode.expiredToken);
+      expect(harness.storage.storedTokens, otherUserTokens);
+      expect(harness.storage.savedTokens, isNull);
+      expect(harness.adapter.callCount('/api/members/me'), 1);
+      expect(harness.storage.clearCount, 0);
+      expect(harness.sessionExpiredCount, 0);
+    });
+
+    test(
+      'otherUserSignedInDuringFailedRefresh_doesNotClearOrExpireSession',
+      () async {
+        final (harness, error) = await expireDuringRefresh(
+          otherUserTokens,
+          refreshReply: _error(
+            401,
+            'INVALID_REFRESH_TOKEN',
+            delay: const Duration(milliseconds: 30),
+          ),
+        );
+
+        expect(
+          (error.error as ApiException).errorCode,
+          ErrorCode.invalidRefreshToken,
+        );
+        expect(harness.storage.storedTokens, otherUserTokens);
+        expect(harness.storage.clearCount, 0);
+        expect(harness.sessionExpiredCount, 0);
+      },
+    );
+  });
+
   test('logout401_isNotRefreshed', () async {
     final harness = _Harness(storedTokens: _oldTokens);
     harness.adapter.on('/api/auth/logout', [_error(401, 'EXPIRED_TOKEN')]);
