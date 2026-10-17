@@ -51,4 +51,61 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
         @Param("fromInclusive") Instant fromInclusive,
         @Param("toExclusive") Instant toExclusive);
 
+    // 통화 시작 시각이 [fromInclusive, toExclusive)인 전체 회원 활성 기록의 사용 시간(초) 합계
+    @Query("""
+        select coalesce(sum(c.durationSeconds), 0L)
+        from CallHistory c
+        where c.deleted = false
+          and c.startedAt >= :fromInclusive
+          and c.startedAt < :toExclusive
+        """)
+    long sumDurationSecondsOfAllMembers(@Param("fromInclusive") Instant fromInclusive,
+        @Param("toExclusive") Instant toExclusive);
+
+    // 기간별 사용량 집계 결과. 별칭은 getter 이름과 같아야 한다
+    interface CallUsageRow {
+
+        // KST 기준 기간 시작 날짜(yyyy-MM-dd)
+        String getPeriodStart();
+
+        long getUsedSeconds();
+
+        long getCallCount();
+
+    }
+
+    // 전체 회원의 기간별(unit: day, month) 사용량. 시작 시각이 [fromInclusive, toExclusive)인 활성 기록만 집계하며
+    // 통화 횟수에서는 실패·대기 중 기록을 제외한다
+    @Query(value = """
+        select to_char(date_trunc(:unit, started_at at time zone :zoneName), 'YYYY-MM-DD') as "periodStart",
+               coalesce(sum(duration_seconds), 0) as "usedSeconds",
+               count(*) filter (where status not in ('FAILED', 'PENDING')) as "callCount"
+        from call_history
+        where deleted = false
+          and started_at >= :fromInclusive
+          and started_at < :toExclusive
+        group by 1
+        order by 1
+        """, nativeQuery = true)
+    List<CallUsageRow> aggregateUsageOfAllMembers(@Param("unit") String unit,
+        @Param("zoneName") String zoneName, @Param("fromInclusive") Instant fromInclusive,
+        @Param("toExclusive") Instant toExclusive);
+
+    // 특정 회원의 기간별(unit: day, month) 사용량
+    @Query(value = """
+        select to_char(date_trunc(:unit, started_at at time zone :zoneName), 'YYYY-MM-DD') as "periodStart",
+               coalesce(sum(duration_seconds), 0) as "usedSeconds",
+               count(*) filter (where status not in ('FAILED', 'PENDING')) as "callCount"
+        from call_history
+        where deleted = false
+          and member_id = :memberId
+          and started_at >= :fromInclusive
+          and started_at < :toExclusive
+        group by 1
+        order by 1
+        """, nativeQuery = true)
+    List<CallUsageRow> aggregateUsageOfMember(@Param("memberId") UUID memberId, @Param("unit") String unit,
+        @Param("zoneName") String zoneName, @Param("fromInclusive") Instant fromInclusive,
+        @Param("toExclusive") Instant toExclusive);
+
 }

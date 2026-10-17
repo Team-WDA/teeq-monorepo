@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 public enum SettingKey {
     CALL_MAX_SECONDS_PER_SESSION(SettingValueType.INT, "1200", "통화 1회에 사용할 수 있는 최대 시간(초)", 1L, null),
     CALL_MAX_SECONDS_PER_DAY(SettingValueType.INT, "1800", "사용자별 하루(KST) 통화 한도(초)", 1L, null),
+    CALL_MAX_SECONDS_PER_MONTH_TOTAL(SettingValueType.INT, "900000", "전체 회원이 합산해 한 달(KST)에 사용할 수 있는 통화 한도(초)", 1L, null),
     CALL_MIN_START_SECONDS(SettingValueType.INT, "60", "통화를 시작하려면 남아 있어야 하는 최소 시간(초)", 1L, null),
     GREETING_DEFAULT_MESSAGE_CASUAL(SettingValueType.STRING, "{호칭},\n오늘 하루 어땠어?\n무슨 일 있었는지 궁금한데...",
         "반말 온보딩 답변 회원에게 쓰는 기본 오늘의 한마디. {호칭} 자리에 호칭이 들어간다",

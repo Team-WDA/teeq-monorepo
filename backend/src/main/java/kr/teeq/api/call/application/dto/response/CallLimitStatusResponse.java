@@ -6,7 +6,7 @@ public record CallLimitStatusResponse(
     @Schema(description = "오늘(KST) 사용한 통화 시간(초)", example = "300")
     long usedSeconds,
 
-    @Schema(description = "오늘 남은 통화 시간(초). 일 한도를 넘겼으면 0", example = "1500")
+    @Schema(description = "오늘 남은 통화 시간(초). 관리자가 부여한 오늘의 추가 시간이 반영되며, 한도를 넘겼으면 0", example = "1500")
     long remainingSeconds,
 
     @Schema(description = "이번 통화에서 허용되는 최대 시간(초). 1회 한도와 남은 시간 중 작은 값", example = "1200")
