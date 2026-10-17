@@ -8,17 +8,33 @@ part 'app_config.g.dart';
 /// README 안내도 함께 갱신한다.
 /// 클라이언트에 넣은 값은 앱에서 추출할 수 있으므로 서버 시크릿은 넣지 않는다.
 class AppConfig {
-  const AppConfig({required this.apiBaseUrl});
+  const AppConfig({
+    required this.apiBaseUrl,
+    required this.appleServiceId,
+    required this.appleRedirectUri,
+  });
 
   static const AppConfig current = AppConfig(
     apiBaseUrl: String.fromEnvironment('API_BASE_URL'),
+    appleServiceId: String.fromEnvironment('APPLE_SERVICE_ID'),
+    appleRedirectUri: String.fromEnvironment('APPLE_REDIRECT_URI'),
   );
 
   final String apiBaseUrl;
 
+  /// Android의 Apple 로그인에 쓰는 Services ID(공개 클라이언트 ID).
+  final String appleServiceId;
+
+  /// Android의 Apple 로그인 콜백 주소(서버의 콜백 중계 엔드포인트).
+  final String appleRedirectUri;
+
   /// 필수 키가 비어 있으면 앱 시작 시점에 즉시 실패시킨다.
   void validate() {
-    final missingKeys = <String>[if (apiBaseUrl.isEmpty) 'API_BASE_URL'];
+    final missingKeys = <String>[
+      if (apiBaseUrl.isEmpty) 'API_BASE_URL',
+      if (appleServiceId.isEmpty) 'APPLE_SERVICE_ID',
+      if (appleRedirectUri.isEmpty) 'APPLE_REDIRECT_URI',
+    ];
     if (missingKeys.isEmpty) {
       return;
     }
