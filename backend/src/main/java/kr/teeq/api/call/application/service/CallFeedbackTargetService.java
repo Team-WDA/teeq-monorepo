@@ -1,8 +1,10 @@
 package kr.teeq.api.call.application.service;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import kr.teeq.api.call.application.dto.response.FeedbackTargetCall;
+import kr.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.teeq.api.call.core.constant.CallStatus;
 import kr.teeq.api.call.core.entity.CallHistory;
 import kr.teeq.api.call.core.repository.CallHistoryRepository;
@@ -32,9 +34,22 @@ public class CallFeedbackTargetService {
         if (!FEEDBACKABLE_STATUSES.contains(callHistory.getStatus())) {
             throw new CustomException(ErrorCode.CALL_NOT_FEEDBACKABLE);
         }
+        return new FeedbackTargetCall(callHistory.getId(), countCallIndex(memberId, callHistory));
+    }
+
+    // 피드백 가능한(종료·만료) 통화 중 가장 최근 것. 없으면 empty
+    @Transactional(readOnly = true)
+    public Optional<LatestFeedbackableCall> findLatestFeedbackableCall(UUID memberId) {
+        return callHistoryRepository
+            .findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(memberId, FEEDBACKABLE_STATUSES)
+            .map(callHistory -> new LatestFeedbackableCall(
+                callHistory.getId(), callHistory.getCallSessionId(), countCallIndex(memberId, callHistory)));
+    }
+
+    private int countCallIndex(UUID memberId, CallHistory callHistory) {
         long callIndex = callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
             memberId, CallStatus.FAILED, callHistory.getStartedAt());
-        return new FeedbackTargetCall(callHistory.getId(), Math.toIntExact(callIndex));
+        return Math.toIntExact(callIndex);
     }
 
 }

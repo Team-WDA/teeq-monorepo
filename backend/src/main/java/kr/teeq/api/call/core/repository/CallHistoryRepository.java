@@ -20,6 +20,10 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
     // 잠금 없이 통화 세션으로 조회한다(읽기 전용 조회용)
     Optional<CallHistory> findByCallSessionIdAndDeletedFalse(String callSessionId);
 
+    // 회원의 활성 기록 중 해당 상태이면서 시작 시각이 가장 늦은 기록(홈의 대기 피드백 조회용)
+    Optional<CallHistory> findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(
+        UUID memberId, Collection<CallStatus> statuses);
+
     // 회원의 활성 기록 중 status가 아니고 시작 시각이 startedAt 이하인 건수(통화 순번 계산용)
     long countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
         UUID memberId, CallStatus status, Instant startedAt);

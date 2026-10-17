@@ -14,14 +14,17 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import kr.teeq.api.call.application.dto.response.FeedbackTargetCall;
+import kr.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.teeq.api.call.application.service.CallFeedbackTargetService;
 import kr.teeq.api.common.core.exception.CustomException;
 import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.feedback.application.dto.request.DetailedFeedbackRequest;
 import kr.teeq.api.feedback.application.dto.request.RequiredFeedbackRequest;
 import kr.teeq.api.feedback.application.dto.response.FeedbackStatusResponse;
+import kr.teeq.api.feedback.application.dto.response.PendingFeedbackResponse;
 import kr.teeq.api.feedback.application.dto.response.RequiredFeedbackResponse;
 import kr.teeq.api.feedback.core.constant.AwkwardMoment;
 import kr.teeq.api.feedback.core.constant.PreviousCallRecall;
@@ -114,6 +117,35 @@ class CallFeedbackServiceTest {
         FeedbackStatusResponse response = callFeedbackService.getStatus(MEMBER_ID, CALL_SESSION_ID);
 
         assertThat(response).isEqualTo(new FeedbackStatusResponse(2, true, true));
+    }
+
+    // ---- findPendingFeedback ----
+
+    @Test
+    void findPendingFeedback_최근_통화가_없으면_empty() {
+        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID)).willReturn(Optional.empty());
+
+        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID)).isEmpty();
+        verifyNoInteractions(requiredFeedbackRepository);
+    }
+
+    @Test
+    void findPendingFeedback_필수_피드백이_이미_있으면_empty() {
+        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID))
+            .willReturn(Optional.of(new LatestFeedbackableCall(CALL_HISTORY_ID, "call-session-1", 3)));
+        given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
+
+        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID)).isEmpty();
+    }
+
+    @Test
+    void findPendingFeedback_필수_피드백이_없으면_해당_통화를_돌려준다() {
+        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID))
+            .willReturn(Optional.of(new LatestFeedbackableCall(CALL_HISTORY_ID, "call-session-1", 3)));
+        given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(false);
+
+        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID))
+            .contains(new PendingFeedbackResponse("call-session-1", 3));
     }
 
     // ---- submitRequired: 지난 통화 기억 규칙 ----

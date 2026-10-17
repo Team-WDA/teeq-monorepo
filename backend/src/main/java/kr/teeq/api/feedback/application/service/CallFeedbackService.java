@@ -2,6 +2,7 @@ package kr.teeq.api.feedback.application.service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import kr.teeq.api.call.application.dto.response.FeedbackTargetCall;
 import kr.teeq.api.call.application.service.CallFeedbackTargetService;
@@ -10,6 +11,7 @@ import kr.teeq.api.common.core.exception.ErrorCode;
 import kr.teeq.api.feedback.application.dto.request.DetailedFeedbackRequest;
 import kr.teeq.api.feedback.application.dto.request.RequiredFeedbackRequest;
 import kr.teeq.api.feedback.application.dto.response.FeedbackStatusResponse;
+import kr.teeq.api.feedback.application.dto.response.PendingFeedbackResponse;
 import kr.teeq.api.feedback.application.dto.response.RequiredFeedbackResponse;
 import kr.teeq.api.feedback.core.constant.AwkwardMoment;
 import kr.teeq.api.feedback.core.constant.FeedbackRule;
@@ -47,6 +49,14 @@ public class CallFeedbackService {
             target.callIndex(),
             FeedbackRule.isPreviousCallRecallRequired(target.callIndex()),
             requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistoryId()));
+    }
+
+    // 가장 최근 종료·만료 통화에 필수 피드백이 없으면 그 통화를 대기 피드백으로 돌려준다
+    @Transactional(readOnly = true)
+    public Optional<PendingFeedbackResponse> findPendingFeedback(UUID memberId) {
+        return callFeedbackTargetService.findLatestFeedbackableCall(memberId)
+            .filter(latest -> !requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(latest.callHistoryId()))
+            .map(latest -> new PendingFeedbackResponse(latest.callSessionId(), latest.callIndex()));
     }
 
     @Transactional
