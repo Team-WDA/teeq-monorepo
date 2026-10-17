@@ -213,4 +213,29 @@ class OnboardingAnswerServiceTest {
                 List.of(OnboardingOption.AVOID_BEHAVIOR_RAPID_QUESTIONS, OnboardingOption.AVOID_BEHAVIOR_INTERRUPTING)));
     }
 
+    @Test
+    void getSpeechStyle_말투_답변이_있으면_그_선택지를_돌려준다() {
+        given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
+            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.RELATIONSHIP,
+                OnboardingOption.RELATIONSHIP_CLOSE_FRIEND),
+            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.SPEECH_STYLE,
+                OnboardingOption.SPEECH_STYLE_GENTLE_POLITE),
+            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.VOICE_TONE,
+                OnboardingOption.VOICE_TONE_MID_NATURAL)));
+
+        OnboardingOption speechStyle = onboardingAnswerService.getSpeechStyle(MEMBER_ID);
+
+        assertThat(speechStyle).isEqualTo(OnboardingOption.SPEECH_STYLE_GENTLE_POLITE);
+    }
+
+    @Test
+    void getSpeechStyle_말투_답변이_없으면_IllegalStateException() {
+        given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
+            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.RELATIONSHIP,
+                OnboardingOption.RELATIONSHIP_CLOSE_FRIEND)));
+
+        assertThatThrownBy(() -> onboardingAnswerService.getSpeechStyle(MEMBER_ID))
+            .isInstanceOf(IllegalStateException.class);
+    }
+
 }
