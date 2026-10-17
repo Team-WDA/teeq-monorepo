@@ -26,7 +26,7 @@ public interface CallControllerDocs {
             description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않거나 삭제된 회원임. `EXPIRED_TOKEN`: Access Token이 만료됨(토큰 재발급 후 재시도)",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403",
-            description = "`CALL_LIMIT_INSUFFICIENT`: 오늘 남은 통화 시간이 시작 최소 시간보다 적음",
+            description = "`CALL_LIMIT_INSUFFICIENT`: 오늘 남은 통화 시간(관리자가 부여한 추가 시간 포함)이 시작 최소 시간보다 적음. `CALL_SERVICE_LIMIT_EXCEEDED`: 서비스 전체의 이번 달 통화 한도가 소진되어 지금은 통화를 시작할 수 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
             description = "`CALL_ALREADY_IN_PROGRESS`: 이미 진행 중인 통화가 있음(동시에 두 번 요청한 경우 포함)",
