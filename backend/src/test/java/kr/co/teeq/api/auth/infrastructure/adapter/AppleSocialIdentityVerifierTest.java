@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.Map;
+import kr.co.teeq.api.auth.core.constant.AppleClientIds;
 import kr.co.teeq.api.auth.core.port.SocialIdentity;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
@@ -49,7 +50,7 @@ class AppleSocialIdentityVerifierTest {
         return Jwts.builder()
             .header().keyId(KEY_ID).and()
             .issuer(AppleSocialIdentityVerifier.ISSUER)
-            .audience().add(AppleSocialIdentityVerifier.AUDIENCE).and()
+            .audience().add(AppleClientIds.BUNDLE_IDENTIFIER).and()
             .subject("apple-subject")
             .claim("email", "Soyeon@Teeq.com")
             .issuedAt(Date.from(NOW))
@@ -103,18 +104,50 @@ class AppleSocialIdentityVerifierTest {
     }
 
     @Test
-    void verify_wrongIssuerOrAudience_throwsTokenInvalid() {
+    void verify_wrongIssuer_throwsTokenInvalid() {
         stubKeys();
 
         assertFailsWith(sign(validToken().issuer("https://evil.example.com")), ErrorCode.SOCIAL_TOKEN_INVALID);
+    }
+
+    @Test
+    void verify_servicesIdentifierAudience_returnsIdentity() {
+        stubKeys();
+
+        SocialIdentity identity = verifier.verify(
+            sign(validToken().audience().single(AppleClientIds.SERVICES_IDENTIFIER)));
+
+        assertThat(identity.subject()).isEqualTo("apple-subject");
+    }
+
+    @Test
+    void verify_otherAudience_throwsTokenInvalid() {
+        stubKeys();
+
         assertFailsWith(sign(validToken().audience().single("other.app")), ErrorCode.SOCIAL_TOKEN_INVALID);
     }
 
     @Test
-    void verify_missingEmailOrSubject_throwsTokenInvalid() {
+    void verify_missingEmail_returnsIdentityWithNullEmail() {
         stubKeys();
 
-        assertFailsWith(sign(validToken().claim("email", null)), ErrorCode.SOCIAL_TOKEN_INVALID);
+        SocialIdentity identity = verifier.verify(sign(validToken().claim("email", null)));
+
+        assertThat(identity.email()).isNull();
+        assertThat(identity.subject()).isEqualTo("apple-subject");
+    }
+
+    @Test
+    void verify_emailPresentButNotVerified_throwsTokenInvalid() {
+        stubKeys();
+
+        assertFailsWith(sign(validToken().claim("email_verified", false)), ErrorCode.SOCIAL_TOKEN_INVALID);
+    }
+
+    @Test
+    void verify_missingSubject_throwsTokenInvalid() {
+        stubKeys();
+
         assertFailsWith(sign(validToken().subject(null)), ErrorCode.SOCIAL_TOKEN_INVALID);
     }
 
@@ -149,7 +182,7 @@ class AppleSocialIdentityVerifierTest {
         String unknownKeyToken = Jwts.builder()
             .header().keyId("unknown-key").and()
             .issuer(AppleSocialIdentityVerifier.ISSUER)
-            .audience().add(AppleSocialIdentityVerifier.AUDIENCE).and()
+            .audience().add(AppleClientIds.BUNDLE_IDENTIFIER).and()
             .subject("apple-subject")
             .claim("email", "soyeon@teeq.com")
             .expiration(Date.from(NOW.plusSeconds(600)))

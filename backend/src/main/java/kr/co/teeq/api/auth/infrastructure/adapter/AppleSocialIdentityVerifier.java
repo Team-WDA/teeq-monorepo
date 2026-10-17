@@ -11,10 +11,13 @@ import java.security.PublicKey;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import kr.co.teeq.api.auth.core.constant.AppleClientIds;
 import kr.co.teeq.api.auth.core.port.SocialIdentity;
 import kr.co.teeq.api.auth.core.port.SocialIdentityVerifier;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -32,7 +35,6 @@ import org.springframework.stereotype.Component;
 public class AppleSocialIdentityVerifier implements SocialIdentityVerifier {
 
     static final String ISSUER = "https://appleid.apple.com";
-    static final String AUDIENCE = "kr.co.teeq.app";
     private static final Duration MINIMUM_REFRESH_INTERVAL = Duration.ofMinutes(5);
     private static final String EMAIL_CLAIM = "email";
     private static final String EMAIL_VERIFIED_CLAIM = "email_verified";
@@ -65,12 +67,12 @@ public class AppleSocialIdentityVerifier implements SocialIdentityVerifier {
                     }
                 })
                 .requireIssuer(ISSUER)
-                .requireAudience(AUDIENCE)
                 .clock(() -> Date.from(clock.instant()))
                 .build()
                 .parseSignedClaims(credential);
             if (!Jwts.SIG.RS256.getId().equals(signedClaims.getHeader().getAlgorithm())
-                || signedClaims.getPayload().getExpiration() == null) {
+                || signedClaims.getPayload().getExpiration() == null
+                || !hasAllowedAudience(signedClaims.getPayload())) {
                 throw new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID);
             }
             return toIdentity(signedClaims.getPayload());
@@ -79,11 +81,23 @@ public class AppleSocialIdentityVerifier implements SocialIdentityVerifier {
         }
     }
 
+    // 번들 ID와 Services ID 중 하나라도 audience에 포함되면 허용한다
+    private boolean hasAllowedAudience(Claims claims) {
+        Set<String> audience = claims.getAudience();
+        return audience != null && !Collections.disjoint(audience, AppleClientIds.AUDIENCES);
+    }
+
+    // email 클레임은 없을 수 있다(재로그인 등). 있을 때만 email_verified를 확인한다
     private SocialIdentity toIdentity(Claims claims) {
         String subject = claims.getSubject();
+        if (subject == null || subject.isBlank()) {
+            throw new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID);
+        }
         Object email = claims.get(EMAIL_CLAIM);
-        if (subject == null || subject.isBlank() || !(email instanceof String emailValue) || emailValue.isBlank()
-            || !isEmailVerified(claims.get(EMAIL_VERIFIED_CLAIM))) {
+        if (!(email instanceof String emailValue) || emailValue.isBlank()) {
+            return new SocialIdentity(LoginType.APPLE, subject, null);
+        }
+        if (!isEmailVerified(claims.get(EMAIL_VERIFIED_CLAIM))) {
             throw new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID);
         }
         return new SocialIdentity(LoginType.APPLE, subject, emailValue);
