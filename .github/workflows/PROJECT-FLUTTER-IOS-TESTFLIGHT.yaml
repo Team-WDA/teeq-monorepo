@@ -368,7 +368,7 @@ jobs:
             <key>stripSwiftSymbols</key><true/>
             <key>provisioningProfiles</key>
             <dict>
-              <key>kr.teeq.app</key>
+              <key>kr.co.teeq.app</key>
               <string>$IOS_PROVISIONING_PROFILE_NAME</string>
             </dict>
           </dict>

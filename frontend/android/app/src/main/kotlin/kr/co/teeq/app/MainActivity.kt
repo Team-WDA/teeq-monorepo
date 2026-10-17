@@ -1,4 +1,4 @@
-package kr.teeq.app
+package kr.co.teeq.app
 
 import io.flutter.embedding.android.FlutterActivity
 

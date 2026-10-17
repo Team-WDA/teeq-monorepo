@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 public class AppleSocialIdentityVerifier implements SocialIdentityVerifier {
 
     static final String ISSUER = "https://appleid.apple.com";
-    static final String AUDIENCE = "kr.teeq.app";
+    static final String AUDIENCE = "kr.co.teeq.app";
     private static final Duration MINIMUM_REFRESH_INTERVAL = Duration.ofMinutes(5);
     private static final String EMAIL_CLAIM = "email";
     private static final String EMAIL_VERIFIED_CLAIM = "email_verified";
