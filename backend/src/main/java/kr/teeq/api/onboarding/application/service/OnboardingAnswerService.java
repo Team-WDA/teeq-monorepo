@@ -60,6 +60,16 @@ public class OnboardingAnswerService {
         return new OnboardingAnswersResponse(groups);
     }
 
+    // 캐릭터가 있는 회원은 온보딩을 마친 상태여야 하므로 말투 답변이 없으면 불변식 위반이다
+    @Transactional(readOnly = true)
+    public OnboardingOption getSpeechStyle(UUID memberId) {
+        return onboardingAnswerRepository.findByMemberIdAndDeletedFalse(memberId).stream()
+            .filter(answer -> answer.getQuestion() == OnboardingQuestion.SPEECH_STYLE)
+            .map(OnboardingAnswer::getOption)
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("온보딩 말투 답변이 없습니다"));
+    }
+
     private List<OnboardingAnswer> validateAndToAnswers(UUID memberId, List<OnboardingAnswerGroupRequest> groups) {
         if (groups == null || groups.isEmpty()) {
             throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
