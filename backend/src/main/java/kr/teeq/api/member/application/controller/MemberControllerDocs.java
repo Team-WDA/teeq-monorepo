@@ -17,8 +17,9 @@ import kr.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.teeq.api.member.core.constant.MemberValidation;
 import kr.teeq.api.member.core.principal.AuthenticatedMember;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "회원", description = "내 정보 조회, 닉네임 변경, 닉네임 중복 확인")
+@Tag(name = "회원", description = "내 정보 조회, 닉네임 변경, 닉네임 중복 확인, 프로필 사진 교체·삭제")
 public interface MemberControllerDocs {
 
     @Operation(summary = "닉네임 사용 가능 여부 확인",
@@ -68,5 +69,46 @@ public interface MemberControllerDocs {
     ResponseEntity<MemberResponse> changeNickname(
         @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
         @Valid ChangeNicknameRequest request);
+
+    @Operation(summary = "프로필 사진 교체",
+        description = """
+            프로필 사진을 올린다. 이미 사진이 있으면 새 사진으로 교체한다.
+            요청은 `multipart/form-data`이고 파일 파트 이름은 `image`다. JPEG, PNG, WebP만 허용하며 최대 5MB다.
+            형식은 파일 내용으로 판별하므로 확장자와 content type이 달라도 내용이 허용 형식이면 통과한다.
+            응답의 `profileImageUrl`은 서버 기준 상대 경로이므로 앱이 API base URL을 붙여 요청한다.""")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "교체 성공. 갱신된 회원 정보 반환"),
+        @ApiResponse(responseCode = "400",
+            description = "`PROFILE_IMAGE_INVALID`: 빈 파일이거나 JPEG, PNG, WebP가 아님. `INVALID_REQUEST`: multipart 본문을 해석할 수 없거나 `image` 파트가 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "401",
+            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409",
+            description = "`STATE_CONFLICT`: 같은 회원의 사진 교체 요청이 동시에 들어와 충돌함(다시 시도)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "413",
+            description = "`PROFILE_IMAGE_TOO_LARGE`: 파일이 5MB를 넘음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "415",
+            description = "`UNSUPPORTED_MEDIA_TYPE`: 요청이 `multipart/form-data`가 아님",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500",
+            description = "`INTERNAL_SERVER_ERROR`: 사진 파일을 저장하지 못함",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<MemberResponse> replaceProfileImage(
+        @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
+        @Parameter(description = "프로필 사진 파일. JPEG, PNG, WebP, 최대 5MB") MultipartFile image);
+
+    @Operation(summary = "프로필 사진 삭제",
+        description = "프로필 사진을 삭제한다. 사진이 없어도 204로 응답한다(멱등).")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "삭제 성공(사진이 없던 경우 포함)"),
+        @ApiResponse(responseCode = "401",
+            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<Void> deleteProfileImage(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
 
 }
