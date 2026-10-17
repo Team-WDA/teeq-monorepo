@@ -34,7 +34,8 @@ public class Member extends BaseEntity {
     @Column
     private String socialUserId;
 
-    @Column(nullable = false)
+    // 소셜 계정은 가입 완료 전까지 null이다
+    @Column
     private String nickname;
 
     @Enumerated(EnumType.STRING)
@@ -60,17 +61,24 @@ public class Member extends BaseEntity {
         this.privacyPolicyAgreed = privacyPolicyAgreed;
     }
 
-    public static Member createSocialMember(LoginType loginType, String socialUserId, String email, String nickname,
-        boolean serviceTermsAgreed, boolean privacyPolicyAgreed) {
+    // 소셜 계정은 닉네임·약관 동의 없이 만들고, 가입 완료 때 채운다
+    public static Member createSocialMember(LoginType loginType, String socialUserId, String email) {
         Member member = new Member();
         member.email = email;
         member.loginType = loginType;
         member.socialUserId = socialUserId;
-        member.nickname = nickname;
         member.role = Role.USER;
-        member.serviceTermsAgreed = serviceTermsAgreed;
-        member.privacyPolicyAgreed = privacyPolicyAgreed;
         return member;
+    }
+
+    public void completeSignup(String nickname) {
+        this.nickname = nickname;
+        this.serviceTermsAgreed = true;
+        this.privacyPolicyAgreed = true;
+    }
+
+    public boolean isSignupCompleted() {
+        return nickname != null;
     }
 
     public void changeNickname(String nickname) {

@@ -26,25 +26,14 @@ public class SocialLoginCommandService {
     public SocialLoginResult loginOrSignUp(SocialIdentity identity, SocialLoginRequest request) {
         return memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(identity.loginType(), identity.subject())
             .map(member -> new SocialLoginResult(authTokenIssuer.issue(member), false))
-            .orElseGet(() -> new SocialLoginResult(authTokenIssuer.issue(signUp(identity, request)), true));
+            .orElseGet(() -> new SocialLoginResult(authTokenIssuer.issue(signUp(identity)), true));
     }
 
-    private Member signUp(SocialIdentity identity, SocialLoginRequest request) {
+    private Member signUp(SocialIdentity identity) {
         if (memberRepository.existsByEmailAndDeletedFalse(identity.email())) {
             throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
         }
-        if (request.nickname() == null || request.serviceTermsAgreed() == null
-            || request.privacyPolicyAgreed() == null) {
-            throw new CustomException(ErrorCode.SOCIAL_SIGNUP_REQUIRED);
-        }
-        if (!request.serviceTermsAgreed() || !request.privacyPolicyAgreed()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST);
-        }
-        if (memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(request.nickname()).isPresent()) {
-            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
-        }
-        Member member = Member.createSocialMember(identity.loginType(), identity.subject(), identity.email(),
-            request.nickname(), request.serviceTermsAgreed(), request.privacyPolicyAgreed());
+        Member member = Member.createSocialMember(identity.loginType(), identity.subject(), identity.email());
         return memberRepository.saveAndFlush(member);
     }
 

@@ -337,7 +337,7 @@ class AuthServiceTest {
     // ---------- login / changePassword with social account ----------
 
     private Member socialMember() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연", true, true);
+        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         return member;
     }
