@@ -5,7 +5,7 @@ import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_messages.dart';
 
 const String _backendErrorCodePath =
-    '../backend/src/main/java/kr/teeq/api/common/core/exception/ErrorCode.java';
+    '../backend/src/main/java/kr/co/teeq/api/common/core/exception/ErrorCode.java';
 
 void main() {
   test('모든 ErrorCode는 비어 있지 않은 사용자 문구를 가진다', () {

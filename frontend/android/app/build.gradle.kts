@@ -18,7 +18,7 @@ val releaseStoreFile = keystoreProperties.getProperty("storeFile")?.let { rootPr
 val hasReleaseKey = releaseStoreFile != null && releaseStoreFile.exists() && releaseStoreFile.length() > 0
 
 android {
-    namespace = "kr.teeq.app"
+    namespace = "kr.co.teeq.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "kr.teeq.app"
+        applicationId = "kr.co.teeq.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

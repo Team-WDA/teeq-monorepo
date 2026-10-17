@@ -3,14 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AppConfig.validate', () {
-    test('does not throw when every required key is set', () {
-      const config = AppConfig(apiBaseUrl: 'https://api.example.test');
+    test('validate_allPresent_doesNotThrow', () {
+      const config = AppConfig(
+        apiBaseUrl: 'https://api.example.test',
+        appleServiceId: 'kr.co.teeq.app.service',
+        appleRedirectUri: 'https://api.example.test/api/auth/apple/callback',
+      );
 
       expect(config.validate, returnsNormally);
     });
 
-    test('throws a StateError naming the missing keys', () {
-      const config = AppConfig(apiBaseUrl: '');
+    test('validate_missingAppleKeys_listsAllMissingKeys', () {
+      const config = AppConfig(
+        apiBaseUrl: '',
+        appleServiceId: '',
+        appleRedirectUri: '',
+      );
 
       expect(
         config.validate,
@@ -18,7 +26,11 @@ void main() {
           isA<StateError>().having(
             (error) => error.message,
             'message',
-            contains('API_BASE_URL'),
+            allOf(
+              contains('API_BASE_URL'),
+              contains('APPLE_SERVICE_ID'),
+              contains('APPLE_REDIRECT_URI'),
+            ),
           ),
         ),
       );

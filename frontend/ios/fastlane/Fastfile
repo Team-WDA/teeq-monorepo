@@ -15,7 +15,7 @@ platform :ios do
 
     deploy_mode = ENV["DEPLOY_MODE"] || "store_only"
     app_identifier = ENV["APP_IDENTIFIER"]
-    app_identifier = "kr.teeq.app" if app_identifier.nil? || app_identifier.empty?
+    app_identifier = "kr.co.teeq.app" if app_identifier.nil? || app_identifier.empty?
 
     upload_to_testflight(
       api_key: api_key,
