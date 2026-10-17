@@ -1,14 +1,41 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-17T05:45:16Z",
-    "currentVersion": "0.9.0",
+    "lastUpdated": "2026-10-17T07:14:46Z",
+    "currentVersion": "0.10.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 12
+    "totalReleases": 13
   },
   "releases": [
+    {
+      "version": "0.10.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-17",
+      "pr_number": null,
+      "raw_summary": "## [0.10.0]\n\n### ✨ 기능\n- 통화 사용량 일별·월별 조회 관리자 API 추가\n- 하루 추가 통화 시간 부여·조회·취소 관리자 API 추가\n- 서비스 월 한도와 하루 추가 시간을 통화 한도 계산에 반영\n\n### ✅ 테스트\n- 월 한도, 추가 시간, 사용량 조회 테스트 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "통화 사용량 일별·월별 조회 관리자 API 추가",
+            "하루 추가 통화 시간 부여·조회·취소 관리자 API 추가",
+            "서비스 월 한도와 하루 추가 시간을 통화 한도 계산에 반영"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "월 한도, 추가 시간, 사용량 조회 테스트 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.9.0",
       "project_types": [
