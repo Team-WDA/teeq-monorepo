@@ -1,4 +1,5 @@
 import 'package:teeq/core/config/app_config.dart';
+import 'package:teeq/core/network/api_error_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -8,11 +9,13 @@ part 'dio_client.g.dart';
 @Riverpod(keepAlive: true)
 Dio dio(Ref ref) {
   final config = ref.watch(appConfigProvider);
-  return Dio(
+  final dio = Dio(
     BaseOptions(
       baseUrl: config.apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
     ),
   );
+  dio.interceptors.add(ApiErrorInterceptor());
+  return dio;
 }
