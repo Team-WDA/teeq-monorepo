@@ -44,6 +44,24 @@ abstract final class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const TextStyle body16Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: lineHeight,
+    letterSpacing: 16 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: lineHeight,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
   static const TextStyle paragraph16 = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
