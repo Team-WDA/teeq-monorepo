@@ -1,5 +1,6 @@
 import 'package:teeq/core/auth/auth_session.dart';
 import 'package:teeq/core/auth/auth_status.dart';
+import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/features/auth/domain/apple_credential_provider.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
@@ -92,6 +93,37 @@ class AuthFlow {
       privacyPolicyAgreed: privacyPolicyAgreed,
     );
     await _session.restored(member);
+  }
+
+  /// 서버에서 최신 회원 정보를 받아 보관 중인 회원을 갱신한다(로그인 응답에 없는 이메일 등).
+  /// 응답을 기다리는 사이 로그아웃했거나 다른 회원이 로그인했다면 결과와 실패를 모두 버린다.
+  Future<void> refreshMember() async {
+    final requestedMemberId = _session.currentMember?.memberId;
+    final Member member;
+    try {
+      member = await _repository.fetchMe();
+    } on Object {
+      if (_isStillCurrent(requestedMemberId)) {
+        rethrow;
+      }
+      return;
+    }
+    if (_isStillCurrent(requestedMemberId)) {
+      _session.updateMember(member);
+    }
+  }
+
+  bool _isStillCurrent(String? requestedMemberId) =>
+      _readStatus() == AuthStatus.signedIn &&
+      _session.currentMember?.memberId == requestedMemberId;
+
+  /// 회원 탈퇴 후 로컬 세션을 지운다. 서버가 이미 토큰을 폐기했으므로 서버 로그아웃은 부르지 않는다.
+  /// 서버 호출이 실패하면 예외를 그대로 던지고 세션은 유지한다.
+  /// [beforeSigningOut]은 세션을 지우기 직전에 호출해 다른 상태를 함께 비울 수 있게 한다.
+  Future<void> deleteAccount({void Function()? beforeSigningOut}) async {
+    await _repository.deleteAccount();
+    beforeSigningOut?.call();
+    await _session.signOut();
   }
 
   /// 서버 로그아웃 실패는 무시하고 로컬 세션은 항상 지운다.

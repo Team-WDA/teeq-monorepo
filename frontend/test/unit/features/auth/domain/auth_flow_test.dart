@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -199,5 +201,147 @@ void main() {
     expect(harness.status, AuthStatus.signedOut);
     expect(harness.currentMember, isNull);
     expect(harness.tokenStorage.storedTokens, isNull);
+  });
+
+  test('deleteAccount_callsRepositoryThenSignsOut_withoutLogout', () async {
+    final harness = _Harness(
+      repository: FakeAuthRepository(),
+      storedTokens: _tokens,
+    );
+    harness.container
+        .read(authStatusControllerProvider.notifier)
+        .markSignedIn();
+
+    await harness.flow.deleteAccount();
+
+    expect(harness.repository.deleteAccountCount, 1);
+    expect(harness.repository.logoutCount, 0);
+    expect(harness.status, AuthStatus.signedOut);
+    expect(harness.tokenStorage.storedTokens, isNull);
+  });
+
+  test('deleteAccount_runsBeforeSigningOutBeforeSignOut', () async {
+    final harness = _Harness(storedTokens: _tokens);
+    harness.container
+        .read(authStatusControllerProvider.notifier)
+        .markSignedIn();
+    AuthStatus? statusInsideCallback;
+
+    await harness.flow.deleteAccount(
+      beforeSigningOut: () => statusInsideCallback = harness.status,
+    );
+
+    expect(statusInsideCallback, AuthStatus.signedIn);
+    expect(harness.status, AuthStatus.signedOut);
+  });
+
+  test('deleteAccount_failure_propagatesAndKeepsSession', () async {
+    final error = Exception('server down');
+    final harness = _Harness(
+      repository: FakeAuthRepository(deleteAccountError: error),
+      storedTokens: _tokens,
+    );
+    harness.container
+        .read(authStatusControllerProvider.notifier)
+        .markSignedIn();
+    var callbackCalled = false;
+
+    await expectLater(
+      harness.flow.deleteAccount(beforeSigningOut: () => callbackCalled = true),
+      throwsA(error),
+    );
+
+    expect(callbackCalled, isFalse);
+    expect(harness.status, AuthStatus.signedIn);
+    expect(harness.tokenStorage.storedTokens, _tokens);
+  });
+
+  test('refreshMember_replacesCurrentMemberWithFetchedMember', () async {
+    const fetched = Member(
+      memberId: 'member-1',
+      nickname: '티큐',
+      hasAiCharacter: false,
+      loginType: LoginType.apple,
+      email: 'user@example.com',
+    );
+    final harness = _Harness(repository: FakeAuthRepository(member: fetched));
+    await harness.container.read(authSessionProvider).restored(_member);
+
+    await harness.flow.refreshMember();
+
+    expect(harness.currentMember?.email, 'user@example.com');
+  });
+
+  group('refreshMember_stale', () {
+    const fetched = Member(
+      memberId: 'member-1',
+      nickname: '티큐',
+      hasAiCharacter: false,
+      loginType: LoginType.apple,
+      email: 'user@example.com',
+    );
+
+    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
+      final harness = _Harness(repository: repository);
+      await harness.container.read(authSessionProvider).restored(_member);
+      return harness;
+    }
+
+    test('logoutWhileFetching_doesNotRestoreMember', () async {
+      final repository = FakeAuthRepository(member: fetched)
+        ..fetchMeGate = Completer<void>();
+      final harness = await signedInHarness(repository);
+
+      final refreshing = harness.flow.refreshMember();
+      await harness.flow.logout();
+      repository.fetchMeGate!.complete();
+      await refreshing;
+
+      expect(harness.status, AuthStatus.signedOut);
+      expect(harness.currentMember, isNull);
+    });
+
+    test('differentMemberSignedInWhileFetching_ignoresResult', () async {
+      final repository = FakeAuthRepository(member: fetched)
+        ..fetchMeGate = Completer<void>();
+      final harness = await signedInHarness(repository);
+      const otherMember = Member(
+        memberId: 'member-2',
+        nickname: '다른사람',
+        hasAiCharacter: false,
+        loginType: LoginType.email,
+      );
+
+      final refreshing = harness.flow.refreshMember();
+      await harness.flow.logout();
+      await harness.container.read(authSessionProvider).restored(otherMember);
+      repository.fetchMeGate!.complete();
+      await refreshing;
+
+      expect(harness.currentMember, otherMember);
+    });
+
+    test('failureAfterLogout_isSwallowed', () async {
+      final repository = FakeAuthRepository(
+        member: fetched,
+        fetchMeError: Exception('late failure'),
+      )..fetchMeGate = Completer<void>();
+      final harness = await signedInHarness(repository);
+
+      final refreshing = harness.flow.refreshMember();
+      await harness.flow.logout();
+      repository.fetchMeGate!.complete();
+
+      await expectLater(refreshing, completes);
+    });
+
+    test('failureWhileStillCurrent_propagates', () async {
+      final error = Exception('failure');
+      final harness = await signedInHarness(
+        FakeAuthRepository(member: fetched, fetchMeError: error),
+      );
+
+      await expectLater(harness.flow.refreshMember(), throwsA(error));
+    });
   });
 }

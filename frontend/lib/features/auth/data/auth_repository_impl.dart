@@ -63,6 +63,11 @@ final class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    await _dio.delete<void>('/api/members/me');
+  }
+
+  @override
   Future<Member> fetchMe() async {
     final response = await _dio.get<Map<String, dynamic>>('/api/members/me');
     return MemberResponseDto.fromJson(response.data!).toMember();
