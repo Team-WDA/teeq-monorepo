@@ -24,6 +24,7 @@ class PrimaryFilledButton extends StatelessWidget {
       enabled: isEnabled,
       excludeSemantics: true,
       label: label,
+      onTap: onPressed,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,

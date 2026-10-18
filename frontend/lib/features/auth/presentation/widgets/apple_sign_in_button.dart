@@ -20,6 +20,7 @@ class AppleSignInButton extends StatelessWidget {
       enabled: onPressed != null,
       excludeSemantics: true,
       label: 'Apple로 시작하기',
+      onTap: onPressed,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,

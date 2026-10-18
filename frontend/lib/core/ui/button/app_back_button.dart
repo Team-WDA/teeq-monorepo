@@ -14,6 +14,7 @@ class AppBackButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: '뒤로 가기',
+      onTap: onPressed,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
