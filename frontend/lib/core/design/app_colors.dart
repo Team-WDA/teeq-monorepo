@@ -13,4 +13,5 @@ abstract final class AppColors {
   static const Color accentStrong = Color(0xFF95CA00);
   static const Color accentSoft = Color(0xFFE7FFA3);
   static const Color accentSurface = Color(0xFFFAFFED);
+  static const Color scrim = Color(0x80000000);
 }
