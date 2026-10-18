@@ -6,10 +6,14 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/auth_redirect.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
-import 'package:teeq/features/auth/presentation/login_screen.dart';
+import 'package:teeq/features/auth/presentation/email_login_screen.dart';
+import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
+import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
+import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
 
 part 'app_router.g.dart';
@@ -39,8 +43,24 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
+        path: AppRoutes.welcome,
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.login,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => const EmailLoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signup,
+        builder: (context, state) => const EmailSignupCredentialsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signupNickname,
+        builder: (context, state) => const SignupNicknameScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (context, state) => const OnboardingIntroductionScreen(),
       ),
       GoRoute(
         path: AppRoutes.signupCompletion,
