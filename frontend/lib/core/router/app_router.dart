@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
@@ -6,6 +6,7 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/auth_redirect.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
+import 'package:teeq/core/ui/layout/main_tab_shell_screen.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
@@ -13,6 +14,7 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
@@ -106,9 +108,27 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.signupCompletion,
         builder: (context, state) => const SignupCompletionScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            MainTabShellScreen(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.myPage,
+                builder: (context, state) => const MyPageScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.error,
