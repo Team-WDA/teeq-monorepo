@@ -17,7 +17,7 @@
 
 ## Important directories
 
-- `backend/`: Spring Boot 앱, 소스 루트 `backend/src/main/java/kr/teeq/api`
+- `backend/`: Spring Boot 앱, 소스 루트 `backend/src/main/java/kr/co/teeq/api`
 - `frontend/`: Flutter 앱(`lib/core`, `lib/features`), 환경값 `frontend/config/`(gitignore)
 - `scripts/sql/`: Flyway 파일명 검증 스크립트
 - `.report/`: 작업 보고서(gitignore)

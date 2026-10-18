@@ -1,5 +1,0 @@
-package kr.teeq.app
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()

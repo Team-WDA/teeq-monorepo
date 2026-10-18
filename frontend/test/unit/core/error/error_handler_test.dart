@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
@@ -15,6 +16,7 @@ import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_token_storage.dart';
 
 const _developerMessage = 'SQL: select * from member -- 내부 정보';
 
@@ -27,10 +29,14 @@ ApiException _api(ErrorCode code, {int status = 400}) => ApiException(
 Future<ProviderContainer> _pumpApp(
   WidgetTester tester, {
   AuthStatus status = AuthStatus.signedIn,
+  FakeTokenStorage? tokenStorage,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        tokenStorageProvider.overrideWithValue(
+          tokenStorage ?? FakeTokenStorage(),
+        ),
         authStatusControllerProvider.overrideWith(
           () => FakeAuthStatusController(status),
         ),
@@ -114,8 +120,9 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
-  testWidgets('authentication 경로는 signedOut으로 만든다', (tester) async {
-    final container = await _pumpApp(tester);
+  testWidgets('authentication 경로는 저장소를 비우고 signedOut으로 만든다', (tester) async {
+    final storage = FakeTokenStorage();
+    final container = await _pumpApp(tester, tokenStorage: storage);
 
     container
         .read(errorHandlerProvider)
@@ -123,6 +130,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(authStatusControllerProvider), AuthStatus.signedOut);
+    expect(storage.clearCount, 1);
   });
 
   testWidgets('cancel DioException은 무시한다', (tester) async {

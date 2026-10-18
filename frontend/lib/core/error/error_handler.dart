@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/auth/auth_session.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_presentation.dart';
 import 'package:teeq/core/router/app_router.dart';
@@ -51,8 +52,7 @@ class ErrorHandler {
       case ErrorPresentation.errorPage:
         _showErrorPage(exception.userMessage);
       case ErrorPresentation.authentication:
-        // 토큰 갱신과 재시도는 인증 이슈에서 채운다. 지금은 로그아웃 처리만 한다.
-        _ref.read(authStatusControllerProvider.notifier).markSignedOut();
+        unawaited(_ref.read(authSessionProvider).signOut());
     }
   }
 

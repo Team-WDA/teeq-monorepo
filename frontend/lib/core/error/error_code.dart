@@ -22,7 +22,7 @@ enum ErrorCode {
   memberNotFound('MEMBER_NOT_FOUND'),
   socialTokenInvalid('SOCIAL_TOKEN_INVALID'),
   socialServerUnavailable('SOCIAL_SERVER_UNAVAILABLE'),
-  socialSignupRequired('SOCIAL_SIGNUP_REQUIRED'),
+  signupNotCompleted('SIGNUP_NOT_COMPLETED'),
   loginMethodMismatch('LOGIN_METHOD_MISMATCH'),
 
   // 통화
