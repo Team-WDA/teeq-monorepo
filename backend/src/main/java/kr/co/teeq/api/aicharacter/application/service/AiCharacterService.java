@@ -4,8 +4,10 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import kr.co.teeq.api.aicharacter.application.dto.request.SubmitAiCharacterRequest;
+import kr.co.teeq.api.aicharacter.application.dto.request.GenerateAiCharacterRequest;
+import kr.co.teeq.api.aicharacter.application.dto.request.RenameAiCharacterRequest;
 import kr.co.teeq.api.aicharacter.application.dto.response.AiCharacterResponse;
+import kr.co.teeq.api.aicharacter.core.entity.AiCharacter;
 import kr.co.teeq.api.aicharacter.core.port.AiCharacterGenerationPort;
 import kr.co.teeq.api.aicharacter.core.port.GeneratedAiCharacter;
 import kr.co.teeq.api.aicharacter.core.repository.AiCharacterRepository;
@@ -20,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * AI 캐릭터 제출과 조회. 제출은 답변 검증 -> AI 서버 호출 -> 저장 순서이며, AI 서버 호출 중에는 DB 트랜잭션을 열지 않는다.
+ * AI 캐릭터 생성, 이름 확정, 조회. 생성은 답변 검증 -> AI 서버 호출 -> 저장 순서이며, AI 서버 호출 중에는 DB 트랜잭션을 열지 않는다.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,16 +33,21 @@ public class AiCharacterService {
     private final AiCharacterCommandService aiCharacterCommandService;
     private final AiCharacterRepository aiCharacterRepository;
 
-    public AiCharacterSubmitResult submit(UUID memberId, SubmitAiCharacterRequest request) {
-        onboardingAnswerService.validateAnswers(memberId, request.answers());
+    public AiCharacterGenerationResult generate(UUID memberId, GenerateAiCharacterRequest request) {
+        onboardingAnswerService.validateAnswers(memberId, request.onboardingAnswers());
         GeneratedAiCharacter generated = aiCharacterGenerationPort.generate(
-            memberId, request.name(), toAnswersByQuestion(request.answers()));
-        return aiCharacterCommandService.save(memberId, request.name(), generated, request.answers());
+            memberId, toAnswersByQuestion(request.onboardingAnswers()));
+        return aiCharacterCommandService.save(memberId, generated, request.onboardingAnswers());
+    }
+
+    public AiCharacterResponse rename(UUID memberId, RenameAiCharacterRequest request) {
+        return aiCharacterCommandService.rename(memberId, request.name());
     }
 
     @Transactional(readOnly = true)
     public AiCharacterResponse get(UUID memberId) {
         return aiCharacterRepository.findByMemberId(memberId)
+            .filter(AiCharacter::isNamed)
             .map(AiCharacterResponse::from)
             .orElseThrow(() -> new CustomException(ErrorCode.AI_CHARACTER_NOT_FOUND));
     }
