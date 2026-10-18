@@ -52,13 +52,13 @@ class AiServerCharacterGenerationAdapterTest {
             .andExpect(method(HttpMethod.POST))
             .andExpect(header(HEADER_NAME, HEADER_VALUE))
             .andExpect(jsonPath("$.user_id").value(memberId.toString()))
-            .andExpect(jsonPath("$.character_name").value("티큐"))
+            .andExpect(jsonPath("$.character_name").doesNotExist())
             .andExpect(jsonPath("$.answers[0].question_code").value("RELATIONSHIP"))
             .andExpect(jsonPath("$.answers[0].option_codes[0]").value("RELATIONSHIP_CLOSE_FRIEND"))
             .andRespond(withSuccess("{\"character_number\":7,\"personality_tags\":[\"a\",\"b\",\"c\"]}",
                 MediaType.APPLICATION_JSON));
 
-        GeneratedAiCharacter generated = adapter.generate(memberId, "티큐", answers());
+        GeneratedAiCharacter generated = adapter.generate(memberId, answers());
 
         assertThat(generated).isEqualTo(new GeneratedAiCharacter(7, List.of("a", "b", "c")));
         server.verify();
@@ -92,14 +92,14 @@ class AiServerCharacterGenerationAdapterTest {
             .andRespond(withSuccess(
                 "{\"character_number\":7,\"personality_tags\":[\"a\",\"b\",\"" + "c".repeat(50) + "\"]}",
                 MediaType.APPLICATION_JSON));
-        assertThat(adapter.generate(UUID.randomUUID(), "티큐", answers()).personalityTags()).hasSize(3);
+        assertThat(adapter.generate(UUID.randomUUID(), answers()).personalityTags()).hasSize(3);
     }
 
     private void assertInvalidResponse(String responseBody) {
         server.expect(requestTo(BASE_URL + "/characters"))
             .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
 
-        assertThatThrownBy(() -> adapter.generate(UUID.randomUUID(), "티큐", answers()))
+        assertThatThrownBy(() -> adapter.generate(UUID.randomUUID(), answers()))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_SERVER_UNAVAILABLE));
     }
@@ -108,7 +108,7 @@ class AiServerCharacterGenerationAdapterTest {
     void 서버_오류_응답이면_AI_서버_오류로_바꾼다() {
         server.expect(requestTo(BASE_URL + "/characters")).andRespond(withServerError());
 
-        assertThatThrownBy(() -> adapter.generate(UUID.randomUUID(), "티큐", answers()))
+        assertThatThrownBy(() -> adapter.generate(UUID.randomUUID(), answers()))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_SERVER_UNAVAILABLE));
     }
