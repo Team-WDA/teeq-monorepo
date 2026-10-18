@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/korean_particle.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
@@ -59,6 +60,8 @@ class CharacterResultScreen extends ConsumerWidget {
     final flowController = ref.read(
       characterSetupFlowControllerProvider.notifier,
     );
+    // 수정한 캐릭터가 홈에 바로 보이도록 홈 요약을 다시 불러오게 한다.
+    ref.invalidate(homeSummaryProvider);
     context.go(AppRoutes.home);
     flowController.reset();
   }

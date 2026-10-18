@@ -13,9 +13,12 @@ import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
+import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_home_repository.dart';
 import '../../../support/fake_token_storage.dart';
 
 const _developerMessage = 'SQL: select * from member -- 내부 정보';
@@ -39,6 +42,15 @@ Future<ProviderContainer> _pumpApp(
         ),
         authStatusControllerProvider.overrideWith(
           () => FakeAuthStatusController(status),
+        ),
+        homeRepositoryProvider.overrideWithValue(
+          FakeHomeRepository(
+            summary: const HomeSummary(
+              characterName: '티티',
+              personalityTags: ['다정함', '차분함', '유쾌함'],
+              greeting: '안녕',
+            ),
+          ),
         ),
       ],
       child: const App(),
