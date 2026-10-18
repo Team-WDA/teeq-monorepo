@@ -7,6 +7,8 @@ abstract final class AppTextStyles {
   static const String fontFamily = 'Pretendard';
   static const double lineHeight = 1.4;
   static const double letterSpacingRatio = -0.012;
+  // 여러 줄 설명 본문용 행간. 14px 글자에 22px 줄 높이다.
+  static const double relaxedLineHeight = 22 / 14;
 
   static const TextStyle display = TextStyle(
     fontFamily: fontFamily,
@@ -62,6 +64,15 @@ abstract final class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const TextStyle body14MediumRelaxed = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: relaxedLineHeight,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
   static const TextStyle paragraph16 = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
@@ -77,6 +88,42 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w600,
     height: lineHeight,
     letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle title = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: lineHeight,
+    letterSpacing: 24 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption12Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: lineHeight,
+    letterSpacing: 12 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption10Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    height: lineHeight,
+    letterSpacing: 10 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption10 = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    height: lineHeight,
+    letterSpacing: 10 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 

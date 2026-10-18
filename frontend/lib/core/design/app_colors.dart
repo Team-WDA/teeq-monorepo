@@ -7,11 +7,15 @@ abstract final class AppColors {
   static const Color textSecondary = Color(0xFF6C6C6C);
   static const Color textOnDark = Color(0xFFFFFFFF);
   static const Color textMuted = Color(0xFFABABAB);
-  static const Color disabled = Color(0xFFD1D1D1);
+  static const Color neutralSurface = Color(0xFFD1D1D1);
   static const Color borderSubtle = Color(0xFFECEAE0);
   static const Color accent = Color(0xFFBBFF00);
   static const Color accentStrong = Color(0xFF95CA00);
   static const Color accentSoft = Color(0xFFE7FFA3);
   static const Color accentSurface = Color(0xFFFAFFED);
   static const Color scrim = Color(0x80000000);
+  static const Color scrimSoft = Color(0x5C000000);
+  static const Color tabBarBackground = Color(0xFFF7F7F7);
+  static const Color destructiveSurface = Color(0xFFFFF6F5);
+  static const Color destructiveText = Color(0xFFFF3B30);
 }

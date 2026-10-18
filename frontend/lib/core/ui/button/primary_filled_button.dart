@@ -36,7 +36,7 @@ class PrimaryFilledButton extends StatelessWidget {
           ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isEnabled ? AppColors.accent : AppColors.disabled,
+            color: isEnabled ? AppColors.accent : AppColors.neutralSurface,
             borderRadius: AppRadius.borderRadiusMd,
           ),
           child: AnimatedDefaultTextStyle(
