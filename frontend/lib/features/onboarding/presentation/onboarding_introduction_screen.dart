@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
@@ -8,14 +9,16 @@ import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
+import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
+import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/onboarding_introduction_step_card.dart';
 
 /// 가입을 마친 회원에게 온보딩이 시작됨을 알리는 화면.
-class OnboardingIntroductionScreen extends StatelessWidget {
+class OnboardingIntroductionScreen extends ConsumerWidget {
   const OnboardingIntroductionScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BottomActionScreenLayout(
       content: Stack(
         clipBehavior: Clip.none,
@@ -50,8 +53,12 @@ class OnboardingIntroductionScreen extends StatelessWidget {
       ),
       bottomAction: PrimaryFilledButton(
         label: '나만의 티크 만들기',
-        // 온보딩 질문 화면 구현 이슈에서 해당 화면 이동으로 교체한다.
-        onPressed: () => context.go(AppRoutes.home),
+        onPressed: () {
+          ref
+              .read(characterSetupFlowControllerProvider.notifier)
+              .start(CharacterSetupMode.firstTime);
+          context.go(AppRoutes.onboardingQuestions);
+        },
       ),
     );
   }
