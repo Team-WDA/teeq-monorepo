@@ -9,6 +9,7 @@ import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -97,13 +98,30 @@ void main() {
       const Member(
         memberId: 'member-1',
         nickname: '티큐',
-        hasAiCharacter: false,
+        hasAiCharacter: true,
         loginType: LoginType.apple,
       ),
     );
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(SignupCompletionScreen), findsNothing);
+  });
+
+  testWidgets('signedIn + 가입 완료 + 캐릭터 없는 회원이면 온보딩 시작 화면을 보여 준다', (
+    tester,
+  ) async {
+    await _pumpSignedInApp(
+      tester,
+      const Member(
+        memberId: 'member-1',
+        nickname: '티큐',
+        hasAiCharacter: false,
+        loginType: LoginType.apple,
+      ),
+    );
+
+    expect(find.byType(OnboardingIntroductionScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
   });
 
   testWidgets('빈 저장소로 unknown에서 시작하면 스플래시 복원 뒤 시작 화면을 보여 준다', (tester) async {
