@@ -14,7 +14,7 @@ public class AiCharacterExistenceAdapter implements AiCharacterExistencePort {
 
     @Override
     public boolean existsByMemberId(UUID memberId) {
-        return aiCharacterRepository.existsByMemberId(memberId);
+        return aiCharacterRepository.existsByMemberIdAndNameIsNotNull(memberId);
     }
 
 }

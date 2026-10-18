@@ -37,15 +37,14 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
 
     // 재시도하지 않는다. 실패 원인은 cause로만 남기고 앱에는 노출하지 않는다
     @Override
-    public GeneratedAiCharacter generate(UUID memberId, String characterName,
-        Map<OnboardingQuestion, List<OnboardingOption>> answers) {
+    public GeneratedAiCharacter generate(UUID memberId, Map<OnboardingQuestion, List<OnboardingOption>> answers) {
         Map<String, Object> responseBody;
         try {
             responseBody = restClient.post()
                 .uri("/characters")
                 .header(properties.authHeaderName(), properties.authHeaderValue())
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(toRequestBody(memberId, characterName, answers))
+                .body(toRequestBody(memberId, answers))
                 .retrieve()
                 .body(new ParameterizedTypeReference<Map<String, Object>>() {
                 });
@@ -55,7 +54,7 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
         return toGeneratedAiCharacter(responseBody);
     }
 
-    private Map<String, Object> toRequestBody(UUID memberId, String characterName,
+    private Map<String, Object> toRequestBody(UUID memberId,
         Map<OnboardingQuestion, List<OnboardingOption>> answers) {
         List<Map<String, Object>> answerBodies = new ArrayList<>();
         answers.forEach((question, options) -> answerBodies.add(Map.of(
@@ -63,7 +62,6 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
             "option_codes", options.stream().map(OnboardingOption::name).toList())));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("user_id", memberId.toString());
-        body.put("character_name", characterName);
         body.put("answers", answerBodies);
         return body;
     }

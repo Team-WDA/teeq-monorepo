@@ -13,7 +13,12 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
+import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
+import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
+import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
 
 part 'app_router.g.dart';
@@ -28,6 +33,12 @@ GoRouter appRouter(Ref ref) {
   ref.listen(currentMemberControllerProvider, (previous, next) {
     refreshNotifier.value++;
   });
+
+  // 흐름 상태 없이 이름·결과 화면에 들어오면 캐릭터 보유 여부에 따라 시작 화면이나 홈으로 보낸다.
+  String redirectWithoutGeneratedCharacter() =>
+      ref.read(currentMemberControllerProvider)?.hasAiCharacter == true
+      ? AppRoutes.home
+      : AppRoutes.onboarding;
 
   final router = GoRouter(
     initialLocation: AppRoutes.home,
@@ -61,6 +72,35 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.onboarding,
         builder: (context, state) => const OnboardingIntroductionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboardingQuestions,
+        builder: (context, state) => const OnboardingQuestionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboardingGenerating,
+        redirect: (context, state) =>
+            ref.read(characterSetupFlowControllerProvider).selections.isComplete
+            ? null
+            : AppRoutes.onboardingQuestions,
+        builder: (context, state) => const CharacterGeneratingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.characterName,
+        redirect: (context, state) =>
+            ref.read(characterSetupFlowControllerProvider).character == null
+            ? redirectWithoutGeneratedCharacter()
+            : null,
+        builder: (context, state) => const CharacterNameScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.characterResult,
+        redirect: (context, state) =>
+            ref.read(characterSetupFlowControllerProvider).character?.name ==
+                null
+            ? redirectWithoutGeneratedCharacter()
+            : null,
+        builder: (context, state) => const CharacterResultScreen(),
       ),
       GoRoute(
         path: AppRoutes.signupCompletion,

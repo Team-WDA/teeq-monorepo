@@ -22,22 +22,22 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AiCharacterCommandService {
 
-    // 마이그레이션의 unique 제약 이름과 같아야 한다. 동시 제출로 제약이 먼저 걸린 경우에만 409로 바꾼다
+    // 마이그레이션의 unique 제약 이름과 같아야 한다. 동시 생성으로 제약이 먼저 걸린 경우에만 409로 바꾼다
     private static final String MEMBER_UNIQUE_CONSTRAINT_NAME = "uq_ai_character_member";
 
     private final AiCharacterRepository aiCharacterRepository;
     private final OnboardingAnswerService onboardingAnswerService;
 
     @Transactional
-    public AiCharacterSubmitResult save(UUID memberId, String name, GeneratedAiCharacter generated,
+    public AiCharacterGenerationResult save(UUID memberId, GeneratedAiCharacter generated,
         List<OnboardingAnswerGroupRequest> groups) {
         AiCharacter existing = aiCharacterRepository.findByMemberId(memberId).orElse(null);
         boolean created = existing == null;
         AiCharacter aiCharacter = created
-            ? AiCharacter.of(memberId, name, generated.characterNumber(), generated.personalityTags())
+            ? AiCharacter.of(memberId, generated.characterNumber(), generated.personalityTags())
             : existing;
         if (!created) {
-            aiCharacter.reset(name, generated.characterNumber(), generated.personalityTags());
+            aiCharacter.regenerate(generated.characterNumber(), generated.personalityTags());
         }
         try {
             aiCharacterRepository.saveAndFlush(aiCharacter);
@@ -51,7 +51,15 @@ public class AiCharacterCommandService {
         // 캐릭터 변경은 위 saveAndFlush로 이미 반영됐다. 답변 교체가 영속성 컨텍스트를 비우기 전에 응답을 만들어 둔다
         AiCharacterResponse response = AiCharacterResponse.from(aiCharacter);
         onboardingAnswerService.replaceAnswers(memberId, groups);
-        return new AiCharacterSubmitResult(response, created);
+        return new AiCharacterGenerationResult(response, created);
+    }
+
+    @Transactional
+    public AiCharacterResponse rename(UUID memberId, String name) {
+        AiCharacter aiCharacter = aiCharacterRepository.findByMemberId(memberId)
+            .orElseThrow(() -> new CustomException(ErrorCode.AI_CHARACTER_NOT_FOUND));
+        aiCharacter.rename(name);
+        return AiCharacterResponse.from(aiCharacter);
     }
 
 }
