@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:teeq/core/design/app_border_widths.dart';
 import 'package:teeq/core/design/app_colors.dart';
 import 'package:teeq/core/design/app_layout.dart';
@@ -14,12 +15,18 @@ class OutlinedBoxTextField extends StatelessWidget {
     required this.controller,
     this.onChanged,
     this.textInputAction,
+    this.inputFormatters,
+    this.enabled = true,
   });
 
   final String hintText;
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// false이면 입력과 포커스를 받지 않는다.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +49,8 @@ class OutlinedBoxTextField extends StatelessWidget {
             controller: controller,
             onChanged: onChanged,
             textInputAction: textInputAction,
+            inputFormatters: inputFormatters,
+            enabled: enabled,
             style: AppTextStyles.paragraph16,
             cursorColor: AppColors.textPrimary,
             decoration: InputDecoration(
