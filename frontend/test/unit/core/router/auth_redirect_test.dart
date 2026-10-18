@@ -40,26 +40,36 @@ void main() {
       expect(authRedirect(AuthStatus.unknown, null, AppRoutes.splash), isNull);
     });
 
-    test('signedOut은 login으로, 이미 login이면 null', () {
-      expect(
-        authRedirect(AuthStatus.signedOut, null, AppRoutes.home),
+    test('signedOut은 welcome으로 보내고 허용 위치에서는 null', () {
+      for (final location in [
+        AppRoutes.home,
+        AppRoutes.splash,
+        AppRoutes.signupCompletion,
+        AppRoutes.onboarding,
+      ]) {
+        expect(
+          authRedirect(AuthStatus.signedOut, null, location),
+          AppRoutes.welcome,
+        );
+      }
+      for (final location in [
+        AppRoutes.welcome,
         AppRoutes.login,
-      );
-      expect(
-        authRedirect(AuthStatus.signedOut, null, AppRoutes.splash),
-        AppRoutes.login,
-      );
-      expect(
-        authRedirect(AuthStatus.signedOut, null, AppRoutes.signupCompletion),
-        AppRoutes.login,
-      );
-      expect(authRedirect(AuthStatus.signedOut, null, AppRoutes.login), isNull);
+        AppRoutes.signup,
+        AppRoutes.signupNickname,
+      ]) {
+        expect(authRedirect(AuthStatus.signedOut, null, location), isNull);
+      }
     });
 
     test('signedIn + 미완료 회원은 signupCompletion으로, 이미 거기면 null', () {
       for (final location in [
         AppRoutes.splash,
+        AppRoutes.welcome,
         AppRoutes.login,
+        AppRoutes.signup,
+        AppRoutes.signupNickname,
+        AppRoutes.onboarding,
         AppRoutes.home,
       ]) {
         expect(
@@ -80,7 +90,9 @@ void main() {
     test('signedIn + 완료 회원은 진입 위치에서 home으로, 그 외 null', () {
       for (final location in [
         AppRoutes.splash,
+        AppRoutes.welcome,
         AppRoutes.login,
+        AppRoutes.signup,
         AppRoutes.signupCompletion,
       ]) {
         expect(
@@ -88,16 +100,24 @@ void main() {
           AppRoutes.home,
         );
       }
-      expect(
-        authRedirect(AuthStatus.signedIn, _completedMember, AppRoutes.home),
-        isNull,
-      );
+      for (final location in [
+        AppRoutes.signupNickname,
+        AppRoutes.onboarding,
+        AppRoutes.home,
+      ]) {
+        expect(
+          authRedirect(AuthStatus.signedIn, _completedMember, location),
+          isNull,
+        );
+      }
     });
 
     test('signedIn + 회원 null은 완료와 같게 다룬다', () {
       for (final location in [
         AppRoutes.splash,
+        AppRoutes.welcome,
         AppRoutes.login,
+        AppRoutes.signup,
         AppRoutes.signupCompletion,
       ]) {
         expect(

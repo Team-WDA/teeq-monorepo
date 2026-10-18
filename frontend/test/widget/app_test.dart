@@ -6,7 +6,7 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
-import 'package:teeq/features/auth/presentation/login_screen.dart';
+import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +43,7 @@ Future<void> _pumpSignedInApp(WidgetTester tester, Member member) async {
 }
 
 void main() {
-  testWidgets('signedOut 상태에서는 로그인 화면을 보여 준다', (tester) async {
+  testWidgets('signedOut 상태에서는 시작 화면을 보여 준다', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -56,7 +56,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(WelcomeScreen), findsOneWidget);
     expect(find.byType(HomeScreen), findsNothing);
   });
 
@@ -106,7 +106,7 @@ void main() {
     expect(find.byType(SignupCompletionScreen), findsNothing);
   });
 
-  testWidgets('빈 저장소로 unknown에서 시작하면 스플래시 복원 뒤 로그인 화면을 보여 준다', (tester) async {
+  testWidgets('빈 저장소로 unknown에서 시작하면 스플래시 복원 뒤 시작 화면을 보여 준다', (tester) async {
     final tokenStorage = FakeTokenStorage();
     await tester.pumpWidget(
       ProviderScope(
@@ -120,6 +120,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tokenStorage.readCount, 1);
-    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(WelcomeScreen), findsOneWidget);
   });
 }

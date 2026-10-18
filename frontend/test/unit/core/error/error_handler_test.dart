@@ -103,7 +103,7 @@ void main() {
                 .currentConfiguration
                 .extra
             as ErrorPageArguments;
-    expect(extra.retryLocation, '/login');
+    expect(extra.retryLocation, '/welcome');
     expect(extra.message, networkErrorMessage);
   });
 
