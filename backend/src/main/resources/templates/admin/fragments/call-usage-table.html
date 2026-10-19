@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 기간별 사용량 표와 합계 행. 컨텍스트 변수 usages, totalUsedSeconds, totalCallCount -->
+<section class="panel" th:fragment="call-usage-table">
+  <div class="table-wrap">
+    <table class="table call-usage-table">
+      <thead>
+        <tr>
+          <th>기간 시작일</th>
+          <th class="numeric-cell">사용 시간(초)</th>
+          <th class="numeric-cell">통화 횟수</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="usage : ${usages}">
+          <td th:text="${usage.periodStart}">2026-10-01</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(usage.usedSeconds, 1, 'COMMA')}">0</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(usage.callCount, 1, 'COMMA')}">0</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(usages)}">
+          <td class="muted" colspan="3">조회된 기간이 없습니다.</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="call-usage-total-row">
+          <th>합계</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(totalUsedSeconds, 1, 'COMMA')}">0</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(totalCallCount, 1, 'COMMA')}">0</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+</body>
+</html>

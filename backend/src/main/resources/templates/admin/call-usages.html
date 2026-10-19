@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('통화 사용량', ~{::main}, 'call-usages')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>통화 사용량</h1>
+      <p>기간별 통화 사용 시간과 횟수입니다. 날짜는 한국 시간 기준이며, 회원을 비우면 전체 회원을 합산합니다.</p>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/call-usage-filter-form :: call-usage-filter-form}"></section>
+
+  <p th:if="${memberId != null}" class="call-usage-member-link">
+    <a class="link link-primary" th:href="@{/admin/call-bonuses(memberId=${memberId})}">이 회원의 보너스 보기</a>
+  </p>
+
+  <section th:replace="~{admin/fragments/call-usage-table :: call-usage-table}"></section>
+</main>
+</body>
+</html>
