@@ -1,0 +1,72 @@
+<!doctype html>
+<!--
+  관리자 화면 공통 셸. 화면은 <html th:replace="~{admin/fragments/shell :: shell('제목', ~{::main}, '메뉴키')}">로 조립한다.
+  title: 브라우저 탭과 상단 바에 보이는 화면 이름
+  content: 화면 본문(<main class="content">)
+  active: 강조할 메뉴 키(home, settings, call-usages, call-bonuses, onboarding-submissions). 해당 없음이면 ''
+-->
+<html lang="ko" data-theme="light" xmlns:th="http://www.thymeleaf.org" th:fragment="shell(title, content, active)">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="_csrf" th:content="${_csrf?.token}">
+  <meta name="_csrf_header" th:content="${_csrf?.headerName}">
+  <title th:text="|${title} - teeq 관리자|">teeq 관리자</title>
+  <link rel="stylesheet" th:href="@{/admin/assets/daisyui.min.css}">
+  <link rel="stylesheet" th:href="@{/admin/assets/themes.css}">
+  <link rel="stylesheet" th:href="@{/admin/assets/admin.css}">
+  <script th:src="@{/admin/assets/htmx.min.js}"></script>
+  <script>
+    // htmx 요청에 meta 태그의 CSRF 토큰을 헤더로 싣는다
+    document.addEventListener('htmx:configRequest', function (event) {
+      var token = document.querySelector('meta[name="_csrf"]');
+      var header = document.querySelector('meta[name="_csrf_header"]');
+      if (token && header && token.content && header.content) {
+        event.detail.headers[header.content] = token.content;
+      }
+    });
+    // 422는 입력 오류를 담은 조각이므로 오류로 보지 않고 원래 대상에 바꿔 끼운다.
+    // HX-Retarget이 있는 오류 응답은 관리자 화면 오류 처리기가 보낸 한 줄 오류 조각이므로 알림 영역에 끼우고 알림을 보인다
+    document.addEventListener('htmx:beforeSwap', function (event) {
+      var xhr = event.detail.xhr;
+      if (xhr.status === 422) {
+        event.detail.shouldSwap = true;
+        event.detail.isError = false;
+        return;
+      }
+      if (xhr.status >= 400 && xhr.getResponseHeader('HX-Retarget')) {
+        event.detail.shouldSwap = true;
+        event.detail.isError = false;
+        document.getElementById('htmx-error-notice').hidden = false;
+      }
+    });
+    // 끼워 넣지 못한 실패(처리기를 거치지 않은 오류, 네트워크 오류)는 응답 본문 대신 고정 문구만 보인다
+    function showDefaultHtmxErrorNotice() {
+      var notice = document.getElementById('htmx-error-notice');
+      notice.textContent = notice.dataset.defaultMessage;
+      notice.hidden = false;
+    }
+    document.addEventListener('htmx:responseError', showDefaultHtmxErrorNotice);
+    document.addEventListener('htmx:sendError', showDefaultHtmxErrorNotice);
+    document.addEventListener('htmx:beforeRequest', function () {
+      document.getElementById('htmx-error-notice').hidden = true;
+    });
+  </script>
+</head>
+<body>
+  <div class="shell">
+    <nav th:replace="~{admin/fragments/sidebar-navigation :: sidebar-navigation(${active})}"></nav>
+    <div class="shell-main">
+      <header th:replace="~{admin/fragments/top-bar :: top-bar(${title})}"></header>
+      <!-- htmx 오류 알림. 오류 처리기의 한 줄 오류 조각(HX-Retarget)이 여기에 들어오고, 그 밖의 실패는 data-default-message를 보인다 -->
+      <div id="htmx-error-notice" class="htmx-error-notice" role="alert" hidden
+           data-default-message="요청을 처리하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도하세요.">
+        요청을 처리하지 못했습니다. 페이지를 새로고침한 뒤 다시 시도하세요.
+      </div>
+      <main th:replace="${content}">
+        <p>본문</p>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

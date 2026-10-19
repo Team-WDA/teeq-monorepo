@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 한 줄 오류 문구. 오류 화면 본문과 htmx 오류 응답이 함께 쓴다. errorMessage는 ErrorCode 문구만 받는다 -->
+<p class="error-message" role="alert" th:fragment="error-message" th:text="${errorMessage}">요청을 처리할 수 없습니다.</p>
+</body>
+</html>

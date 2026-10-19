@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 왼쪽 어두운 사이드바 메뉴. activeMenu와 같은 키의 메뉴를 강조한다 -->
+<nav class="sidebar" aria-label="관리자 메뉴" th:fragment="sidebar-navigation(activeMenu)">
+  <div class="brand">teeq <span class="brand-accent">admin</span><small>운영자 전용</small></div>
+  <a th:href="@{/admin}" th:classappend="${activeMenu == 'home'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'home'} ? 'page'">대시보드</a>
+  <a th:href="@{/admin/settings}" th:classappend="${activeMenu == 'settings'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'settings'} ? 'page'">서비스 설정</a>
+  <a th:href="@{/admin/call-usages}" th:classappend="${activeMenu == 'call-usages'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'call-usages'} ? 'page'">통화 사용량</a>
+  <a th:href="@{/admin/call-bonuses}" th:classappend="${activeMenu == 'call-bonuses'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'call-bonuses'} ? 'page'">통화 보너스</a>
+  <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
+</nav>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<!-- 상단 바: 현재 화면 이름, 로그인한 관리자 이름, 로그아웃(POST만 허용) -->
+<header class="top-bar" th:fragment="top-bar(pageTitle)">
+  <div class="top-bar-location" th:text="${pageTitle}">화면 이름</div>
+  <div class="top-bar-account" sec:authorize="isAuthenticated()">
+    <span class="top-bar-admin-name" sec:authentication="principal.name">관리자</span>
+    <form method="post" th:action="@{/admin/logout}">
+      <button class="btn btn-sm btn-ghost" type="submit">로그아웃</button>
+    </form>
+  </div>
+</header>
+</body>
+</html>
