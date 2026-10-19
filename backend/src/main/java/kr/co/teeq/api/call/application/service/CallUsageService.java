@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CallUsageService {
 
+    // 전체 회원 집계에서 쿼리가 무시하는 자리표시 값. null은 PostgreSQL에서 bytea로 바인딩돼 쓰지 않는다
+    static final UUID ALL_MEMBERS_PLACEHOLDER = new UUID(0L, 0L);
     private static final long MAX_DAYS = 93;
     private static final long MAX_MONTHS = 24;
 
@@ -48,11 +50,9 @@ public class CallUsageService {
 
         Instant fromInclusive = firstPeriodStart.atStartOfDay(koreaZoneId).toInstant();
         Instant toExclusive = unit.nextPeriodStart(lastPeriodStart).atStartOfDay(koreaZoneId).toInstant();
-        List<CallUsageRow> rows = memberId == null
-            ? callHistoryRepository.aggregateUsageOfAllMembers(
-                unit.truncateField(), koreaZoneId.getId(), fromInclusive, toExclusive)
-            : callHistoryRepository.aggregateUsageOfMember(
-                memberId, unit.truncateField(), koreaZoneId.getId(), fromInclusive, toExclusive);
+        List<CallUsageRow> rows = callHistoryRepository.aggregateUsage(
+            memberId == null, memberId == null ? ALL_MEMBERS_PLACEHOLDER : memberId,
+            unit.truncateField(), koreaZoneId.getId(), fromInclusive, toExclusive);
 
         Map<LocalDate, CallUsageRow> rowByPeriodStart = new HashMap<>();
         for (CallUsageRow row : rows) {
