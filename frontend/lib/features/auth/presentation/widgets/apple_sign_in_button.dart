@@ -44,7 +44,7 @@ class AppleSignInButton extends StatelessWidget {
               const SizedBox(width: AppSpacing.space8),
               Text(
                 'Apple로 시작하기',
-                style: AppTextStyles.label16.copyWith(
+                style: AppTextStyles.body16Bold.copyWith(
                   color: AppColors.textOnDark,
                 ),
               ),

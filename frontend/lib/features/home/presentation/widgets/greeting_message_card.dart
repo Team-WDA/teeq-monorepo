@@ -39,7 +39,7 @@ class GreetingMessageCard extends StatelessWidget {
               ),
               child: SizedBox(
                 width: double.infinity,
-                child: Text(message, style: AppTextStyles.heading),
+                child: Text(message, style: AppTextStyles.heading20Bold),
               ),
             ),
             const Positioned(

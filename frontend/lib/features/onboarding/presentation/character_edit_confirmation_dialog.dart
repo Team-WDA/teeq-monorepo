@@ -79,7 +79,7 @@ class CharacterEditConfirmationDialog extends ConsumerWidget {
                 Text(
                   '$characterName의 성향을 다시 설정할까?',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.heading,
+                  style: AppTextStyles.heading20Bold,
                 ),
                 const SizedBox(height: AppSpacing.space8),
                 Text(
@@ -87,7 +87,7 @@ class CharacterEditConfirmationDialog extends ConsumerWidget {
                   '새로운 답변에 맞춰 $characterName의 성향과\n'
                   '대화 스타일이 달라져요.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.caption12.copyWith(
+                  style: AppTextStyles.caption12SemiBoldMultiline.copyWith(
                     color: AppColors.textMuted,
                   ),
                 ),

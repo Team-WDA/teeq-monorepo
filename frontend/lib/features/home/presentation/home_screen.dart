@@ -123,7 +123,7 @@ class _HomeContent extends StatelessWidget {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.heading,
+                        style: AppTextStyles.heading20Bold,
                       ),
                       const SizedBox(height: AppSpacing.space8),
                       PersonalityTagRow(tags: summary.personalityTags),

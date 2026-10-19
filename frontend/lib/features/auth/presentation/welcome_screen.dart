@@ -70,7 +70,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 child: const Center(
                   child: Text(
                     '이미 계정이 있나요? 로그인하기',
-                    style: AppTextStyles.caption12,
+                    style: AppTextStyles.caption12SemiBold,
                   ),
                 ),
               ),

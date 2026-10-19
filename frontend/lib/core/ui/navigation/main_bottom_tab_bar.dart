@@ -75,7 +75,9 @@ class _MainBottomTabItem extends StatelessWidget {
     final color = isSelected ? AppColors.textPrimary : AppColors.textMuted;
     // 시안에서 선택 탭의 글자 굵기가 화면마다 달라, 선택은 SemiBold, 비선택은 Medium으로 정했다.
     final labelStyle =
-        (isSelected ? AppTextStyles.caption10 : AppTextStyles.caption10Medium)
+        (isSelected
+                ? AppTextStyles.caption10SemiBold
+                : AppTextStyles.caption10Medium)
             .copyWith(color: color);
     return Semantics(
       button: true,

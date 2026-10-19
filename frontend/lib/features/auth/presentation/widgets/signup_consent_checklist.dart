@@ -59,7 +59,7 @@ class SignupConsentChecklist extends StatelessWidget {
         const SizedBox(height: AppSpacing.space8),
         Text(
           '필수 항목에 모두 동의하면 다음으로 진행할 수 있어.',
-          style: AppTextStyles.caption12.copyWith(
+          style: AppTextStyles.caption12SemiBoldMultiline.copyWith(
             color: AppColors.textSecondary,
           ),
         ),

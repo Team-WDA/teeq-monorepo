@@ -79,7 +79,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('마이', style: AppTextStyles.display),
+          const Text('마이', style: AppTextStyles.display32Bold),
           const SizedBox(height: AppSpacing.space24),
           ProfileSummaryCard(
             nickname: member.nickname ?? '',

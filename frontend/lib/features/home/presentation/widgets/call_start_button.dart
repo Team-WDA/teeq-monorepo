@@ -47,7 +47,7 @@ class CallStartButton extends StatelessWidget {
                       '통화하기',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.label16,
+                      style: AppTextStyles.body16Bold,
                     ),
                   ),
                 ],
