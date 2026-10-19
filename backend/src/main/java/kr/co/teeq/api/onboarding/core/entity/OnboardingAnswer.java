@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 온보딩 답변 1건. 선택지 하나당 한 행이며, 다시 설정할 때는 회원의 기존 행을 지우고 새로 넣는다.
+ * 온보딩 답변 1건. 선택지 하나당 한 행이며, 다시 제출하면 회원의 기존 행은 soft delete하고 새 제출에 속한 행을 넣는다.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -29,6 +29,10 @@ public class OnboardingAnswer extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "submission_id", nullable = false)
+    private OnboardingSubmission submission;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "question_code", nullable = false, length = 50)
     private OnboardingQuestion question;
@@ -37,14 +41,17 @@ public class OnboardingAnswer extends BaseEntity {
     @Column(name = "option_code", nullable = false, length = 50)
     private OnboardingOption option;
 
-    private OnboardingAnswer(Member member, OnboardingQuestion question, OnboardingOption option) {
+    private OnboardingAnswer(Member member, OnboardingSubmission submission, OnboardingQuestion question,
+        OnboardingOption option) {
         this.member = member;
+        this.submission = submission;
         this.question = question;
         this.option = option;
     }
 
-    public static OnboardingAnswer of(Member member, OnboardingQuestion question, OnboardingOption option) {
-        return new OnboardingAnswer(member, question, option);
+    public static OnboardingAnswer of(Member member, OnboardingSubmission submission, OnboardingQuestion question,
+        OnboardingOption option) {
+        return new OnboardingAnswer(member, submission, question, option);
     }
 
 }

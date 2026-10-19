@@ -3,6 +3,8 @@ package kr.co.teeq.api.aicharacter.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -60,10 +62,10 @@ class AiCharacterCommandServiceTest {
         assertThat(result.response().name()).isNull();
         assertThat(result.response().characterNumber()).isEqualTo(7);
         assertThat(result.response().personalityTags()).containsExactly("a", "b", "c");
-        // 답변 교체가 영속성 컨텍스트를 비우므로 캐릭터를 먼저 flush한다
+        // 캐릭터를 먼저 flush한 뒤 제출을 기록한다
         InOrder inOrder = inOrder(aiCharacterRepository, onboardingAnswerService);
         inOrder.verify(aiCharacterRepository).saveAndFlush(any(AiCharacter.class));
-        inOrder.verify(onboardingAnswerService).replaceAnswers(member, GROUPS);
+        inOrder.verify(onboardingAnswerService).recordSubmission(member, 7, List.of("a", "b", "c"), GROUPS);
     }
 
     @Test
@@ -84,13 +86,13 @@ class AiCharacterCommandServiceTest {
     }
 
     @Test
-    void 저장은_온보딩_답변을_교체한다() {
+    void 저장은_온보딩_제출을_기록한다() {
         given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
 
         commandService.save(member, GENERATED, GROUPS);
 
-        verify(onboardingAnswerService).replaceAnswers(member, GROUPS);
+        verify(onboardingAnswerService).recordSubmission(member, 7, List.of("a", "b", "c"), GROUPS);
     }
 
     @Test
@@ -104,7 +106,7 @@ class AiCharacterCommandServiceTest {
         assertThatThrownBy(() -> commandService.save(member, GENERATED, GROUPS))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
-        verify(onboardingAnswerService, never()).replaceAnswers(any(), any());
+        verify(onboardingAnswerService, never()).recordSubmission(any(), anyInt(), anyList(), anyList());
     }
 
     @Test

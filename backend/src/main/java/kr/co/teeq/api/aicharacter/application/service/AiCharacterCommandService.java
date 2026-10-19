@@ -48,10 +48,9 @@ public class AiCharacterCommandService {
             }
             throw exception;
         }
-        // 캐릭터 변경은 위 saveAndFlush로 이미 반영됐다. 답변 교체가 영속성 컨텍스트를 비우기 전에 응답을 만들어 둔다
-        AiCharacterResponse response = AiCharacterResponse.from(aiCharacter);
-        onboardingAnswerService.replaceAnswers(member, groups);
-        return new AiCharacterGenerationResult(response, created);
+        onboardingAnswerService.recordSubmission(
+            member, generated.characterNumber(), generated.personalityTags(), groups);
+        return new AiCharacterGenerationResult(AiCharacterResponse.from(aiCharacter), created);
     }
 
     @Transactional

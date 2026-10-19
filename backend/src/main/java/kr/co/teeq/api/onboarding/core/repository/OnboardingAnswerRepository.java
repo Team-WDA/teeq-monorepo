@@ -1,20 +1,16 @@
 package kr.co.teeq.api.onboarding.core.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import kr.co.teeq.api.onboarding.core.entity.OnboardingAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 public interface OnboardingAnswerRepository extends JpaRepository<OnboardingAnswer, UUID> {
 
     List<OnboardingAnswer> findByMemberIdAndDeletedFalse(UUID memberId);
 
-    // 답변 재설정용 hard delete. 같은 트랜잭션의 이후 insert가 unique 제약과 겹치지 않도록 먼저 flush한다
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("delete from OnboardingAnswer a where a.member.id = :memberId")
-    void deleteByMemberId(@Param("memberId") UUID memberId);
+    // 삭제된 행을 포함한다. 제출 이력 조회에서 제출별 답변과 활성 여부를 구할 때 쓴다
+    List<OnboardingAnswer> findBySubmissionIdIn(Collection<UUID> submissionIds);
 
 }
