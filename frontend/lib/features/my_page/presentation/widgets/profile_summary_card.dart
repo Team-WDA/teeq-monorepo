@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_border_widths.dart';
 import 'package:teeq/core/design/app_colors.dart';
@@ -9,10 +7,9 @@ import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_radius.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
-import 'package:teeq/core/network/media_url.dart';
 
 /// 마이 화면 상단의 프로필 카드. 아바타(연필 배지 포함), 닉네임, 이메일, `>`를 보여 주며 탭 동작은 없다.
-class ProfileSummaryCard extends ConsumerWidget {
+class ProfileSummaryCard extends StatelessWidget {
   const ProfileSummaryCard({
     super.key,
     required this.nickname,
@@ -23,11 +20,11 @@ class ProfileSummaryCard extends ConsumerWidget {
   final String nickname;
   final String? email;
 
-  /// 서버 기준 상대 경로. 없거나 불러오지 못하면 기본 아바타를 보여 준다.
+  /// 서버가 조립한 절대 URL. 없거나 불러오지 못하면 기본 아바타를 보여 준다.
   final String? profileImageUrl;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final emailText = email;
     return Container(
       constraints: const BoxConstraints(minHeight: AppLayout.profileCardHeight),
@@ -42,9 +39,7 @@ class ProfileSummaryCard extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          _AvatarWithEditBadge(
-            imageUrl: _resolveImageUrl(ref.watch(appConfigProvider)),
-          ),
+          _AvatarWithEditBadge(imageUrl: profileImageUrl),
           const SizedBox(width: AppSpacing.space16),
           Expanded(
             child: Column(
@@ -83,11 +78,6 @@ class ProfileSummaryCard extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  String? _resolveImageUrl(AppConfig config) {
-    final path = profileImageUrl;
-    return path == null ? null : mediaUrl(config.apiBaseUrl, path);
   }
 }
 
