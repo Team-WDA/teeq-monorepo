@@ -5,7 +5,7 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
-import 'package:teeq/features/onboarding/domain/korean_particle.dart';
+import 'package:teeq/core/text/korean_particle.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/character_result_screen_layout.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/edit_character_result_decoration.dart';
