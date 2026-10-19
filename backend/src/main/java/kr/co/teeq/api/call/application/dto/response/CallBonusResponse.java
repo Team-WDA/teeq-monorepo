@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 import kr.co.teeq.api.call.core.entity.CallBonus;
+import kr.co.teeq.api.member.core.entity.Member;
 
 public record CallBonusResponse(
     @Schema(description = "추가 통화 시간 ID")
@@ -39,9 +40,10 @@ public record CallBonusResponse(
 ) {
 
     public static CallBonusResponse from(CallBonus callBonus) {
-        return new CallBonusResponse(callBonus.getId(), callBonus.getMemberId(), callBonus.getBonusDate(),
-            callBonus.getSeconds(), callBonus.getReason(), callBonus.getGrantedByMemberId(),
-            callBonus.isDeleted(), callBonus.getDeletedAt(), callBonus.getCanceledByMemberId(),
+        Member canceledBy = callBonus.getCanceledBy();
+        return new CallBonusResponse(callBonus.getId(), callBonus.getMember().getId(), callBonus.getBonusDate(),
+            callBonus.getSeconds(), callBonus.getReason(), callBonus.getGrantedBy().getId(),
+            callBonus.isDeleted(), callBonus.getDeletedAt(), canceledBy == null ? null : canceledBy.getId(),
             callBonus.getCreatedAt());
     }
 

@@ -19,8 +19,7 @@ public class HomeController implements HomeControllerDocs {
 
     @GetMapping
     public ResponseEntity<HomeResponse> getHome(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
-        return ResponseEntity.ok(homeService.getHome(authenticatedMember.member().getId(),
-            authenticatedMember.member().getNickname()));
+        return ResponseEntity.ok(homeService.getHome(authenticatedMember.member()));
     }
 
 }

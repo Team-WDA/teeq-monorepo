@@ -1,14 +1,13 @@
 package kr.co.teeq.api.onboarding.application.service;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswerGroupResponse;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
@@ -31,9 +30,10 @@ public class OnboardingAnswerService {
     private final OnboardingAnswerRepository onboardingAnswerRepository;
 
     @Transactional
-    public void replaceAnswers(UUID memberId, List<OnboardingAnswerGroupRequest> groups) {
-        List<OnboardingAnswer> answers = validateAndToAnswers(memberId, groups);
-        onboardingAnswerRepository.deleteByMemberId(memberId);
+    public void replaceAnswers(Member member, List<OnboardingAnswerGroupRequest> groups) {
+        validateAnswers(groups);
+        List<OnboardingAnswer> answers = toAnswers(member, groups);
+        onboardingAnswerRepository.deleteByMemberId(member.getId());
         try {
             onboardingAnswerRepository.saveAllAndFlush(answers);
         } catch (DataIntegrityViolationException exception) {
@@ -43,14 +43,30 @@ public class OnboardingAnswerService {
     }
 
     // 저장하지 않고 검증만 한다. 다른 호출(AI 서버 등) 전에 잘못된 답변을 걸러낼 때 쓴다
-    public void validateAnswers(UUID memberId, List<OnboardingAnswerGroupRequest> groups) {
-        validateAndToAnswers(memberId, groups);
+    public void validateAnswers(List<OnboardingAnswerGroupRequest> groups) {
+        if (groups == null || groups.isEmpty()) {
+            throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
+        }
+        Set<OnboardingQuestion> answeredQuestions = EnumSet.noneOf(OnboardingQuestion.class);
+        for (OnboardingAnswerGroupRequest group : groups) {
+            if (group == null || group.questionCode() == null || group.optionCodes() == null) {
+                throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
+            }
+            OnboardingQuestion question = group.questionCode();
+            if (!answeredQuestions.add(question)) {
+                throw new CustomException(ErrorCode.ONBOARDING_ANSWER_DUPLICATED);
+            }
+            validateOptions(question, group.optionCodes());
+        }
+        if (answeredQuestions.size() < OnboardingQuestion.values().length) {
+            throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
+        }
     }
 
     @Transactional(readOnly = true)
-    public OnboardingAnswersResponse getAnswers(UUID memberId) {
+    public OnboardingAnswersResponse getAnswers(Member member) {
         Map<OnboardingQuestion, Set<OnboardingOption>> optionsByQuestion = new EnumMap<>(OnboardingQuestion.class);
-        onboardingAnswerRepository.findByMemberIdAndDeletedFalse(memberId).forEach(answer ->
+        onboardingAnswerRepository.findByMemberIdAndDeletedFalse(member.getId()).forEach(answer ->
             optionsByQuestion.computeIfAbsent(answer.getQuestion(), question -> EnumSet.noneOf(OnboardingOption.class))
                 .add(answer.getOption()));
         // EnumMap과 EnumSet이 질문·선택지의 선언 순서를 보장한다
@@ -62,35 +78,20 @@ public class OnboardingAnswerService {
 
     // 캐릭터가 있는 회원은 온보딩을 마친 상태여야 하므로 말투 답변이 없으면 불변식 위반이다
     @Transactional(readOnly = true)
-    public OnboardingOption getSpeechStyle(UUID memberId) {
-        return onboardingAnswerRepository.findByMemberIdAndDeletedFalse(memberId).stream()
+    public OnboardingOption getSpeechStyle(Member member) {
+        return onboardingAnswerRepository.findByMemberIdAndDeletedFalse(member.getId()).stream()
             .filter(answer -> answer.getQuestion() == OnboardingQuestion.SPEECH_STYLE)
             .map(OnboardingAnswer::getOption)
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("온보딩 말투 답변이 없습니다"));
     }
 
-    private List<OnboardingAnswer> validateAndToAnswers(UUID memberId, List<OnboardingAnswerGroupRequest> groups) {
-        if (groups == null || groups.isEmpty()) {
-            throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
-        }
-        Set<OnboardingQuestion> answeredQuestions = EnumSet.noneOf(OnboardingQuestion.class);
-        List<OnboardingAnswer> answers = new ArrayList<>();
-        for (OnboardingAnswerGroupRequest group : groups) {
-            if (group == null || group.questionCode() == null || group.optionCodes() == null) {
-                throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
-            }
-            OnboardingQuestion question = group.questionCode();
-            if (!answeredQuestions.add(question)) {
-                throw new CustomException(ErrorCode.ONBOARDING_ANSWER_DUPLICATED);
-            }
-            validateOptions(question, group.optionCodes());
-            group.optionCodes().forEach(option -> answers.add(OnboardingAnswer.of(memberId, question, option)));
-        }
-        if (answeredQuestions.size() < OnboardingQuestion.values().length) {
-            throw new CustomException(ErrorCode.ONBOARDING_ANSWER_INCOMPLETE);
-        }
-        return answers;
+    // 검증을 통과한 답변이라 null 요소는 없다
+    private List<OnboardingAnswer> toAnswers(Member member, List<OnboardingAnswerGroupRequest> groups) {
+        return groups.stream()
+            .flatMap(group -> group.optionCodes().stream()
+                .map(option -> OnboardingAnswer.of(member, group.questionCode(), option)))
+            .toList();
     }
 
     private void validateOptions(OnboardingQuestion question, List<OnboardingOption> options) {

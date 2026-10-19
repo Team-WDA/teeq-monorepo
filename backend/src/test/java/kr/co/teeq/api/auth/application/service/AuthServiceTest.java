@@ -191,7 +191,7 @@ class AuthServiceTest {
     void login_withUppercaseEmail_findsSameAccountAndReplacesExistingRefreshToken() {
         Member member = memberWithPassword("abcd1234");
         RefreshToken existing = RefreshToken.builder()
-            .memberId(MEMBER_ID).token("old-refresh").expiresAt(NOW).build();
+            .member(member).token("old-refresh").expiresAt(NOW).build();
         given(memberRepository.findByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(Optional.of(member));
         stubTokenIssue("access-token", "new-refresh");
         given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(existing));
@@ -222,7 +222,7 @@ class AuthServiceTest {
     void refresh_rotatesToken_andRejectsTheOldOneAfterwards() {
         Member member = memberWithPassword("abcd1234");
         RefreshToken stored = RefreshToken.builder()
-            .memberId(MEMBER_ID).token("old-refresh").expiresAt(NOW).build();
+            .member(member).token("old-refresh").expiresAt(NOW).build();
         given(tokenProvider.parseRefreshToken("old-refresh")).willReturn(MEMBER_ID);
         given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(stored));
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
@@ -247,8 +247,9 @@ class AuthServiceTest {
 
     @Test
     void refresh_forDeletedMember_throwsInvalidRefreshToken() {
+        Member member = memberWithPassword("abcd1234");
         RefreshToken stored = RefreshToken.builder()
-            .memberId(MEMBER_ID).token("some-refresh").expiresAt(NOW).build();
+            .member(member).token("some-refresh").expiresAt(NOW).build();
         given(tokenProvider.parseRefreshToken("some-refresh")).willReturn(MEMBER_ID);
         given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(stored));
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.empty());
@@ -307,7 +308,7 @@ class AuthServiceTest {
     @Test
     void deleteAccount_softDeletesActiveProfileImage() {
         Member member = memberWithPassword("abcd1234");
-        ProfileImage image = ProfileImage.of(MEMBER_ID, "key.jpg", "image/jpeg", 10L);
+        ProfileImage image = ProfileImage.of(member, "key.jpg", "image/jpeg", 10L);
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(image));
 
@@ -325,7 +326,7 @@ class AuthServiceTest {
         stubTokenIssue("access-token", "refresh-token");
         given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
-            .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.jpg", "image/jpeg", 10L)));
+            .willReturn(Optional.of(ProfileImage.of(member, "key.jpg", "image/jpeg", 10L)));
         given(mediaService.urlFor(MediaCategory.PROFILE_IMAGE, "key.jpg"))
             .willReturn("https://api.teeq.co.kr/media/profile-images/key.jpg");
 

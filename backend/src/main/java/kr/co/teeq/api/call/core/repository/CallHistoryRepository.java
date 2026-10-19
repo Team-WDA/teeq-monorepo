@@ -42,7 +42,7 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
     @Query("""
         select coalesce(sum(c.durationSeconds), 0L)
         from CallHistory c
-        where c.memberId = :memberId
+        where c.member.id = :memberId
           and c.deleted = false
           and c.startedAt >= :fromInclusive
           and c.startedAt < :toExclusive

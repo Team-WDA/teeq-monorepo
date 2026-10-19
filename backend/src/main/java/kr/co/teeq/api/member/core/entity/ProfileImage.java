@@ -2,8 +2,10 @@ package kr.co.teeq.api.member.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,8 +21,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "profile_image")
 public class ProfileImage extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(nullable = false, length = 100)
     private String storageKey;
@@ -31,15 +34,15 @@ public class ProfileImage extends BaseEntity {
     @Column(nullable = false)
     private long fileSize;
 
-    private ProfileImage(UUID memberId, String storageKey, String contentType, long fileSize) {
-        this.memberId = memberId;
+    private ProfileImage(Member member, String storageKey, String contentType, long fileSize) {
+        this.member = member;
         this.storageKey = storageKey;
         this.contentType = contentType;
         this.fileSize = fileSize;
     }
 
-    public static ProfileImage of(UUID memberId, String storageKey, String contentType, long fileSize) {
-        return new ProfileImage(memberId, storageKey, contentType, fileSize);
+    public static ProfileImage of(Member member, String storageKey, String contentType, long fileSize) {
+        return new ProfileImage(member, storageKey, contentType, fileSize);
     }
 
 }

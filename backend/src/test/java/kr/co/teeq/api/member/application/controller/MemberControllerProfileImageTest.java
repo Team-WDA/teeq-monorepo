@@ -1,6 +1,7 @@
 package kr.co.teeq.api.member.application.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
@@ -147,7 +148,7 @@ class MemberControllerProfileImageTest {
     void delete_success_returns204() throws Exception {
         mockMvc.perform(delete(PATH).header(HttpHeaders.AUTHORIZATION, bearer()))
             .andExpect(status().isNoContent());
-        verify(profileImageService).delete(MEMBER_ID);
+        verify(profileImageService).delete(argThat(member -> MEMBER_ID.equals(member.getId())));
     }
 
     @TestConfiguration(proxyBeanMethods = false)

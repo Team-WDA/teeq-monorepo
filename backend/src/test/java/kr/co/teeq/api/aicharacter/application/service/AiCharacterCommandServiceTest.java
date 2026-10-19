@@ -17,6 +17,7 @@ import kr.co.teeq.api.aicharacter.core.port.GeneratedAiCharacter;
 import kr.co.teeq.api.aicharacter.core.repository.AiCharacterRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,8 @@ class AiCharacterCommandServiceTest {
     private static final GeneratedAiCharacter GENERATED = new GeneratedAiCharacter(7, List.of("a", "b", "c"));
 
     @Mock
+    private Member member;
+    @Mock
     private AiCharacterRepository aiCharacterRepository;
     @Mock
     private OnboardingAnswerService onboardingAnswerService;
@@ -48,9 +51,10 @@ class AiCharacterCommandServiceTest {
 
     @Test
     void 저장은_첫_생성이면_이름_없는_캐릭터를_만들고_생성됨을_돌려준다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
 
-        AiCharacterGenerationResult result = commandService.save(MEMBER_ID, GENERATED, GROUPS);
+        AiCharacterGenerationResult result = commandService.save(member, GENERATED, GROUPS);
 
         assertThat(result.created()).isTrue();
         assertThat(result.response().name()).isNull();
@@ -59,16 +63,17 @@ class AiCharacterCommandServiceTest {
         // 답변 교체가 영속성 컨텍스트를 비우므로 캐릭터를 먼저 flush한다
         InOrder inOrder = inOrder(aiCharacterRepository, onboardingAnswerService);
         inOrder.verify(aiCharacterRepository).saveAndFlush(any(AiCharacter.class));
-        inOrder.verify(onboardingAnswerService).replaceAnswers(MEMBER_ID, GROUPS);
+        inOrder.verify(onboardingAnswerService).replaceAnswers(member, GROUPS);
     }
 
     @Test
     void 저장은_이름_있는_기존_캐릭터면_이름을_유지하고_생성되지_않음을_돌려준다() {
-        AiCharacter existing = AiCharacter.of(MEMBER_ID, 1, List.of("x", "y", "z"));
+        AiCharacter existing = AiCharacter.of(member, 1, List.of("x", "y", "z"));
         existing.rename("티큐");
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(existing));
 
-        AiCharacterGenerationResult result = commandService.save(MEMBER_ID, GENERATED, GROUPS);
+        AiCharacterGenerationResult result = commandService.save(member, GENERATED, GROUPS);
 
         assertThat(result.created()).isFalse();
         assertThat(result.response().name()).isEqualTo("티큐");
@@ -80,21 +85,23 @@ class AiCharacterCommandServiceTest {
 
     @Test
     void 저장은_온보딩_답변을_교체한다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
 
-        commandService.save(MEMBER_ID, GENERATED, GROUPS);
+        commandService.save(member, GENERATED, GROUPS);
 
-        verify(onboardingAnswerService).replaceAnswers(MEMBER_ID, GROUPS);
+        verify(onboardingAnswerService).replaceAnswers(member, GROUPS);
     }
 
     @Test
     void 저장에서_유니크_제약_위반이면_STATE_CONFLICT를_던진다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
         given(aiCharacterRepository.saveAndFlush(any(AiCharacter.class)))
             .willThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint "
                 + "\"uq_ai_character_member\""));
 
-        assertThatThrownBy(() -> commandService.save(MEMBER_ID, GENERATED, GROUPS))
+        assertThatThrownBy(() -> commandService.save(member, GENERATED, GROUPS))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
         verify(onboardingAnswerService, never()).replaceAnswers(any(), any());
@@ -102,20 +109,22 @@ class AiCharacterCommandServiceTest {
 
     @Test
     void 저장에서_다른_제약_위반이면_그대로_다시_던진다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
         given(aiCharacterRepository.saveAndFlush(any(AiCharacter.class)))
             .willThrow(new DataIntegrityViolationException("value too long for type character varying(50)"));
 
-        assertThatThrownBy(() -> commandService.save(MEMBER_ID, GENERATED, GROUPS))
+        assertThatThrownBy(() -> commandService.save(member, GENERATED, GROUPS))
             .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
     void 이름_변경은_기존_캐릭터의_이름을_바꾼다() {
-        AiCharacter existing = AiCharacter.of(MEMBER_ID, 7, List.of("a", "b", "c"));
+        AiCharacter existing = AiCharacter.of(member, 7, List.of("a", "b", "c"));
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(existing));
 
-        AiCharacterResponse response = commandService.rename(MEMBER_ID, "티큐");
+        AiCharacterResponse response = commandService.rename(member, "티큐");
 
         assertThat(existing.getName()).isEqualTo("티큐");
         assertThat(response).isEqualTo(new AiCharacterResponse("티큐", 7, List.of("a", "b", "c")));
@@ -123,9 +132,10 @@ class AiCharacterCommandServiceTest {
 
     @Test
     void 이름_변경에서_캐릭터가_없으면_AI_CHARACTER_NOT_FOUND를_던진다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> commandService.rename(MEMBER_ID, "티큐"))
+        assertThatThrownBy(() -> commandService.rename(member, "티큐"))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_CHARACTER_NOT_FOUND));
     }

@@ -1,9 +1,9 @@
 package kr.co.teeq.api.member.application.service;
 
-import java.util.UUID;
 import kr.co.teeq.api.media.application.service.MediaService;
 import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.media.core.model.StoredMedia;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,10 +18,10 @@ public class ProfileImageService {
     private final MediaService mediaService;
     private final ProfileImageCommandService profileImageCommandService;
 
-    public void replace(UUID memberId, MultipartFile image) {
+    public void replace(Member member, MultipartFile image) {
         StoredMedia stored = mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image);
         try {
-            profileImageCommandService.replace(memberId, stored.key(), stored.contentType(), stored.sizeBytes());
+            profileImageCommandService.replace(member, stored.key(), stored.contentType(), stored.sizeBytes());
         } catch (RuntimeException exception) {
             // DB에 반영되지 않은 파일이 남지 않게 정리한다
             mediaService.delete(MediaCategory.PROFILE_IMAGE, stored.key());
@@ -29,8 +29,8 @@ public class ProfileImageService {
         }
     }
 
-    public void delete(UUID memberId) {
-        profileImageCommandService.delete(memberId);
+    public void delete(Member member) {
+        profileImageCommandService.delete(member);
     }
 
 }

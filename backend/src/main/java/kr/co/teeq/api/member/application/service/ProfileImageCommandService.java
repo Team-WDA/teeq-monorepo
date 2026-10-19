@@ -1,9 +1,9 @@
 package kr.co.teeq.api.member.application.service;
 
 import java.time.Clock;
-import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.entity.ProfileImage;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +26,13 @@ public class ProfileImageCommandService {
 
     // 활성 행 unique 인덱스 때문에 이전 행의 soft delete를 먼저 반영(flush)한 뒤 새 행을 저장한다
     @Transactional
-    public void replace(UUID memberId, String storageKey, String contentType, long fileSize) {
-        profileImageRepository.findByMemberIdAndDeletedFalse(memberId).ifPresent(previous -> {
+    public void replace(Member member, String storageKey, String contentType, long fileSize) {
+        profileImageRepository.findByMemberIdAndDeletedFalse(member.getId()).ifPresent(previous -> {
             previous.delete(clock);
             profileImageRepository.saveAndFlush(previous);
         });
         try {
-            profileImageRepository.saveAndFlush(ProfileImage.of(memberId, storageKey, contentType, fileSize));
+            profileImageRepository.saveAndFlush(ProfileImage.of(member, storageKey, contentType, fileSize));
         } catch (DataIntegrityViolationException exception) {
             String message = String.valueOf(exception.getMostSpecificCause().getMessage());
             if (message.contains(MEMBER_ACTIVE_INDEX_NAME)) {
@@ -44,8 +44,8 @@ public class ProfileImageCommandService {
 
     // 활성 사진이 없으면 아무것도 하지 않는다. 파일은 삭제하지 않는다
     @Transactional
-    public void delete(UUID memberId) {
-        profileImageRepository.findByMemberIdAndDeletedFalse(memberId)
+    public void delete(Member member) {
+        profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
             .ifPresent(image -> image.delete(clock));
     }
 

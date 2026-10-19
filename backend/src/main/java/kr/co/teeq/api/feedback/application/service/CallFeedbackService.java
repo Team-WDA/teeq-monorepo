@@ -3,9 +3,9 @@ package kr.co.teeq.api.feedback.application.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.FeedbackTargetCall;
 import kr.co.teeq.api.call.application.service.CallFeedbackTargetService;
+import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.feedback.application.dto.request.DetailedFeedbackRequest;
@@ -24,6 +24,7 @@ import kr.co.teeq.api.feedback.core.repository.DetailedFeedbackRepository;
 import kr.co.teeq.api.feedback.core.repository.DetailedFeedbackStartReasonRepository;
 import kr.co.teeq.api.feedback.core.repository.RequiredFeedbackAwkwardMomentRepository;
 import kr.co.teeq.api.feedback.core.repository.RequiredFeedbackRepository;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -43,34 +44,34 @@ public class CallFeedbackService {
     private final DetailedFeedbackStartReasonRepository detailedFeedbackStartReasonRepository;
 
     @Transactional(readOnly = true)
-    public FeedbackStatusResponse getStatus(UUID memberId, String callSessionId) {
-        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(memberId, callSessionId);
+    public FeedbackStatusResponse getStatus(Member member, String callSessionId) {
+        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(member, callSessionId);
         return new FeedbackStatusResponse(
             target.callIndex(),
             FeedbackRule.isPreviousCallRecallRequired(target.callIndex()),
-            requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistoryId()));
+            requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistory().getId()));
     }
 
     // 가장 최근 종료·만료 통화에 필수 피드백이 없으면 그 통화를 대기 피드백으로 돌려준다
     @Transactional(readOnly = true)
-    public Optional<PendingFeedbackResponse> findPendingFeedback(UUID memberId) {
-        return callFeedbackTargetService.findLatestFeedbackableCall(memberId)
+    public Optional<PendingFeedbackResponse> findPendingFeedback(Member member) {
+        return callFeedbackTargetService.findLatestFeedbackableCall(member)
             .filter(latest -> !requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(latest.callHistoryId()))
             .map(latest -> new PendingFeedbackResponse(latest.callSessionId(), latest.callIndex()));
     }
 
     @Transactional
-    public RequiredFeedbackResponse submitRequired(UUID memberId, String callSessionId,
+    public RequiredFeedbackResponse submitRequired(Member member, String callSessionId,
         RequiredFeedbackRequest request) {
-        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(memberId, callSessionId);
-        if (requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistoryId())) {
+        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(member, callSessionId);
+        if (requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistory().getId())) {
             throw new CustomException(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
         }
         validatePreviousCallRecall(request, target.callIndex());
         validateAwkwardMoments(request.awkwardMoments());
 
         RequiredFeedback requiredFeedback = saveRequiredFeedback(RequiredFeedback.of(
-            target.callHistoryId(), request.rating(), request.revisitIntention(), request.previousCallRecall()));
+            target.callHistory(), request.rating(), request.revisitIntention(), request.previousCallRecall()));
         requiredFeedbackAwkwardMomentRepository.saveAll(request.awkwardMoments().stream()
             .map(awkwardMoment -> RequiredFeedbackAwkwardMoment.of(requiredFeedback, awkwardMoment))
             .toList());
@@ -78,27 +79,27 @@ public class CallFeedbackService {
     }
 
     @Transactional
-    public void submitDetailed(UUID memberId, String callSessionId, DetailedFeedbackRequest request) {
-        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(memberId, callSessionId);
+    public void submitDetailed(Member member, String callSessionId, DetailedFeedbackRequest request) {
+        FeedbackTargetCall target = callFeedbackTargetService.getFeedbackTarget(member, callSessionId);
         validateDetailedFeedbackSubmittable(target);
         DetailedFeedbackRequest normalized = normalize(request);
         validateMemory(normalized);
         validateStartReasons(normalized);
 
-        DetailedFeedback detailedFeedback = saveDetailedFeedback(toEntity(target.callHistoryId(), normalized));
+        DetailedFeedback detailedFeedback = saveDetailedFeedback(toEntity(target.callHistory(), normalized));
         detailedFeedbackStartReasonRepository.saveAll(normalized.startReasons().stream()
             .map(startReason -> DetailedFeedbackStartReason.of(detailedFeedback, startReason))
             .toList());
     }
 
     private void validateDetailedFeedbackSubmittable(FeedbackTargetCall target) {
-        if (!requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistoryId())) {
+        if (!requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistory().getId())) {
             throw new CustomException(ErrorCode.REQUIRED_FEEDBACK_NOT_SUBMITTED);
         }
         if (!FeedbackRule.isDetailedFeedbackInvited(target.callIndex())) {
             throw new CustomException(ErrorCode.DETAILED_FEEDBACK_NOT_INVITED);
         }
-        if (detailedFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistoryId())) {
+        if (detailedFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(target.callHistory().getId())) {
             throw new CustomException(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
         }
     }
@@ -159,8 +160,8 @@ public class CallFeedbackService {
         }
     }
 
-    private DetailedFeedback toEntity(UUID callHistoryId, DetailedFeedbackRequest request) {
-        return DetailedFeedback.of(callHistoryId,
+    private DetailedFeedback toEntity(CallHistory callHistory, DetailedFeedbackRequest request) {
+        return DetailedFeedback.of(callHistory,
             request.timingScore(), request.timingReason(),
             request.personaFitScore(), request.personaFitReason(),
             request.memoryScore(), request.memoryReason(), request.memoryNotApplicable(),

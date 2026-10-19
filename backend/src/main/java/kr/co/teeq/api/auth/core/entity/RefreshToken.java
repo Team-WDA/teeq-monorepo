@@ -2,10 +2,13 @@ package kr.co.teeq.api.auth.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.UUID;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,8 +23,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "refresh_token")
 public class RefreshToken extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(nullable = false)
     private String token;
@@ -30,8 +34,8 @@ public class RefreshToken extends BaseEntity {
     private Instant expiresAt;
 
     @Builder
-    private RefreshToken(UUID memberId, String token, Instant expiresAt) {
-        this.memberId = memberId;
+    private RefreshToken(Member member, String token, Instant expiresAt) {
+        this.member = member;
         this.token = token;
         this.expiresAt = expiresAt;
     }

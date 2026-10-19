@@ -2,7 +2,6 @@ package kr.co.teeq.api.call.application.service;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.FeedbackTargetCall;
 import kr.co.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.co.teeq.api.call.core.constant.CallStatus;
@@ -10,6 +9,7 @@ import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,28 +27,28 @@ public class CallFeedbackTargetService {
 
     // 본인 통화가 아니거나 없으면 존재 여부를 숨기려고 같은 404로 응답한다
     @Transactional(readOnly = true)
-    public FeedbackTargetCall getFeedbackTarget(UUID memberId, String callSessionId) {
+    public FeedbackTargetCall getFeedbackTarget(Member member, String callSessionId) {
         CallHistory callHistory = callHistoryRepository.findByCallSessionIdAndDeletedFalse(callSessionId)
-            .filter(found -> found.getMemberId().equals(memberId))
+            .filter(found -> found.getMember().getId().equals(member.getId()))
             .orElseThrow(() -> new CustomException(ErrorCode.CALL_SESSION_NOT_FOUND));
         if (!FEEDBACKABLE_STATUSES.contains(callHistory.getStatus())) {
             throw new CustomException(ErrorCode.CALL_NOT_FEEDBACKABLE);
         }
-        return new FeedbackTargetCall(callHistory.getId(), countCallIndex(memberId, callHistory));
+        return new FeedbackTargetCall(callHistory, countCallIndex(member, callHistory));
     }
 
     // 피드백 가능한(종료·만료) 통화 중 가장 최근 것. 없으면 empty
     @Transactional(readOnly = true)
-    public Optional<LatestFeedbackableCall> findLatestFeedbackableCall(UUID memberId) {
+    public Optional<LatestFeedbackableCall> findLatestFeedbackableCall(Member member) {
         return callHistoryRepository
-            .findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(memberId, FEEDBACKABLE_STATUSES)
+            .findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(member.getId(), FEEDBACKABLE_STATUSES)
             .map(callHistory -> new LatestFeedbackableCall(
-                callHistory.getId(), callHistory.getCallSessionId(), countCallIndex(memberId, callHistory)));
+                callHistory.getId(), callHistory.getCallSessionId(), countCallIndex(member, callHistory)));
     }
 
-    private int countCallIndex(UUID memberId, CallHistory callHistory) {
+    private int countCallIndex(Member member, CallHistory callHistory) {
         long callIndex = callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
-            memberId, CallStatus.FAILED, callHistory.getStartedAt());
+            member.getId(), CallStatus.FAILED, callHistory.getStartedAt());
         return Math.toIntExact(callIndex);
     }
 

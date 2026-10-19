@@ -2,11 +2,14 @@ package kr.co.teeq.api.aicharacter.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.List;
-import java.util.UUID;
 import kr.co.teeq.api.aicharacter.core.constant.AiCharacterValidation;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,8 +25,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "ai_character")
 public class AiCharacter extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     @Column(length = 10)
     private String name;
@@ -40,13 +44,13 @@ public class AiCharacter extends BaseEntity {
     @Column(name = "personality_tag_3", nullable = false, length = AiCharacterValidation.PERSONALITY_TAG_MAX_LENGTH)
     private String personalityTag3;
 
-    private AiCharacter(UUID memberId, int characterNumber, List<String> personalityTags) {
-        this.memberId = memberId;
+    private AiCharacter(Member member, int characterNumber, List<String> personalityTags) {
+        this.member = member;
         regenerate(characterNumber, personalityTags);
     }
 
-    public static AiCharacter of(UUID memberId, int characterNumber, List<String> personalityTags) {
-        return new AiCharacter(memberId, characterNumber, personalityTags);
+    public static AiCharacter of(Member member, int characterNumber, List<String> personalityTags) {
+        return new AiCharacter(member, characterNumber, personalityTags);
     }
 
     // 이름은 유지하고 번호와 성향 태그만 바꾼다

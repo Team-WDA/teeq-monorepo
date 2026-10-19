@@ -1,13 +1,13 @@
 package kr.co.teeq.api.aicharacter.application.service;
 
 import java.util.List;
-import java.util.UUID;
 import kr.co.teeq.api.aicharacter.application.dto.response.AiCharacterResponse;
 import kr.co.teeq.api.aicharacter.core.entity.AiCharacter;
 import kr.co.teeq.api.aicharacter.core.port.GeneratedAiCharacter;
 import kr.co.teeq.api.aicharacter.core.repository.AiCharacterRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +29,12 @@ public class AiCharacterCommandService {
     private final OnboardingAnswerService onboardingAnswerService;
 
     @Transactional
-    public AiCharacterGenerationResult save(UUID memberId, GeneratedAiCharacter generated,
+    public AiCharacterGenerationResult save(Member member, GeneratedAiCharacter generated,
         List<OnboardingAnswerGroupRequest> groups) {
-        AiCharacter existing = aiCharacterRepository.findByMemberId(memberId).orElse(null);
+        AiCharacter existing = aiCharacterRepository.findByMemberId(member.getId()).orElse(null);
         boolean created = existing == null;
         AiCharacter aiCharacter = created
-            ? AiCharacter.of(memberId, generated.characterNumber(), generated.personalityTags())
+            ? AiCharacter.of(member, generated.characterNumber(), generated.personalityTags())
             : existing;
         if (!created) {
             aiCharacter.regenerate(generated.characterNumber(), generated.personalityTags());
@@ -50,13 +50,13 @@ public class AiCharacterCommandService {
         }
         // 캐릭터 변경은 위 saveAndFlush로 이미 반영됐다. 답변 교체가 영속성 컨텍스트를 비우기 전에 응답을 만들어 둔다
         AiCharacterResponse response = AiCharacterResponse.from(aiCharacter);
-        onboardingAnswerService.replaceAnswers(memberId, groups);
+        onboardingAnswerService.replaceAnswers(member, groups);
         return new AiCharacterGenerationResult(response, created);
     }
 
     @Transactional
-    public AiCharacterResponse rename(UUID memberId, String name) {
-        AiCharacter aiCharacter = aiCharacterRepository.findByMemberId(memberId)
+    public AiCharacterResponse rename(Member member, String name) {
+        AiCharacter aiCharacter = aiCharacterRepository.findByMemberId(member.getId())
             .orElseThrow(() -> new CustomException(ErrorCode.AI_CHARACTER_NOT_FOUND));
         aiCharacter.rename(name);
         return AiCharacterResponse.from(aiCharacter);

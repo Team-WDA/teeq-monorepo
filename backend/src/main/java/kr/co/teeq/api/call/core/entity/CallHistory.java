@@ -4,13 +4,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.UUID;
 import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,8 +27,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "call_history")
 public class CallHistory extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID memberId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
 
     // AI 서버가 발급하며, 세션 생성에 성공하기 전(PENDING, FAILED)에는 없다
     @Column(length = 64)
@@ -43,16 +47,16 @@ public class CallHistory extends BaseEntity {
 
     private Instant endedAt;
 
-    private CallHistory(UUID memberId, Instant startedAt) {
-        this.memberId = memberId;
+    private CallHistory(Member member, Instant startedAt) {
+        this.member = member;
         this.startedAt = startedAt;
         this.durationSeconds = 0;
         this.status = CallStatus.PENDING;
     }
 
     // AI 서버 호출 전에 선삽입하는 기록
-    public static CallHistory pending(UUID memberId, Instant startedAt) {
-        return new CallHistory(memberId, startedAt);
+    public static CallHistory pending(Member member, Instant startedAt) {
+        return new CallHistory(member, startedAt);
     }
 
     public void activate(String callSessionId) {

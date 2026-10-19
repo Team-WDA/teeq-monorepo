@@ -19,6 +19,7 @@ import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.FeedbackTargetCall;
 import kr.co.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.co.teeq.api.call.application.service.CallFeedbackTargetService;
+import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.feedback.application.dto.request.DetailedFeedbackRequest;
@@ -38,6 +39,7 @@ import kr.co.teeq.api.feedback.core.repository.DetailedFeedbackRepository;
 import kr.co.teeq.api.feedback.core.repository.DetailedFeedbackStartReasonRepository;
 import kr.co.teeq.api.feedback.core.repository.RequiredFeedbackAwkwardMomentRepository;
 import kr.co.teeq.api.feedback.core.repository.RequiredFeedbackRepository;
+import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -50,9 +52,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 @ExtendWith(MockitoExtension.class)
 class CallFeedbackServiceTest {
 
-    private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
     private static final UUID CALL_HISTORY_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c");
     private static final String CALL_SESSION_ID = "session-1";
+
+    @Mock
+    private Member member;
+
+    @Mock
+    private CallHistory callHistory;
 
     @Mock
     private CallFeedbackTargetService callFeedbackTargetService;
@@ -73,8 +80,9 @@ class CallFeedbackServiceTest {
     private CallFeedbackService callFeedbackService;
 
     private void givenCallIndex(int callIndex) {
-        given(callFeedbackTargetService.getFeedbackTarget(MEMBER_ID, CALL_SESSION_ID))
-            .willReturn(new FeedbackTargetCall(CALL_HISTORY_ID, callIndex));
+        given(callHistory.getId()).willReturn(CALL_HISTORY_ID);
+        given(callFeedbackTargetService.getFeedbackTarget(member, CALL_SESSION_ID))
+            .willReturn(new FeedbackTargetCall(callHistory, callIndex));
     }
 
     private static RequiredFeedbackRequest required(PreviousCallRecall recall, AwkwardMoment... moments) {
@@ -104,7 +112,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(1);
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(false);
 
-        FeedbackStatusResponse response = callFeedbackService.getStatus(MEMBER_ID, CALL_SESSION_ID);
+        FeedbackStatusResponse response = callFeedbackService.getStatus(member, CALL_SESSION_ID);
 
         assertThat(response).isEqualTo(new FeedbackStatusResponse(1, false, false));
     }
@@ -114,7 +122,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(2);
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
 
-        FeedbackStatusResponse response = callFeedbackService.getStatus(MEMBER_ID, CALL_SESSION_ID);
+        FeedbackStatusResponse response = callFeedbackService.getStatus(member, CALL_SESSION_ID);
 
         assertThat(response).isEqualTo(new FeedbackStatusResponse(2, true, true));
     }
@@ -123,28 +131,28 @@ class CallFeedbackServiceTest {
 
     @Test
     void findPendingFeedback_최근_통화가_없으면_empty() {
-        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID)).willReturn(Optional.empty());
+        given(callFeedbackTargetService.findLatestFeedbackableCall(member)).willReturn(Optional.empty());
 
-        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID)).isEmpty();
+        assertThat(callFeedbackService.findPendingFeedback(member)).isEmpty();
         verifyNoInteractions(requiredFeedbackRepository);
     }
 
     @Test
     void findPendingFeedback_필수_피드백이_이미_있으면_empty() {
-        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID))
+        given(callFeedbackTargetService.findLatestFeedbackableCall(member))
             .willReturn(Optional.of(new LatestFeedbackableCall(CALL_HISTORY_ID, "call-session-1", 3)));
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
 
-        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID)).isEmpty();
+        assertThat(callFeedbackService.findPendingFeedback(member)).isEmpty();
     }
 
     @Test
     void findPendingFeedback_필수_피드백이_없으면_해당_통화를_돌려준다() {
-        given(callFeedbackTargetService.findLatestFeedbackableCall(MEMBER_ID))
+        given(callFeedbackTargetService.findLatestFeedbackableCall(member))
             .willReturn(Optional.of(new LatestFeedbackableCall(CALL_HISTORY_ID, "call-session-1", 3)));
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(false);
 
-        assertThat(callFeedbackService.findPendingFeedback(MEMBER_ID))
+        assertThat(callFeedbackService.findPendingFeedback(member))
             .contains(new PendingFeedbackResponse("call-session-1", 3));
     }
 
@@ -154,7 +162,7 @@ class CallFeedbackServiceTest {
     void submitRequired_firstCallWithRecall_isRejected() {
         givenCallIndex(1);
 
-        assertErrorCode(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(PreviousCallRecall.NO, AwkwardMoment.CUT)), ErrorCode.INVALID_FEEDBACK_ANSWER);
         verify(requiredFeedbackRepository, never()).saveAndFlush(any());
     }
@@ -163,7 +171,7 @@ class CallFeedbackServiceTest {
     void submitRequired_secondCallWithoutRecall_isRejected() {
         givenCallIndex(2);
 
-        assertErrorCode(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(null, AwkwardMoment.CUT)), ErrorCode.INVALID_FEEDBACK_ANSWER);
         verify(requiredFeedbackRepository, never()).saveAndFlush(any());
     }
@@ -174,7 +182,7 @@ class CallFeedbackServiceTest {
     void submitRequired_noneCombinedWithOther_isRejected() {
         givenCallIndex(1);
 
-        assertErrorCode(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(null, AwkwardMoment.NONE, AwkwardMoment.CUT)), ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
 
@@ -182,7 +190,7 @@ class CallFeedbackServiceTest {
     void submitRequired_duplicateMoments_isRejected() {
         givenCallIndex(1);
 
-        assertErrorCode(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(null, AwkwardMoment.CUT, AwkwardMoment.CUT)), ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
 
@@ -191,7 +199,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(1);
         willAnswer(returnsFirstArg()).given(requiredFeedbackRepository).saveAndFlush(any(RequiredFeedback.class));
 
-        callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID, required(null, AwkwardMoment.NONE));
+        callFeedbackService.submitRequired(member, CALL_SESSION_ID, required(null, AwkwardMoment.NONE));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<RequiredFeedbackAwkwardMoment>> childCaptor = ArgumentCaptor.forClass(List.class);
@@ -208,7 +216,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(2);
         willAnswer(returnsFirstArg()).given(requiredFeedbackRepository).saveAndFlush(any(RequiredFeedback.class));
 
-        callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(PreviousCallRecall.UNSURE, AwkwardMoment.CUT, AwkwardMoment.SLOW));
 
         ArgumentCaptor<RequiredFeedback> parentCaptor = ArgumentCaptor.forClass(RequiredFeedback.class);
@@ -218,7 +226,7 @@ class CallFeedbackServiceTest {
         order.verify(requiredFeedbackRepository).saveAndFlush(parentCaptor.capture());
         order.verify(requiredFeedbackAwkwardMomentRepository).saveAll(childCaptor.capture());
         RequiredFeedback parent = parentCaptor.getValue();
-        assertThat(parent.getCallHistoryId()).isEqualTo(CALL_HISTORY_ID);
+        assertThat(parent.getCallHistory()).isSameAs(callHistory);
         assertThat(parent.getRating()).isEqualTo(4);
         assertThat(parent.getRevisitIntention()).isEqualTo(RevisitIntention.YES);
         assertThat(parent.getPreviousCallRecall()).isEqualTo(PreviousCallRecall.UNSURE);
@@ -233,10 +241,10 @@ class CallFeedbackServiceTest {
         willAnswer(returnsFirstArg()).given(requiredFeedbackRepository).saveAndFlush(any(RequiredFeedback.class));
 
         givenCallIndex(3);
-        RequiredFeedbackResponse third = callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        RequiredFeedbackResponse third = callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(PreviousCallRecall.REMEMBERED, AwkwardMoment.NONE));
         givenCallIndex(4);
-        RequiredFeedbackResponse fourth = callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        RequiredFeedbackResponse fourth = callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(PreviousCallRecall.REMEMBERED, AwkwardMoment.NONE));
 
         assertThat(third.detailedFeedbackInvited()).isTrue();
@@ -251,7 +259,7 @@ class CallFeedbackServiceTest {
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
 
         // 규칙을 어긴 요청이어도 이미 제출 여부가 먼저 판단된다
-        assertErrorCode(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(PreviousCallRecall.NO, AwkwardMoment.CUT)), ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
         verify(requiredFeedbackRepository, never()).saveAndFlush(any());
     }
@@ -262,7 +270,7 @@ class CallFeedbackServiceTest {
         DataIntegrityViolationException violation = new DataIntegrityViolationException("uq_required_feedback");
         willThrow(violation).given(requiredFeedbackRepository).saveAndFlush(any(RequiredFeedback.class));
 
-        assertThatThrownBy(() -> callFeedbackService.submitRequired(MEMBER_ID, CALL_SESSION_ID,
+        assertThatThrownBy(() -> callFeedbackService.submitRequired(member, CALL_SESSION_ID,
             required(null, AwkwardMoment.CUT)))
             .isInstanceOfSatisfying(CustomException.class, exception -> {
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
@@ -278,7 +286,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(2);
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(false);
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID, validDetailed()),
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID, validDetailed()),
             ErrorCode.REQUIRED_FEEDBACK_NOT_SUBMITTED);
     }
 
@@ -287,7 +295,7 @@ class CallFeedbackServiceTest {
         givenCallIndex(2);
         given(requiredFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID, validDetailed()),
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID, validDetailed()),
             ErrorCode.DETAILED_FEEDBACK_NOT_INVITED);
     }
 
@@ -296,7 +304,7 @@ class CallFeedbackServiceTest {
         givenInvitedCallWithRequiredFeedback();
         given(detailedFeedbackRepository.existsByCallHistoryIdAndDeletedFalse(CALL_HISTORY_ID)).willReturn(true);
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(null, null, false, null, List.of(StartReason.NEED_TO_TALK), null)),
             ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
         verify(detailedFeedbackRepository, never()).saveAndFlush(any());
@@ -308,7 +316,7 @@ class CallFeedbackServiceTest {
         DataIntegrityViolationException violation = new DataIntegrityViolationException("uq_detailed_feedback");
         willThrow(violation).given(detailedFeedbackRepository).saveAndFlush(any(DetailedFeedback.class));
 
-        assertThatThrownBy(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID, validDetailed()))
+        assertThatThrownBy(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID, validDetailed()))
             .isInstanceOfSatisfying(CustomException.class, exception -> {
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FEEDBACK_ALREADY_SUBMITTED);
                 assertThat(exception.getCause()).isSameAs(violation);
@@ -327,7 +335,7 @@ class CallFeedbackServiceTest {
     void submitDetailed_memoryNotApplicableWithScore_isRejected() {
         givenInvitedCallWithRequiredFeedback();
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(3, null, true, null, List.of(StartReason.NEED_TO_TALK), null)),
             ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
@@ -336,7 +344,7 @@ class CallFeedbackServiceTest {
     void submitDetailed_memoryNotApplicableWithReason_isRejected() {
         givenInvitedCallWithRequiredFeedback();
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(null, "이유", true, null, List.of(StartReason.NEED_TO_TALK), null)),
             ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
@@ -345,7 +353,7 @@ class CallFeedbackServiceTest {
     void submitDetailed_memoryApplicableWithoutScore_isRejected() {
         givenInvitedCallWithRequiredFeedback();
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(null, null, false, null, List.of(StartReason.NEED_TO_TALK), null)),
             ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
@@ -355,7 +363,7 @@ class CallFeedbackServiceTest {
         givenInvitedCallWithRequiredFeedback();
         willAnswer(returnsFirstArg()).given(detailedFeedbackRepository).saveAndFlush(any(DetailedFeedback.class));
 
-        callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(null, "   ", true, null, List.of(StartReason.NEED_TO_TALK), null));
 
         ArgumentCaptor<DetailedFeedback> parentCaptor = ArgumentCaptor.forClass(DetailedFeedback.class);
@@ -370,7 +378,7 @@ class CallFeedbackServiceTest {
     void submitDetailed_duplicateStartReasons_isRejected() {
         givenInvitedCallWithRequiredFeedback();
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(3, null, false, null, List.of(StartReason.NEED_TO_TALK, StartReason.NEED_TO_TALK), null)),
             ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
@@ -379,7 +387,7 @@ class CallFeedbackServiceTest {
     void submitDetailed_otherTextWithoutOtherReason_isRejected() {
         givenInvitedCallWithRequiredFeedback();
 
-        assertErrorCode(() -> callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        assertErrorCode(() -> callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(3, null, false, null, List.of(StartReason.NEED_TO_TALK), "그냥")),
             ErrorCode.INVALID_FEEDBACK_ANSWER);
     }
@@ -389,7 +397,7 @@ class CallFeedbackServiceTest {
         givenInvitedCallWithRequiredFeedback();
         willAnswer(returnsFirstArg()).given(detailedFeedbackRepository).saveAndFlush(any(DetailedFeedback.class));
 
-        callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID,
+        callFeedbackService.submitDetailed(member, CALL_SESSION_ID,
             detailed(3, null, false, null, List.of(StartReason.NEED_TO_TALK), "   "));
 
         verify(detailedFeedbackRepository).saveAndFlush(any(DetailedFeedback.class));
@@ -403,7 +411,7 @@ class CallFeedbackServiceTest {
         willAnswer(returnsFirstArg()).given(detailedFeedbackRepository).saveAndFlush(any(DetailedFeedback.class));
 
         // 위치 인자 순서가 바뀌면 단언이 깨지도록 필드마다 서로 다른 값을 쓴다
-        callFeedbackService.submitDetailed(MEMBER_ID, CALL_SESSION_ID, new DetailedFeedbackRequest(
+        callFeedbackService.submitDetailed(member, CALL_SESSION_ID, new DetailedFeedbackRequest(
             1, " 타이밍 이유 ", 2, " 페르소나 이유 ", 3, " 기억했어요 ", false,
             4, " 공감 이유 ", 5, " 편안함 이유 ", 1, " 저장 이유 ", " 자유 의견 ",
             List.of(StartReason.OTHER, StartReason.NEED_TO_TALK), " 심심해서 "));
@@ -415,7 +423,7 @@ class CallFeedbackServiceTest {
         order.verify(detailedFeedbackRepository).saveAndFlush(parentCaptor.capture());
         order.verify(detailedFeedbackStartReasonRepository).saveAll(childCaptor.capture());
         DetailedFeedback parent = parentCaptor.getValue();
-        assertThat(parent.getCallHistoryId()).isEqualTo(CALL_HISTORY_ID);
+        assertThat(parent.getCallHistory()).isSameAs(callHistory);
         assertThat(parent.getTimingScore()).isEqualTo(1);
         assertThat(parent.getTimingReason()).isEqualTo("타이밍 이유");
         assertThat(parent.getPersonaFitScore()).isEqualTo(2);

@@ -19,6 +19,7 @@ import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,6 +36,7 @@ class CallFeedbackTargetServiceTest {
     private static final Instant STARTED_AT = Instant.parse("2026-10-16T03:00:00Z");
 
     private final UUID memberId = UUID.randomUUID();
+    private final Member member = memberOf(memberId);
     private final UUID callHistoryId = UUID.randomUUID();
 
     @Mock
@@ -44,8 +46,20 @@ class CallFeedbackTargetServiceTest {
         return new CallFeedbackTargetService(callHistoryRepository);
     }
 
-    private CallHistory callHistoryOf(UUID ownerId, CallStatus status) {
-        CallHistory callHistory = CallHistory.pending(ownerId, STARTED_AT);
+    private static Member memberOf(UUID id) {
+        Member owner = Member.builder()
+            .email("soyeon@teeq.com")
+            .password("encoded")
+            .nickname("소연")
+            .serviceTermsAgreed(true)
+            .privacyPolicyAgreed(true)
+            .build();
+        ReflectionTestUtils.setField(owner, "id", id);
+        return owner;
+    }
+
+    private CallHistory callHistoryOf(Member owner, CallStatus status) {
+        CallHistory callHistory = CallHistory.pending(owner, STARTED_AT);
         ReflectionTestUtils.setField(callHistory, "id", callHistoryId);
         ReflectionTestUtils.setField(callHistory, "callSessionId", CALL_SESSION_ID);
         ReflectionTestUtils.setField(callHistory, "status", status);
@@ -61,16 +75,16 @@ class CallFeedbackTargetServiceTest {
     void getFeedbackTarget_unknownSession_throwsCallSessionNotFound() {
         given(callHistoryRepository.findByCallSessionIdAndDeletedFalse(CALL_SESSION_ID)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().getFeedbackTarget(memberId, CALL_SESSION_ID))
+        assertThatThrownBy(() -> createService().getFeedbackTarget(member, CALL_SESSION_ID))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SESSION_NOT_FOUND));
     }
 
     @Test
     void getFeedbackTarget_otherMembersCall_throwsCallSessionNotFound() {
-        stubFound(callHistoryOf(UUID.randomUUID(), CallStatus.ENDED));
+        stubFound(callHistoryOf(memberOf(UUID.randomUUID()), CallStatus.ENDED));
 
-        assertThatThrownBy(() -> createService().getFeedbackTarget(memberId, CALL_SESSION_ID))
+        assertThatThrownBy(() -> createService().getFeedbackTarget(member, CALL_SESSION_ID))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SESSION_NOT_FOUND));
     }
@@ -78,9 +92,9 @@ class CallFeedbackTargetServiceTest {
     @ParameterizedTest
     @EnumSource(value = CallStatus.class, names = {"PENDING", "IN_PROGRESS", "FAILED"})
     void getFeedbackTarget_notFeedbackableStatus_throwsCallNotFeedbackable(CallStatus status) {
-        stubFound(callHistoryOf(memberId, status));
+        stubFound(callHistoryOf(member, status));
 
-        assertThatThrownBy(() -> createService().getFeedbackTarget(memberId, CALL_SESSION_ID))
+        assertThatThrownBy(() -> createService().getFeedbackTarget(member, CALL_SESSION_ID))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_NOT_FEEDBACKABLE));
     }
@@ -88,23 +102,23 @@ class CallFeedbackTargetServiceTest {
     @ParameterizedTest
     @EnumSource(value = CallStatus.class, names = {"ENDED", "EXPIRED"})
     void getFeedbackTarget_feedbackableStatus_returnsTargetWithCountAsIndex(CallStatus status) {
-        stubFound(callHistoryOf(memberId, status));
+        stubFound(callHistoryOf(member, status));
         given(callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
             memberId, CallStatus.FAILED, STARTED_AT)).willReturn(3L);
 
-        FeedbackTargetCall target = createService().getFeedbackTarget(memberId, CALL_SESSION_ID);
+        FeedbackTargetCall target = createService().getFeedbackTarget(member, CALL_SESSION_ID);
 
-        assertThat(target.callHistoryId()).isEqualTo(callHistoryId);
+        assertThat(target.callHistory().getId()).isEqualTo(callHistoryId);
         assertThat(target.callIndex()).isEqualTo(3);
     }
 
     @Test
     void getFeedbackTarget_neverUsesLockingLookup() {
-        stubFound(callHistoryOf(memberId, CallStatus.ENDED));
+        stubFound(callHistoryOf(member, CallStatus.ENDED));
         given(callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
             memberId, CallStatus.FAILED, STARTED_AT)).willReturn(1L);
 
-        createService().getFeedbackTarget(memberId, CALL_SESSION_ID);
+        createService().getFeedbackTarget(member, CALL_SESSION_ID);
 
         verify(callHistoryRepository, never()).findWithLockByCallSessionIdAndDeletedFalse(CALL_SESSION_ID);
     }
@@ -114,17 +128,17 @@ class CallFeedbackTargetServiceTest {
         given(callHistoryRepository.findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(
             any(), any())).willReturn(Optional.empty());
 
-        assertThat(createService().findLatestFeedbackableCall(memberId)).isEmpty();
+        assertThat(createService().findLatestFeedbackableCall(member)).isEmpty();
     }
 
     @Test
     void findLatestFeedbackableCall_있으면_세션과_순번을_돌려준다() {
         given(callHistoryRepository.findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(
-            any(), any())).willReturn(Optional.of(callHistoryOf(memberId, CallStatus.ENDED)));
+            any(), any())).willReturn(Optional.of(callHistoryOf(member, CallStatus.ENDED)));
         given(callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
             memberId, CallStatus.FAILED, STARTED_AT)).willReturn(3L);
 
-        LatestFeedbackableCall latest = createService().findLatestFeedbackableCall(memberId).orElseThrow();
+        LatestFeedbackableCall latest = createService().findLatestFeedbackableCall(member).orElseThrow();
 
         assertThat(latest).isEqualTo(new LatestFeedbackableCall(callHistoryId, CALL_SESSION_ID, 3));
     }
@@ -134,7 +148,7 @@ class CallFeedbackTargetServiceTest {
         given(callHistoryRepository.findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(
             any(), any())).willReturn(Optional.empty());
 
-        createService().findLatestFeedbackableCall(memberId);
+        createService().findLatestFeedbackableCall(member);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Collection<CallStatus>> captor = ArgumentCaptor.forClass(Collection.class);

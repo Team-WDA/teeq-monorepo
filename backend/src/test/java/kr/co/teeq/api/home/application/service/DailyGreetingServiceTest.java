@@ -24,6 +24,7 @@ import kr.co.teeq.api.home.core.entity.DailyGreeting;
 import kr.co.teeq.api.home.core.port.GreetingGenerationPort;
 import kr.co.teeq.api.home.core.port.GreetingRequest;
 import kr.co.teeq.api.home.core.repository.DailyGreetingRepository;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
@@ -48,6 +49,8 @@ class DailyGreetingServiceTest {
     private static final String CASUAL_DEFAULT = "{호칭},\n오늘 하루 어땠어?\n무슨 일 있었는지 궁금한데...";
 
     @Mock
+    private Member member;
+    @Mock
     private DailyGreetingRepository dailyGreetingRepository;
     @Mock
     private DailyGreetingCommandService dailyGreetingCommandService;
@@ -68,10 +71,11 @@ class DailyGreetingServiceTest {
 
     @Test
     void getOrCreate_오늘_행이_있으면_AI와_저장을_호출하지_않는다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(MEMBER_ID, TODAY))
-            .willReturn(Optional.of(DailyGreeting.of(MEMBER_ID, TODAY, "저장된 문구")));
+            .willReturn(Optional.of(DailyGreeting.of(member, TODAY, "저장된 문구")));
 
-        assertThat(dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER)).isEqualTo("저장된 문구");
+        assertThat(dailyGreetingService.getOrCreate(member, CHARACTER)).isEqualTo("저장된 문구");
 
         verifyNoInteractions(greetingGenerationPort, dailyGreetingCommandService, onboardingAnswerService);
     }
@@ -83,9 +87,9 @@ class DailyGreetingServiceTest {
         given(greetingGenerationPort.generate(any())).willReturn("소연아, 안녕");
         givenSaveReturnsMessage();
 
-        assertThat(dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER)).isEqualTo("소연아, 안녕");
+        assertThat(dailyGreetingService.getOrCreate(member, CHARACTER)).isEqualTo("소연아, 안녕");
 
-        verify(dailyGreetingCommandService).save(MEMBER_ID, TODAY, "소연아, 안녕");
+        verify(dailyGreetingCommandService).save(member, TODAY, "소연아, 안녕");
         verifyNoInteractions(settingConfigService);
     }
 
@@ -96,7 +100,7 @@ class DailyGreetingServiceTest {
         given(greetingGenerationPort.generate(any())).willReturn("소연 님, 안녕하세요");
         givenSaveReturnsMessage();
 
-        dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER);
+        dailyGreetingService.getOrCreate(member, CHARACTER);
 
         ArgumentCaptor<GreetingRequest> captor = ArgumentCaptor.forClass(GreetingRequest.class);
         verify(greetingGenerationPort).generate(captor.capture());
@@ -113,10 +117,10 @@ class DailyGreetingServiceTest {
         given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL)).willReturn(CASUAL_DEFAULT);
         givenSaveReturnsMessage();
 
-        String result = dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER);
+        String result = dailyGreetingService.getOrCreate(member, CHARACTER);
 
         assertThat(result).isEqualTo("소연아,\n오늘 하루 어땠어?\n무슨 일 있었는지 궁금한데...");
-        verify(dailyGreetingCommandService).save(MEMBER_ID, TODAY, result);
+        verify(dailyGreetingCommandService).save(member, TODAY, result);
     }
 
     @Test
@@ -125,13 +129,15 @@ class DailyGreetingServiceTest {
         String tooLongWithLineBreaks = "가".repeat(10) + "\n".repeat(191);
         for (String invalid : List.of("", "가".repeat(46), tooLongWithLineBreaks)) {
             givenNoGreetingStored();
-            givenSpeechStyle(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
+            given(onboardingAnswerService.getSpeechStyle(member))
+                .willReturn(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
+            given(member.getNickname()).willReturn("민지");
             given(greetingGenerationPort.generate(any())).willReturn(invalid);
             given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL))
                 .willReturn(CASUAL_DEFAULT);
             givenSaveReturnsMessage();
 
-            assertThat(dailyGreetingService.getOrCreate(MEMBER_ID, "민지", CHARACTER))
+            assertThat(dailyGreetingService.getOrCreate(member, CHARACTER))
                 .startsWith("민지야,");
         }
     }
@@ -145,19 +151,20 @@ class DailyGreetingServiceTest {
         given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL)).willReturn("안녕");
         givenSaveReturnsMessage();
 
-        assertThat(dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER)).isEqualTo("안녕");
+        assertThat(dailyGreetingService.getOrCreate(member, CHARACTER)).isEqualTo("안녕");
     }
 
     @Test
     void getOrCreate_저장이_unique_위반이면_저장된_행을_다시_읽어_돌려준다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(MEMBER_ID, TODAY))
-            .willReturn(Optional.empty(), Optional.of(DailyGreeting.of(MEMBER_ID, TODAY, "먼저 저장된 문구")));
+            .willReturn(Optional.empty(), Optional.of(DailyGreeting.of(member, TODAY, "먼저 저장된 문구")));
         givenSpeechStyle(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
         given(greetingGenerationPort.generate(any())).willReturn("내 문구");
         willThrow(new DataIntegrityViolationException("unique"))
-            .given(dailyGreetingCommandService).save(eq(MEMBER_ID), eq(TODAY), any());
+            .given(dailyGreetingCommandService).save(eq(member), eq(TODAY), any());
 
-        assertThat(dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER)).isEqualTo("먼저 저장된 문구");
+        assertThat(dailyGreetingService.getOrCreate(member, CHARACTER)).isEqualTo("먼저 저장된 문구");
     }
 
     @Test
@@ -166,18 +173,18 @@ class DailyGreetingServiceTest {
         givenSpeechStyle(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
         given(greetingGenerationPort.generate(any())).willReturn("내 문구");
         DataIntegrityViolationException violation = new DataIntegrityViolationException("unique");
-        willThrow(violation).given(dailyGreetingCommandService).save(eq(MEMBER_ID), eq(TODAY), any());
+        willThrow(violation).given(dailyGreetingCommandService).save(eq(member), eq(TODAY), any());
 
-        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER))
+        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(member, CHARACTER))
             .isSameAs(violation);
     }
 
     @Test
     void getOrCreate_말투_답변이_없으면_IllegalStateException을_전파하고_AI와_저장을_호출하지_않는다() {
         givenNoGreetingStored();
-        given(onboardingAnswerService.getSpeechStyle(MEMBER_ID)).willThrow(new IllegalStateException("없음"));
+        given(onboardingAnswerService.getSpeechStyle(member)).willThrow(new IllegalStateException("없음"));
 
-        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER))
+        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(member, CHARACTER))
             .isInstanceOf(IllegalStateException.class);
 
         verifyNoInteractions(greetingGenerationPort, dailyGreetingCommandService);
@@ -189,7 +196,7 @@ class DailyGreetingServiceTest {
         givenSpeechStyle(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
         given(greetingGenerationPort.generate(any())).willThrow(new CustomException(ErrorCode.STATE_CONFLICT));
 
-        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(MEMBER_ID, "소연", CHARACTER))
+        assertThatThrownBy(() -> dailyGreetingService.getOrCreate(member, CHARACTER))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
 
@@ -197,16 +204,18 @@ class DailyGreetingServiceTest {
     }
 
     private void givenNoGreetingStored() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(MEMBER_ID, TODAY))
             .willReturn(Optional.empty());
     }
 
     private void givenSpeechStyle(OnboardingOption speechStyle) {
-        given(onboardingAnswerService.getSpeechStyle(MEMBER_ID)).willReturn(speechStyle);
+        given(onboardingAnswerService.getSpeechStyle(member)).willReturn(speechStyle);
+        given(member.getNickname()).willReturn("소연");
     }
 
     private void givenSaveReturnsMessage() {
-        given(dailyGreetingCommandService.save(eq(MEMBER_ID), eq(TODAY), any()))
+        given(dailyGreetingCommandService.save(eq(member), eq(TODAY), any()))
             .willAnswer(invocation -> invocation.getArgument(2));
     }
 

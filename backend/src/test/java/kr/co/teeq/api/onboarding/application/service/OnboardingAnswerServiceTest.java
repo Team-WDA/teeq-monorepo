@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswerGroupResponse;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
@@ -39,6 +40,9 @@ class OnboardingAnswerServiceTest {
     @Mock
     private OnboardingAnswerRepository onboardingAnswerRepository;
 
+    @Mock
+    private Member member;
+
     @InjectMocks
     private OnboardingAnswerService onboardingAnswerService;
 
@@ -58,7 +62,7 @@ class OnboardingAnswerServiceTest {
     }
 
     private void assertFails(List<OnboardingAnswerGroupRequest> groups, ErrorCode expected) {
-        assertThatThrownBy(() -> onboardingAnswerService.replaceAnswers(MEMBER_ID, groups))
+        assertThatThrownBy(() -> onboardingAnswerService.replaceAnswers(member, groups))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(expected));
         verifyNoInteractions(onboardingAnswerRepository);
@@ -66,11 +70,12 @@ class OnboardingAnswerServiceTest {
 
     @Test
     void replaceAnswers_valid_deletesThenSavesOneRowPerOption() {
+        given(member.getId()).willReturn(MEMBER_ID);
         List<OnboardingAnswerGroupRequest> groups = validGroups();
         groups.set(6, group(OnboardingQuestion.AVOID_BEHAVIOR,
             OnboardingOption.AVOID_BEHAVIOR_RAPID_QUESTIONS, OnboardingOption.AVOID_BEHAVIOR_INTERRUPTING));
 
-        onboardingAnswerService.replaceAnswers(MEMBER_ID, groups);
+        onboardingAnswerService.replaceAnswers(member, groups);
 
         InOrder inOrder = inOrder(onboardingAnswerRepository);
         inOrder.verify(onboardingAnswerRepository).deleteByMemberId(MEMBER_ID);
@@ -79,7 +84,7 @@ class OnboardingAnswerServiceTest {
         inOrder.verify(onboardingAnswerRepository).saveAllAndFlush(captor.capture());
         assertThat(captor.getValue()).hasSize(8)
             .allSatisfy(answer -> {
-                assertThat(answer.getMemberId()).isEqualTo(MEMBER_ID);
+                assertThat(answer.getMember()).isSameAs(member);
                 assertThat(answer.getOption().question()).isEqualTo(answer.getQuestion());
             });
         assertThat(captor.getValue())
@@ -174,10 +179,11 @@ class OnboardingAnswerServiceTest {
 
     @Test
     void replaceAnswers_uniqueViolation_stateConflict() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(onboardingAnswerRepository.saveAllAndFlush(anyList()))
             .willThrow(new DataIntegrityViolationException("unique"));
 
-        assertThatThrownBy(() -> onboardingAnswerService.replaceAnswers(MEMBER_ID, validGroups()))
+        assertThatThrownBy(() -> onboardingAnswerService.replaceAnswers(member, validGroups()))
             .isInstanceOfSatisfying(CustomException.class, exception -> {
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT);
                 assertThat(exception.getCause()).isInstanceOf(DataIntegrityViolationException.class);
@@ -186,9 +192,10 @@ class OnboardingAnswerServiceTest {
 
     @Test
     void getAnswers_noRows_emptyList() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of());
 
-        OnboardingAnswersResponse response = onboardingAnswerService.getAnswers(MEMBER_ID);
+        OnboardingAnswersResponse response = onboardingAnswerService.getAnswers(member);
 
         assertThat(response.answers()).isEmpty();
         verify(onboardingAnswerRepository, never()).deleteByMemberId(MEMBER_ID);
@@ -196,15 +203,16 @@ class OnboardingAnswerServiceTest {
 
     @Test
     void getAnswers_groupsByQuestionInEnumOrder() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.AVOID_BEHAVIOR,
+            OnboardingAnswer.of(member, OnboardingQuestion.AVOID_BEHAVIOR,
                 OnboardingOption.AVOID_BEHAVIOR_INTERRUPTING),
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.RELATIONSHIP,
+            OnboardingAnswer.of(member, OnboardingQuestion.RELATIONSHIP,
                 OnboardingOption.RELATIONSHIP_LIFE_MENTOR),
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.AVOID_BEHAVIOR,
+            OnboardingAnswer.of(member, OnboardingQuestion.AVOID_BEHAVIOR,
                 OnboardingOption.AVOID_BEHAVIOR_RAPID_QUESTIONS)));
 
-        OnboardingAnswersResponse response = onboardingAnswerService.getAnswers(MEMBER_ID);
+        OnboardingAnswersResponse response = onboardingAnswerService.getAnswers(member);
 
         assertThat(response.answers()).containsExactly(
             new OnboardingAnswerGroupResponse(OnboardingQuestion.RELATIONSHIP,
@@ -215,26 +223,28 @@ class OnboardingAnswerServiceTest {
 
     @Test
     void getSpeechStyle_말투_답변이_있으면_그_선택지를_돌려준다() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.RELATIONSHIP,
+            OnboardingAnswer.of(member, OnboardingQuestion.RELATIONSHIP,
                 OnboardingOption.RELATIONSHIP_CLOSE_FRIEND),
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.SPEECH_STYLE,
+            OnboardingAnswer.of(member, OnboardingQuestion.SPEECH_STYLE,
                 OnboardingOption.SPEECH_STYLE_GENTLE_POLITE),
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.VOICE_TONE,
+            OnboardingAnswer.of(member, OnboardingQuestion.VOICE_TONE,
                 OnboardingOption.VOICE_TONE_MID_NATURAL)));
 
-        OnboardingOption speechStyle = onboardingAnswerService.getSpeechStyle(MEMBER_ID);
+        OnboardingOption speechStyle = onboardingAnswerService.getSpeechStyle(member);
 
         assertThat(speechStyle).isEqualTo(OnboardingOption.SPEECH_STYLE_GENTLE_POLITE);
     }
 
     @Test
     void getSpeechStyle_말투_답변이_없으면_IllegalStateException() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
-            OnboardingAnswer.of(MEMBER_ID, OnboardingQuestion.RELATIONSHIP,
+            OnboardingAnswer.of(member, OnboardingQuestion.RELATIONSHIP,
                 OnboardingOption.RELATIONSHIP_CLOSE_FRIEND)));
 
-        assertThatThrownBy(() -> onboardingAnswerService.getSpeechStyle(MEMBER_ID))
+        assertThatThrownBy(() -> onboardingAnswerService.getSpeechStyle(member))
             .isInstanceOf(IllegalStateException.class);
     }
 

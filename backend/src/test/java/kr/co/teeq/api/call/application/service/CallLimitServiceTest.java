@@ -17,8 +17,10 @@ import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,6 +41,9 @@ class CallLimitServiceTest {
     private final UUID memberId = UUID.randomUUID();
 
     @Mock
+    private Member member;
+
+    @Mock
     private CallHistoryRepository callHistoryRepository;
 
     @Mock
@@ -46,6 +51,11 @@ class CallLimitServiceTest {
 
     @Mock
     private SettingConfigService settingConfigService;
+
+    @BeforeEach
+    void stubMemberId() {
+        given(member.getId()).willReturn(memberId);
+    }
 
     private CallLimitService createService(Instant now) {
         return new CallLimitService(callHistoryRepository, callBonusRepository, settingConfigService,
@@ -78,7 +88,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(0);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response).isEqualTo(new CallLimitStatusResponse(0, 1800, 1200, true));
     }
@@ -88,7 +98,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(1500);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response).isEqualTo(new CallLimitStatusResponse(1500, 300, 300, true));
     }
@@ -98,7 +108,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(1741);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response.remainingSeconds()).isEqualTo(59);
         assertThat(response.canStart()).isFalse();
@@ -109,7 +119,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(1740);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response.remainingSeconds()).isEqualTo(60);
         assertThat(response.canStart()).isTrue();
@@ -120,7 +130,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(2000);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response.remainingSeconds()).isZero();
         assertThat(response.allowedSeconds()).isZero();
@@ -132,7 +142,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(0);
 
-        createService(Instant.parse("2026-10-16T14:59:59Z")).getTodayStatus(memberId);
+        createService(Instant.parse("2026-10-16T14:59:59Z")).getTodayStatus(member);
 
         // 리포지토리에 넘긴 경계 인자가 KST 당일 [0시, 다음날 0시)인지 확인한다
         verify(callHistoryRepository).sumDurationSeconds(memberId, TODAY_START, TODAY_END);
@@ -146,7 +156,7 @@ class CallLimitServiceTest {
         given(callHistoryRepository.sumDurationSeconds(memberId, nextDayStart, nextDayEnd)).willReturn(0L);
         given(callBonusRepository.sumActiveSeconds(memberId, LocalDate.of(2026, 10, 17))).willReturn(0L);
 
-        createService(Instant.parse("2026-10-16T15:00:00Z")).getTodayStatus(memberId);
+        createService(Instant.parse("2026-10-16T15:00:00Z")).getTodayStatus(member);
 
         verify(callHistoryRepository).sumDurationSeconds(memberId, nextDayStart, nextDayEnd);
     }
@@ -157,7 +167,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(1500);
         stubMonth(900000, 0);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(memberId);
+        long allowedSeconds = createService(NOON_KST).checkStartable(member);
 
         assertThat(allowedSeconds).isEqualTo(300);
     }
@@ -167,7 +177,7 @@ class CallLimitServiceTest {
         stubSettings();
         stubUsedSeconds(1741);
 
-        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
+        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_LIMIT_INSUFFICIENT));
     }
@@ -178,7 +188,7 @@ class CallLimitServiceTest {
         given(callHistoryRepository.sumDurationSeconds(memberId, TODAY_START, TODAY_END)).willReturn(1800L);
         stubBonusSeconds(600);
 
-        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(memberId);
+        CallLimitStatusResponse response = createService(NOON_KST).getTodayStatus(member);
 
         assertThat(response).isEqualTo(new CallLimitStatusResponse(1800, 600, 600, true));
     }
@@ -189,7 +199,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 899700);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(memberId);
+        long allowedSeconds = createService(NOON_KST).checkStartable(member);
 
         assertThat(allowedSeconds).isEqualTo(300);
     }
@@ -200,7 +210,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 899940);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(memberId);
+        long allowedSeconds = createService(NOON_KST).checkStartable(member);
 
         assertThat(allowedSeconds).isEqualTo(60);
     }
@@ -211,7 +221,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 899941);
 
-        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
+        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SERVICE_LIMIT_EXCEEDED));
     }
@@ -222,7 +232,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 950000);
 
-        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
+        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SERVICE_LIMIT_EXCEEDED));
     }
@@ -233,7 +243,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(1741);
 
         // 개인 한도가 먼저 걸리므로 월 한도는 조회하지 않는다
-        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(memberId))
+        assertThatThrownBy(() -> createService(NOON_KST).checkStartable(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_LIMIT_INSUFFICIENT));
     }
@@ -246,7 +256,7 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 0);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(memberId);
+        long allowedSeconds = createService(NOON_KST).checkStartable(member);
 
         assertThat(allowedSeconds).isEqualTo(30);
     }
@@ -261,7 +271,7 @@ class CallLimitServiceTest {
         given(settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_MONTH_TOTAL)).willReturn(900000L);
         given(callHistoryRepository.sumDurationSecondsOfAllMembers(MONTH_START, MONTH_END)).willReturn(0L);
 
-        createService(monthLastSecond).checkStartable(memberId);
+        createService(monthLastSecond).checkStartable(member);
 
         verify(callHistoryRepository).sumDurationSecondsOfAllMembers(MONTH_START, MONTH_END);
     }
@@ -278,7 +288,7 @@ class CallLimitServiceTest {
         given(callHistoryRepository.sumDurationSecondsOfAllMembers(nextMonthFirstSecond, novemberEnd))
             .willReturn(0L);
 
-        createService(nextMonthFirstSecond).checkStartable(memberId);
+        createService(nextMonthFirstSecond).checkStartable(member);
 
         verify(callHistoryRepository).sumDurationSecondsOfAllMembers(nextMonthFirstSecond, novemberEnd);
     }

@@ -11,6 +11,7 @@ import kr.co.teeq.api.call.core.entity.CallBonus;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,8 +27,8 @@ public class CallBonusService {
     private final ZoneId koreaZoneId;
 
     @Transactional
-    public CallBonusResponse grant(UUID memberId, UUID grantedByMemberId, CallBonusGrantRequest request) {
-        memberRepository.findByIdAndDeletedFalse(memberId)
+    public CallBonusResponse grant(Member grantedBy, UUID memberId, CallBonusGrantRequest request) {
+        Member member = memberRepository.findByIdAndDeletedFalse(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         // 추가 시간은 해당 날짜(KST)에만 유효하므로 이미 지난 날짜에는 부여할 수 없다
@@ -37,8 +38,8 @@ public class CallBonusService {
             throw new CustomException(ErrorCode.INVALID_REQUEST);
         }
 
-        CallBonus callBonus = CallBonus.grant(memberId, bonusDate, request.seconds(), request.reason(),
-            grantedByMemberId);
+        CallBonus callBonus = CallBonus.grant(member, bonusDate, request.seconds(), request.reason(),
+            grantedBy);
         return CallBonusResponse.from(callBonusRepository.save(callBonus));
     }
 
@@ -51,10 +52,10 @@ public class CallBonusService {
     }
 
     @Transactional
-    public void cancel(UUID memberId, UUID callBonusId, UUID canceledByMemberId) {
+    public void cancel(Member canceledBy, UUID memberId, UUID callBonusId) {
         CallBonus callBonus = callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.CALL_BONUS_NOT_FOUND));
-        callBonus.cancel(canceledByMemberId, clock);
+        callBonus.cancel(canceledBy, clock);
     }
 
 }

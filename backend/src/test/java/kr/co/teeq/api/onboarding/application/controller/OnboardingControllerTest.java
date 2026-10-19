@@ -74,8 +74,10 @@ class OnboardingControllerTest {
     @MockitoBean
     private OnboardingAnswerService onboardingAnswerService;
 
+    private Member member;
+
     private String bearer() {
-        Member member = Member.builder()
+        member = Member.builder()
             .email("soyeon@teeq.com")
             .password("encoded")
             .nickname("소연")
@@ -96,11 +98,12 @@ class OnboardingControllerTest {
 
     @Test
     void getAnswers_serializesQuestionAndOptionCodes() throws Exception {
-        given(onboardingAnswerService.getAnswers(MEMBER_ID)).willReturn(new OnboardingAnswersResponse(List.of(
+        String bearer = bearer();
+        given(onboardingAnswerService.getAnswers(member)).willReturn(new OnboardingAnswersResponse(List.of(
             new OnboardingAnswerGroupResponse(OnboardingQuestion.AVOID_BEHAVIOR,
                 List.of(OnboardingOption.AVOID_BEHAVIOR_RAPID_QUESTIONS, OnboardingOption.AVOID_BEHAVIOR_INTERRUPTING)))));
 
-        mockMvc.perform(get(PATH).header(HttpHeaders.AUTHORIZATION, bearer()))
+        mockMvc.perform(get(PATH).header(HttpHeaders.AUTHORIZATION, bearer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.answers[0].questionCode").value("AVOID_BEHAVIOR"))
             .andExpect(jsonPath("$.answers[0].optionCodes[0]").value("AVOID_BEHAVIOR_RAPID_QUESTIONS"))
@@ -109,9 +112,10 @@ class OnboardingControllerTest {
 
     @Test
     void getAnswers_noAnswers_returnsEmptyArray() throws Exception {
-        given(onboardingAnswerService.getAnswers(MEMBER_ID)).willReturn(new OnboardingAnswersResponse(List.of()));
+        String bearer = bearer();
+        given(onboardingAnswerService.getAnswers(member)).willReturn(new OnboardingAnswersResponse(List.of()));
 
-        mockMvc.perform(get(PATH).header(HttpHeaders.AUTHORIZATION, bearer()))
+        mockMvc.perform(get(PATH).header(HttpHeaders.AUTHORIZATION, bearer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.answers").isEmpty());
     }

@@ -15,7 +15,7 @@ public interface CallBonusRepository extends JpaRepository<CallBonus, UUID> {
     @Query("""
         select coalesce(sum(b.seconds), 0L)
         from CallBonus b
-        where b.memberId = :memberId
+        where b.member.id = :memberId
           and b.bonusDate = :bonusDate
           and b.deleted = false
         """)
