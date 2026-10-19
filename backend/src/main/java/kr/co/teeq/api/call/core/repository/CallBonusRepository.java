@@ -26,4 +26,29 @@ public interface CallBonusRepository extends JpaRepository<CallBonus, UUID> {
 
     Optional<CallBonus> findByIdAndMemberIdAndDeletedFalse(UUID id, UUID memberId);
 
+    // bonusDate(KST)가 [fromInclusive, toInclusive]인 취소되지 않은(deleted = false) 보너스 건수(관리자 홈)
+    @Query("""
+        select count(b)
+        from CallBonus b
+        where b.deleted = false
+          and b.bonusDate >= :fromInclusive
+          and b.bonusDate <= :toInclusive
+        """)
+    long countActiveByBonusDateBetween(@Param("fromInclusive") LocalDate fromInclusive,
+        @Param("toInclusive") LocalDate toInclusive);
+
+    // bonusDate(KST)가 [fromInclusive, toInclusive]인 취소되지 않은(deleted = false) 보너스의 초 합계(관리자 홈)
+    @Query("""
+        select coalesce(sum(b.seconds), 0L)
+        from CallBonus b
+        where b.deleted = false
+          and b.bonusDate >= :fromInclusive
+          and b.bonusDate <= :toInclusive
+        """)
+    long sumActiveSecondsByBonusDateBetween(@Param("fromInclusive") LocalDate fromInclusive,
+        @Param("toInclusive") LocalDate toInclusive);
+
+    // 생성 시각 내림차순 최근 취소되지 않은(deleted = false) 보너스 5건(관리자 홈의 최근 보너스)
+    List<CallBonus> findTop5ByDeletedFalseOrderByCreatedAtDesc();
+
 }

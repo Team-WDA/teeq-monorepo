@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 이번 달 전체 통화 한도 소진률. 100%를 넘으면 실제 값을 보여 주고 막대는 100%에서 멈춘 채 경고 색을 쓴다. 컨텍스트 변수 dashboard -->
+<section class="panel" th:fragment="dashboard-month-limit-gauge">
+  <div class="panel-head">
+    <h2>이번 달 전체 통화 한도</h2>
+  </div>
+  <div class="panel-body">
+    <p class="limit-summary">
+      <strong class="limit-percent" th:classappend="${dashboard.monthLimitExceeded()} ? 'limit-percent-exceeded'"
+              th:text="|${dashboard.monthLimitPercent()}%|">0%</strong>
+      <span class="muted"
+            th:text="|${#numbers.formatInteger(dashboard.monthUsedSeconds, 1, 'COMMA')} / ${#numbers.formatInteger(dashboard.monthLimitSeconds, 1, 'COMMA')}초|">0 / 0초</span>
+    </p>
+    <div class="limit-gauge" th:classappend="${dashboard.monthLimitExceeded()} ? 'limit-gauge-exceeded'"
+         role="progressbar" aria-label="이번 달 통화 한도 소진률" aria-valuemin="0" aria-valuemax="100"
+         th:attr="aria-valuenow=${dashboard.monthLimitGaugePercent()}">
+      <span class="limit-gauge-fill" th:style="|--gauge-width: ${dashboard.monthLimitGaugePercent()}%|"></span>
+    </div>
+    <p class="limit-warning" th:if="${dashboard.monthLimitExceeded()}" role="status">이번 달 한도를 넘었습니다.</p>
+  </div>
+</section>
+</body>
+</html>

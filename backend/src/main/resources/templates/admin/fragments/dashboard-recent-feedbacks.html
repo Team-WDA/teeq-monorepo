@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 최근 피드백 5건(필수·상세 합산). 평점은 필수만, 내용은 상세의 자유 입력 앞 40자다. 컨텍스트 변수 dashboard -->
+<section class="panel" th:fragment="dashboard-recent-feedbacks">
+  <div class="panel-head">
+    <h2>최근 피드백</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="table table-sm dashboard-recent-feedback-table">
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>평점</th>
+          <th>내용</th>
+          <th>시각</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="feedback : ${dashboard.recentFeedbacks}">
+          <td th:text="${feedback.kind}">필수</td>
+          <td th:text="${feedback.rating} ?: '-'">-</td>
+          <td class="dashboard-free-text-preview" th:text="${feedback.freeTextPreview} ?: '-'">-</td>
+          <td class="muted" th:text="${#temporals.format(feedback.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">-</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(dashboard.recentFeedbacks)}">
+          <td class="muted" colspan="4">아직 피드백이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

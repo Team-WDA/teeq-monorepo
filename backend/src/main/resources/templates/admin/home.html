@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('대시보드', ~{::main}, 'home')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>대시보드</h1>
+      <p>열 때마다 새로 집계합니다. "오늘"과 "이번 달"은 한국 시간 기준입니다.</p>
+    </div>
+    <a class="btn btn-sm" th:href="@{/admin}">새로고침</a>
+  </div>
+
+  <section th:replace="~{admin/fragments/dashboard-kpi-cards :: dashboard-kpi-cards}"></section>
+
+  <div class="dashboard-trend-grid">
+    <section th:replace="~{admin/fragments/dashboard-daily-usage-chart :: dashboard-daily-usage-chart}"></section>
+    <section th:replace="~{admin/fragments/dashboard-month-limit-gauge :: dashboard-month-limit-gauge}"></section>
+  </div>
+
+  <div class="dashboard-recent-grid">
+    <section th:replace="~{admin/fragments/dashboard-recent-members :: dashboard-recent-members}"></section>
+    <section th:replace="~{admin/fragments/dashboard-recent-feedbacks :: dashboard-recent-feedbacks}"></section>
+    <section th:replace="~{admin/fragments/dashboard-recent-bonuses :: dashboard-recent-bonuses}"></section>
+  </div>
+</main>
+</body>
+</html>
