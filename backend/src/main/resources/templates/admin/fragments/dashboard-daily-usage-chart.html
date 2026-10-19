@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 최근 14일 일별 통화 시간 막대. 막대 높이는 서버가 계산한 퍼센트(가장 긴 날 = 100%)다. 컨텍스트 변수 dashboard -->
+<section class="panel" th:fragment="dashboard-daily-usage-chart">
+  <div class="panel-head">
+    <h2>최근 14일 통화 시간</h2>
+    <span class="muted">통화 시작 기준</span>
+  </div>
+  <div class="panel-body">
+    <ol class="usage-chart">
+      <li class="usage-chart-day" th:each="usage, status : ${dashboard.dailyUsages}"
+          th:title="|${#temporals.format(usage.periodStart, 'MM-dd')} · ${#numbers.formatInteger(usage.usedSeconds, 1, 'COMMA')}초 · ${usage.callCount}회|">
+        <span class="usage-chart-track">
+          <span class="usage-chart-bar" th:classappend="${status.last} ? 'usage-chart-bar-today'"
+                th:style="|--bar-height: ${dashboard.barHeightPercent(usage)}%|"></span>
+        </span>
+        <span class="usage-chart-label" th:text="${#temporals.format(usage.periodStart, 'd')}">1</span>
+        <span class="visually-hidden"
+              th:text="|${#temporals.format(usage.periodStart, 'MM-dd')} ${usage.usedSeconds}초 ${usage.callCount}회|"></span>
+      </li>
+    </ol>
+  </div>
+</section>
+</body>
+</html>

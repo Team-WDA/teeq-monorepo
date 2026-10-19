@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('온보딩 응답 이력', ~{::main}, 'onboarding-submissions')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>온보딩 응답 이력</h1>
+      <p>회원이 제출한 온보딩 응답을 최신 제출부터 보여 줍니다. 날짜는 한국 시간 기준입니다.</p>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/onboarding-submission-filter-form :: onboarding-submission-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/onboarding-submission-table :: onboarding-submission-table}"></section>
+
+  <nav th:replace="~{admin/fragments/onboarding-submission-pagination :: onboarding-submission-pagination}"></nav>
+</main>
+</body>
+</html>

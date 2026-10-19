@@ -15,6 +15,12 @@ open frontend/ios/Runner.xcworkspace
 open -a "Android Studio" frontend
 ```
 
+## 관리자 계정 설정
+
+- 설정 키: `admin.accounts[].{username,password,name}`
+- 값은 `application-{dev,prod}.yml`에 직접 채운다.
+- 서버 기동 시 계정을 만들며, 이미 있는 username은 건너뛴다.
+
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->

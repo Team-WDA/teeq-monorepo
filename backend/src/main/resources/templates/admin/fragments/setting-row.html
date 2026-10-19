@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<table>
+  <!--
+    서비스 설정 표의 한 행. 저장·되돌리기 응답은 이 행만 돌려주고 htmx가 행을 통째로 바꾼다.
+    setting: AdminSettingRowResponse
+    submittedValue: 저장에 실패했을 때 입력칸에 남길 값(없으면 현재 값)
+    rowErrorMessage: 행에 보일 오류 문구(없으면 null)
+  -->
+  <tr th:fragment="setting-row" class="setting-row" th:id="|setting-row-${setting.key}|"
+      th:with="editorValue=${submittedValue != null ? submittedValue : setting.value}">
+    <td class="setting-name-cell">
+      <div class="setting-key mono" th:text="${setting.key}">CALL_MAX_SECONDS_PER_SESSION</div>
+      <div class="setting-description muted" th:text="${setting.description}">설명</div>
+    </td>
+    <td class="setting-value-cell">
+      <form class="setting-form" method="post"
+            th:action="@{/admin/settings/{key}(key=${setting.key})}"
+            th:attr="hx-post=@{/admin/settings/{key}(key=${setting.key})}"
+            hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+        <textarea th:if="${setting.multilineValue()}" class="textarea textarea-bordered setting-multiline-input"
+                  name="value" rows="4" th:classappend="${rowErrorMessage != null} ? 'textarea-error'"
+                  th:attr="aria-label=|${setting.key} 값|" th:text="${editorValue}"></textarea>
+        <input th:if="${setting.integerValue()}" class="input input-bordered setting-number-input"
+               type="number" step="1" name="value" th:value="${editorValue}"
+               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.key} 값|">
+        <input th:unless="${setting.multilineValue() or setting.integerValue()}"
+               class="input input-bordered setting-text-input" type="text" name="value" th:value="${editorValue}"
+               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.key} 값|">
+
+        <p th:if="${rowErrorMessage != null}" class="setting-row-error" role="alert" th:text="${rowErrorMessage}">
+          설정 값이 올바르지 않습니다.
+        </p>
+
+        <div class="setting-default-value muted">
+          <span>기본값</span>
+          <span class="setting-default-value-text" th:text="${setting.defaultValue}">1200</span>
+        </div>
+
+        <div class="setting-actions">
+          <button type="button" class="btn btn-sm btn-ghost" th:disabled="${setting.usingDefaultValue()}"
+                  th:attr="hx-post=@{/admin/settings/{key}/reset(key=${setting.key})}"
+                  hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="this"
+                  hx-confirm="기본값으로 되돌릴까요?">기본값으로 되돌리기</button>
+          <button class="btn btn-sm btn-primary" type="submit">저장</button>
+        </div>
+      </form>
+    </td>
+    <td class="setting-state-cell">
+      <span th:if="${setting.usingDefaultValue()}" class="badge badge-ghost badge-sm">기본값 사용 중</span>
+      <span th:unless="${setting.usingDefaultValue()}" class="badge badge-primary badge-soft badge-sm">변경됨</span>
+      <div class="setting-updated-at muted" th:if="${setting.updatedAt == null}">수정 이력 없음</div>
+      <div class="setting-updated-at muted mono" th:if="${setting.updatedAt != null}"
+           th:text="${#temporals.format(setting.updatedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</div>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

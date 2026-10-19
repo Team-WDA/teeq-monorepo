@@ -6,11 +6,10 @@ import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.request.CallBonusGrantRequest;
 import kr.co.teeq.api.call.application.dto.response.CallBonusResponse;
 import kr.co.teeq.api.call.application.service.CallBonusService;
-import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
+import kr.co.teeq.api.member.core.principal.AuthenticatedAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/members/{member-id}/call-bonuses")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class CallBonusAdminController implements CallBonusAdminControllerDocs {
 
@@ -30,11 +28,11 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
 
     @PostMapping
     public ResponseEntity<CallBonusResponse> grant(
-        @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
+        @AuthenticationPrincipal AuthenticatedAdmin authenticatedAdmin,
         @PathVariable("member-id") UUID memberId,
         @Valid @RequestBody CallBonusGrantRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            callBonusService.grant(authenticatedMember.member(), memberId, request));
+            callBonusService.grant(authenticatedAdmin.adminId(), memberId, request));
     }
 
     @GetMapping
@@ -44,10 +42,10 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
 
     @DeleteMapping("/{call-bonus-id}")
     public ResponseEntity<Void> cancel(
-        @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
+        @AuthenticationPrincipal AuthenticatedAdmin authenticatedAdmin,
         @PathVariable("member-id") UUID memberId,
         @PathVariable("call-bonus-id") UUID callBonusId) {
-        callBonusService.cancel(authenticatedMember.member(), memberId, callBonusId);
+        callBonusService.cancel(authenticatedAdmin.adminId(), memberId, callBonusId);
         return ResponseEntity.noContent().build();
     }
 

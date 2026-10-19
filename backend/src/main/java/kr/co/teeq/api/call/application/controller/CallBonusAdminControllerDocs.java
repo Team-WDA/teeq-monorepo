@@ -13,12 +13,12 @@ import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.request.CallBonusGrantRequest;
 import kr.co.teeq.api.call.application.dto.response.CallBonusResponse;
 import kr.co.teeq.api.common.application.exception.ErrorResponse;
-import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
+import kr.co.teeq.api.member.core.principal.AuthenticatedAdmin;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@Tag(name = "관리자 추가 통화 시간", description = "관리자 전용 하루 추가 통화 시간 부여, 조회, 취소(ADMIN 권한 필요)")
+@Tag(name = "관리자 추가 통화 시간", description = "관리자 전용 하루 추가 통화 시간 부여, 조회, 취소(관리자 로그인 세션 필요)")
 public interface CallBonusAdminControllerDocs {
 
     @Operation(summary = "하루 추가 통화 시간 부여",
@@ -31,30 +31,27 @@ public interface CallBonusAdminControllerDocs {
             description = "`INVALID_REQUEST`: 시간이 1~3600초 범위를 벗어남, 사유가 비어 있거나 200자 초과, 과거 날짜(`errorMessage`는 세부 사유 없이 일반 문구). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아니거나 날짜 형식이 올바르지 않음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`ACCESS_DENIED`: 관리자 권한이 없거나 CSRF 토큰이 없거나 올바르지 않음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
-            description = "`MEMBER_NOT_FOUND`: 대상 회원이 없거나 탈퇴함",
+            description = "`MEMBER_NOT_FOUND`: 대상 회원이 없거나 탈퇴함. `ADMIN_NOT_FOUND`: 로그인한 관리자 계정이 삭제됨",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<CallBonusResponse> grant(
-        @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
+        @Parameter(hidden = true) AuthenticatedAdmin authenticatedAdmin,
         @Parameter(description = "대상 회원 ID") @PathVariable("member-id") UUID memberId,
         @Valid @RequestBody CallBonusGrantRequest request);
 
     @Operation(summary = "추가 통화 시간 부여 내역 조회",
         description = """
-            회원의 추가 통화 시간 부여 내역을 부여 시각 내림차순으로 반환한다. 취소된 항목도 포함하며 `canceled`, `canceledAt`, `canceledByMemberId`로 구분한다.""")
+            회원의 추가 통화 시간 부여 내역을 부여 시각 내림차순으로 반환한다. 취소된 항목도 포함하며 `canceled`, `canceledAt`, `canceledByAdminId`로 구분한다.""")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공. 내역이 없으면 빈 배열"),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<List<CallBonusResponse>> getAll(
@@ -66,17 +63,17 @@ public interface CallBonusAdminControllerDocs {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "취소 성공"),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`ACCESS_DENIED`: 관리자 권한이 없거나 CSRF 토큰이 없거나 올바르지 않음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
-            description = "`CALL_BONUS_NOT_FOUND`: 추가 시간이 없거나 이미 취소됐거나 해당 회원의 항목이 아님",
+            description = "`CALL_BONUS_NOT_FOUND`: 추가 시간이 없거나 이미 취소됐거나 해당 회원의 항목이 아님. `ADMIN_NOT_FOUND`: 로그인한 관리자 계정이 삭제됨",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<Void> cancel(
-        @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
+        @Parameter(hidden = true) AuthenticatedAdmin authenticatedAdmin,
         @Parameter(description = "대상 회원 ID") @PathVariable("member-id") UUID memberId,
         @Parameter(description = "추가 통화 시간 ID") @PathVariable("call-bonus-id") UUID callBonusId);
 

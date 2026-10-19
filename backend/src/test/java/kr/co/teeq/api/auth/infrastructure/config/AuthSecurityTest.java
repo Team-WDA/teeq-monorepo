@@ -13,12 +13,14 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.auth.infrastructure.properties.JwtProperties;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
 import kr.co.teeq.api.member.core.constant.Role;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.member.core.principal.AuthenticatedAdmin;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import org.junit.jupiter.api.Test;
@@ -29,7 +31,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -145,23 +152,18 @@ class AuthSecurityTest {
     }
 
     @Test
-    void userRole_isDeniedOnAdminEndpoint_with403Json() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member(Role.USER)));
-        String token = jwtProvider.issueAccessToken(MEMBER_ID);
+    void adminSession_isRejectedOnJwtApiPath() throws Exception {
+        // JWT 체인은 STATELESS라 세션에 담긴 관리자 인증을 읽지 않는다
+        SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
+            new AuthenticatedAdmin(UUID.randomUUID(), "operator", "운영자"), null,
+            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
-        mockMvc.perform(get("/probe/admin-only").header(HttpHeaders.AUTHORIZATION, bearer(token)))
-            .andExpect(status().isForbidden())
-            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
-    }
-
-    @Test
-    void adminRole_isAllowedOnAdminEndpoint() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member(Role.ADMIN)));
-        String token = jwtProvider.issueAccessToken(MEMBER_ID);
-
-        mockMvc.perform(get("/probe/admin-only").header(HttpHeaders.AUTHORIZATION, bearer(token)))
-            .andExpect(status().isOk());
+        mockMvc.perform(get("/probe/authenticated").session(session))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.errorCode").value("UNAUTHENTICATED"));
     }
 
     @Test
@@ -202,12 +204,6 @@ class AuthSecurityTest {
         @GetMapping("/probe/authenticated")
         String authenticated(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
             return authenticatedMember.member().getNickname();
-        }
-
-        @GetMapping("/probe/admin-only")
-        @PreAuthorize("hasRole('ADMIN')")
-        String adminOnly() {
-            return "ok";
         }
 
     }

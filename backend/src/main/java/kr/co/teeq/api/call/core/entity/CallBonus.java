@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.time.Clock;
 import java.time.LocalDate;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
+import kr.co.teeq.api.member.core.entity.Admin;
 import kr.co.teeq.api.member.core.entity.Member;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,14 +38,14 @@ public class CallBonus extends BaseEntity {
     private String reason;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "granted_by_member_id", nullable = false)
-    private Member grantedBy;
+    @JoinColumn(name = "granted_by_admin_id", nullable = false)
+    private Admin grantedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "canceled_by_member_id")
-    private Member canceledBy;
+    @JoinColumn(name = "canceled_by_admin_id")
+    private Admin canceledBy;
 
-    private CallBonus(Member member, LocalDate bonusDate, int seconds, String reason, Member grantedBy) {
+    private CallBonus(Member member, LocalDate bonusDate, int seconds, String reason, Admin grantedBy) {
         this.member = member;
         this.bonusDate = bonusDate;
         this.seconds = seconds;
@@ -53,12 +54,12 @@ public class CallBonus extends BaseEntity {
     }
 
     public static CallBonus grant(Member member, LocalDate bonusDate, int seconds, String reason,
-        Member grantedBy) {
+        Admin grantedBy) {
         return new CallBonus(member, bonusDate, seconds, reason, grantedBy);
     }
 
     // 취소한 관리자를 남기고 soft delete 한다
-    public void cancel(Member canceledBy, Clock clock) {
+    public void cancel(Admin canceledBy, Clock clock) {
         this.canceledBy = canceledBy;
         delete(clock);
     }

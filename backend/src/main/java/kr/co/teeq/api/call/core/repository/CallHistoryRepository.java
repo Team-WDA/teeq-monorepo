@@ -93,4 +93,22 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
         @Param("unit") String unit, @Param("zoneName") String zoneName,
         @Param("fromInclusive") Instant fromInclusive, @Param("toExclusive") Instant toExclusive);
 
+    // 시작 시각이 [fromInclusive, toExclusive)인 활성(deleted = false) 기록 중 실패·대기 중이 아닌 통화가
+    // minimumCalls회 이상인 서로 다른 회원 수(관리자 홈의 주간 재통화 회원)
+    @Query(value = """
+        select count(*)
+        from (
+            select member_id
+            from call_history
+            where deleted = false
+              and status not in ('FAILED', 'PENDING')
+              and started_at >= :fromInclusive
+              and started_at < :toExclusive
+            group by member_id
+            having count(*) >= :minimumCalls
+        ) returning_member
+        """, nativeQuery = true)
+    long countReturningMembers(@Param("fromInclusive") Instant fromInclusive,
+        @Param("toExclusive") Instant toExclusive, @Param("minimumCalls") long minimumCalls);
+
 }

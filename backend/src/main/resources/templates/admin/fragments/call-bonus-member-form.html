@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 보너스 대상 회원 입력(GET 폼). 컨텍스트 변수 memberId -->
+<section class="panel" th:fragment="call-bonus-member-form">
+  <form class="panel-body call-bonus-member-form" method="get" th:action="@{/admin/call-bonuses}">
+    <label class="call-bonus-field call-bonus-member-field">
+      <span class="call-bonus-label">회원 ID</span>
+      <input class="input input-sm mono" type="text" name="memberId" th:value="${memberId}" required
+             placeholder="회원 UUID를 입력하세요">
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>
