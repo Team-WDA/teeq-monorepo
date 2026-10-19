@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('통화 보너스', ~{::main}, 'call-bonuses')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>통화 보너스</h1>
+      <p>회원 ID를 입력하면 해당 회원의 추가 통화 시간 부여 이력을 보고, 새로 부여하거나 취소할 수 있습니다. 날짜는 한국 시간 기준입니다.</p>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/call-bonus-member-form :: call-bonus-member-form}"></section>
+
+  <th:block th:if="${memberId != null}">
+    <section th:replace="~{admin/fragments/call-bonus-grant-form :: call-bonus-grant-form}"></section>
+    <section th:replace="~{admin/fragments/call-bonus-table :: call-bonus-table}"></section>
+  </th:block>
+</main>
+</body>
+</html>

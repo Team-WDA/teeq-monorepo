@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  추가 통화 시간 부여 폼(일반 POST, CSRF 숨은 필드는 th:action이 넣는다).
+  memberId: 대상 회원 UUID
+  formErrorMessages: 입력 검증 실패 문구 목록(없으면 null)
+  submittedSeconds, submittedBonusDate, submittedReason: 실패 시 입력칸에 남길 값(없으면 null)
+-->
+<section class="panel" th:fragment="call-bonus-grant-form">
+  <div class="panel-head"><h2>추가 통화 시간 부여</h2></div>
+  <form class="panel-body call-bonus-grant-form" method="post" th:action="@{/admin/call-bonuses/grant}">
+    <input type="hidden" name="memberId" th:value="${memberId}">
+    <ul class="call-bonus-form-errors" role="alert" th:if="${formErrorMessages != null}">
+      <li th:each="formErrorMessage : ${formErrorMessages}" th:text="${formErrorMessage}">입력값이 올바르지 않습니다.</li>
+    </ul>
+    <label class="call-bonus-field">
+      <span class="call-bonus-label">추가 시간(초, 1~3600)</span>
+      <input class="input input-sm" type="number" step="1" name="seconds" th:value="${submittedSeconds}" required>
+    </label>
+    <label class="call-bonus-field">
+      <span class="call-bonus-label">유효 날짜 (비우면 오늘)</span>
+      <input class="input input-sm" type="date" name="bonusDate" th:value="${submittedBonusDate}">
+    </label>
+    <label class="call-bonus-field call-bonus-reason-field">
+      <span class="call-bonus-label">부여 사유 (200자 이하)</span>
+      <input class="input input-sm" type="text" name="reason" maxlength="200" th:value="${submittedReason}" required>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">부여</button>
+  </form>
+</section>
+</body>
+</html>
