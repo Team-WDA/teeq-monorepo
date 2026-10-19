@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/ui/button/destructive_tonal_button.dart';
 import 'package:teeq/features/my_page/presentation/widgets/profile_summary_card.dart';
 import 'package:teeq/features/my_page/presentation/widgets/settings_row.dart';
 import 'package:teeq/features/my_page/presentation/widgets/settings_section_card.dart';
 
-import '../../../../support/my_page_harness.dart';
+import '../../../../support/viewport_cases.dart';
 
-Widget _host(Widget child, {AppConfig config = testAppConfig}) {
-  return ProviderScope(
-    overrides: [appConfigProvider.overrideWithValue(config)],
-    child: MaterialApp(home: Scaffold(body: child)),
-  );
+Widget _host(Widget child) {
+  return MaterialApp(home: Scaffold(body: child));
 }
 
 Finder _networkImage() => find.byWidgetPredicate(
@@ -60,7 +57,7 @@ void main() {
       _host(
         const ProfileSummaryCard(
           nickname: '소연',
-          profileImageUrl: '/media/profile-images/a.png',
+          profileImageUrl: 'https://a.kr/media/profile-images/a.png',
         ),
       ),
     );
@@ -71,19 +68,13 @@ void main() {
     expect(_defaultAvatar(), findsOneWidget);
   });
 
-  testWidgets('avatar url joins base url without double slash', (tester) async {
-    const config = AppConfig(
-      apiBaseUrl: 'https://a.kr/',
-      appleServiceId: 'x',
-      appleRedirectUri: 'x',
-    );
+  testWidgets('uses given absolute url as is', (tester) async {
     await tester.pumpWidget(
       _host(
         const ProfileSummaryCard(
           nickname: '소연',
-          profileImageUrl: '/media/profile-images/a.png',
+          profileImageUrl: 'https://a.kr/media/profile-images/a.png',
         ),
-        config: config,
       ),
     );
 
@@ -122,6 +113,83 @@ void main() {
     expect(find.text('둘째'), findsOneWidget);
     expect(find.text('값'), findsOneWidget);
     expect(find.byType(Divider), findsOneWidget);
+  });
+
+  testWidgets('email value uses remaining width', (tester) async {
+    // flutter_test 기본 폰트는 글자마다 1em이다. 값 글자 크기 12 기준
+    // 'soyeon.kim@teeq.kr'(18자)은 18*12=216px이다.
+    // 393 폭에서 행의 남는 폭은 393-48-32-24-12-42(라벨 3자*14)-12=223px이라
+    // 새 레이아웃은 한 줄로 들어간다. 라벨 Expanded와 값 Flexible이 남는 폭을
+    // 나눠 값이 약 132.5px만 쓰던 이전 레이아웃은 말줄임이 되므로 이 테스트로 변경을 구별한다.
+    const email = 'soyeon.kim@teeq.kr';
+    await pumpAtViewport(
+      tester,
+      viewportCases.firstWhere(
+        (viewport) => viewport.width == 393 && viewport.textScale == 1.0,
+      ),
+      _host(
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: SettingsSectionCard(
+            title: '계정',
+            rows: [
+              SettingsRow(
+                label: '이메일',
+                leadingIconAssetPath: AppAssets.mailIcon,
+                value: email,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final paragraph = tester.renderObject<RenderParagraph>(find.text(email));
+    expect(paragraph.didExceedMaxLines, isFalse);
+  });
+
+  testWidgets(
+    'very long email ellipsizes without overflow at 320 and text scale 1.2',
+    (tester) async {
+      await pumpAtViewport(
+        tester,
+        viewportCases.firstWhere(
+          (viewport) => viewport.width == 320 && viewport.textScale == 1.2,
+        ),
+        _host(
+          const SettingsRow(
+            label: '이메일',
+            leadingIconAssetPath: AppAssets.mailIcon,
+            value: 'a-very-long-email-address-for-overflow-check.soyeon.kim@teeq.kr',
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.textContaining('@teeq.kr'),
+      );
+      expect(paragraph.didExceedMaxLines, isTrue);
+    },
+  );
+
+  testWidgets('row without value keeps chevron at the right edge', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        const SettingsRow(
+          label: '이용약관',
+          leadingIconAssetPath: AppAssets.documentIcon,
+          showsChevron: true,
+        ),
+      ),
+    );
+
+    final rowRight = tester.getRect(find.byType(SettingsRow)).right;
+    final chevronRight = tester.getRect(find.byType(SvgPicture).last).right;
+    // 행의 오른쪽 안쪽 여백(16)만큼만 떨어져 있어야 한다.
+    expect(rowRight - chevronRight, 16);
   });
 
   testWidgets('DestructiveTonalButton taps only when enabled', (tester) async {

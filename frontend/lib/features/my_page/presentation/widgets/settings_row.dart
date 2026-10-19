@@ -39,20 +39,22 @@ class SettingsRow extends StatelessWidget {
               height: AppLayout.iconSize,
             ),
             const SizedBox(width: AppSpacing.space12),
-            Expanded(child: Text(label, style: AppTextStyles.body14Medium)),
-            if (trailingValue != null) ...[
-              const SizedBox(width: AppSpacing.space12),
-              Flexible(
-                child: Text(
-                  trailingValue,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.caption12Medium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ],
+            // 라벨은 짧은 고정 문구라 자기 폭만 쓰고, 남는 폭은 값(또는 빈 공간)이 차지한다.
+            Text(label, style: AppTextStyles.body14Medium),
+            const SizedBox(width: AppSpacing.space12),
+            Expanded(
+              child: trailingValue == null
+                  ? const SizedBox.shrink()
+                  : Text(
+                      trailingValue,
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption12Medium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+            ),
             if (showsChevron) ...[
               const SizedBox(width: AppSpacing.space12),
               SvgPicture.asset(
