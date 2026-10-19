@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 이전/다음 페이지 이동. 링크는 필터를 유지한다. 컨텍스트 변수 currentPageNumber, totalPages, previousPageUrl, nextPageUrl, result -->
+<nav class="onboarding-submission-pagination" aria-label="페이지 이동" th:fragment="onboarding-submission-pagination">
+  <a th:if="${previousPageUrl != null}" class="btn btn-sm btn-ghost" th:href="@{${previousPageUrl}}">이전</a>
+  <span class="muted" th:text="|${currentPageNumber} / ${totalPages}|">1 / 1</span>
+  <a th:if="${nextPageUrl != null}" class="btn btn-sm btn-ghost" th:href="@{${nextPageUrl}}">다음</a>
+  <span class="muted">총 <span th:text="${#numbers.formatInteger(result.totalElements, 1, 'COMMA')}">0</span>건</span>
+</nav>
+</body>
+</html>

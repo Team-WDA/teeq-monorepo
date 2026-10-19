@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 온보딩 응답 이력 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 memberId, from, to, optionCode, activeFilter, optionCodes -->
+<section class="panel" th:fragment="onboarding-submission-filter-form">
+  <form class="panel-body onboarding-submission-filter-form" method="get" th:action="@{/admin/onboarding-submissions}">
+    <label class="onboarding-submission-filter-field onboarding-submission-filter-member">
+      <span class="onboarding-submission-filter-label">회원 ID (선택)</span>
+      <input class="input input-sm mono" type="text" name="memberId" th:value="${memberId}" placeholder="비우면 전체 회원">
+    </label>
+    <label class="onboarding-submission-filter-field">
+      <span class="onboarding-submission-filter-label">제출일 시작</span>
+      <input class="input input-sm" type="date" name="from" th:value="${from}">
+    </label>
+    <label class="onboarding-submission-filter-field">
+      <span class="onboarding-submission-filter-label">제출일 종료</span>
+      <input class="input input-sm" type="date" name="to" th:value="${to}">
+    </label>
+    <label class="onboarding-submission-filter-field">
+      <span class="onboarding-submission-filter-label">포함한 선택지</span>
+      <select class="select select-sm" name="optionCode">
+        <option value="" th:selected="${optionCode == null}">전체</option>
+        <option th:each="option : ${optionCodes}" th:value="${option.name()}" th:text="${option.name()}"
+                th:selected="${optionCode != null and optionCode == option}">RELATIONSHIP_CLOSE_FRIEND</option>
+      </select>
+    </label>
+    <label class="onboarding-submission-filter-field">
+      <span class="onboarding-submission-filter-label">활성 여부</span>
+      <select class="select select-sm" name="active">
+        <option value="" th:selected="${activeFilter == null}">전체</option>
+        <option value="true" th:selected="${activeFilter != null and activeFilter}">활성</option>
+        <option value="false" th:selected="${activeFilter != null and !activeFilter}">비활성</option>
+      </select>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>

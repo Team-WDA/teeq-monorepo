@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 온보딩 제출 이력 표. 답변은 접어 두는 details로 보인다. 컨텍스트 변수 result -->
+<section class="panel" th:fragment="onboarding-submission-table">
+  <div class="table-wrap">
+    <table class="table onboarding-submission-table">
+      <thead>
+        <tr>
+          <th>제출 시각</th>
+          <th>회원 ID</th>
+          <th class="numeric-cell">제출 순번</th>
+          <th>상태</th>
+          <th>캐릭터</th>
+          <th>답변</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="submission : ${result.items}">
+          <td class="mono" th:text="${#temporals.format(submission.submittedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-17 12:00:00</td>
+          <td>
+            <a class="link link-primary mono" th:href="@{/admin/call-bonuses(memberId=${submission.memberId})}"
+               th:text="${submission.memberId}">회원 ID</a>
+          </td>
+          <td class="numeric-cell" th:text="${submission.submissionOrder}">1</td>
+          <td>
+            <span th:if="${submission.active}" class="badge badge-success badge-sm">활성</span>
+            <span th:unless="${submission.active}" class="badge badge-ghost badge-sm">비활성</span>
+          </td>
+          <td class="onboarding-submission-character-cell">
+            <div th:text="|캐릭터 ${submission.character.characterNumber}|">캐릭터 1</div>
+            <div class="muted" th:text="${#strings.listJoin(submission.character.personalityTags, ', ')}">성향 태그</div>
+          </td>
+          <td class="onboarding-submission-answer-cell">
+            <details>
+              <summary>답변 보기</summary>
+              <dl class="onboarding-submission-answer-list">
+                <div th:each="answerGroup : ${submission.answers}">
+                  <dt th:text="${answerGroup.questionCode}">RELATIONSHIP</dt>
+                  <dd class="mono" th:text="${#strings.listJoin(answerGroup.optionCodes, ', ')}">RELATIONSHIP_CLOSE_FRIEND</dd>
+                </div>
+              </dl>
+            </details>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(result.items)}">
+          <td class="muted" colspan="6">제출 이력이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>
