@@ -18,7 +18,9 @@ public enum SettingKey {
         GreetingMessageRule::validateTemplate),
     GREETING_DEFAULT_MESSAGE_POLITE(SettingValueType.STRING, "{호칭},\n오늘 하루 어땠어요?\n무슨 일 있었는지 궁금해요.",
         "존댓말 온보딩 답변 회원에게 쓰는 기본 오늘의 한마디. {호칭} 자리에 호칭이 들어간다",
-        GreetingMessageRule::validateTemplate);
+        GreetingMessageRule::validateTemplate),
+    MEDIA_BASE_URL(SettingValueType.STRING, "https://api.teeq.co.kr", "미디어(프로필 사진 등) 절대 URL의 앞부분. 끝의 /는 무시한다",
+        MediaBaseUrlRule::validate);
 
     private final SettingValueType valueType;
     private final String defaultValue;
