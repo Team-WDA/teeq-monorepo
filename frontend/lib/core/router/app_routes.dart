@@ -14,4 +14,23 @@ abstract final class AppRoutes {
   static const String home = '/';
   static const String myPage = '/my-page';
   static const String error = '/error';
+  static const String feedbackClosing = '/calls/:callSessionId/feedback';
+  static const String feedbackCompletion =
+      '/calls/:callSessionId/feedback/completion';
+  static const String detailedFeedback =
+      '/calls/:callSessionId/feedback/detail';
+  static const String detailedFeedbackCompletion =
+      '/calls/:callSessionId/feedback/detail/completion';
+
+  static String feedbackClosingLocation(String callSessionId) =>
+      '/calls/${Uri.encodeComponent(callSessionId)}/feedback';
+
+  static String feedbackCompletionLocation(String callSessionId) =>
+      '${feedbackClosingLocation(callSessionId)}/completion';
+
+  static String detailedFeedbackLocation(String callSessionId) =>
+      '${feedbackClosingLocation(callSessionId)}/detail';
+
+  static String detailedFeedbackCompletionLocation(String callSessionId) =>
+      '${detailedFeedbackLocation(callSessionId)}/completion';
 }
