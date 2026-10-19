@@ -14,7 +14,7 @@ import kr.co.teeq.api.setting.application.dto.request.SettingConfigUpdateRequest
 import kr.co.teeq.api.setting.application.dto.response.SettingConfigResponse;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "관리자 설정", description = "관리자 전용 동적 설정 조회와 수정(ADMIN 권한 필요)")
+@Tag(name = "관리자 설정", description = "관리자 전용 동적 설정 조회와 수정(관리자 로그인 세션 필요)")
 public interface SettingConfigAdminControllerDocs {
 
     @Operation(summary = "동적 설정 목록 조회",
@@ -23,10 +23,7 @@ public interface SettingConfigAdminControllerDocs {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<List<SettingConfigResponse>> getAll();
@@ -40,10 +37,10 @@ public interface SettingConfigAdminControllerDocs {
             description = "`INVALID_REQUEST`: value가 비어 있음. `INVALID_SETTING_VALUE`: 값이 키의 타입 또는 범위에 맞지 않음. `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`ACCESS_DENIED`: 관리자 권한이 없거나 CSRF 토큰이 없거나 올바르지 않음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
             description = "`SETTING_CONFIG_NOT_FOUND`: 코드에 정의되지 않은 설정 키",

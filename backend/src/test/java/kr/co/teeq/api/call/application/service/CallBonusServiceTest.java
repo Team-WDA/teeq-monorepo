@@ -21,7 +21,9 @@ import kr.co.teeq.api.call.core.entity.CallBonus;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Admin;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.member.core.repository.AdminRepository;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,11 +50,18 @@ class CallBonusServiceTest {
     private Member member;
 
     @Mock
-    private Member admin;
+    private AdminRepository adminRepository;
+
+    @Mock
+    private Admin admin;
 
     private CallBonusService createService() {
-        return new CallBonusService(callBonusRepository, memberRepository, Clock.fixed(NOW, ZoneOffset.UTC),
-            ZoneId.of("Asia/Seoul"));
+        return new CallBonusService(callBonusRepository, memberRepository, adminRepository,
+            Clock.fixed(NOW, ZoneOffset.UTC), ZoneId.of("Asia/Seoul"));
+    }
+
+    private void stubAdminExists() {
+        given(adminRepository.findByIdAndDeletedFalse(adminId)).willReturn(Optional.of(admin));
     }
 
     private void stubMemberExists() {
@@ -65,30 +74,32 @@ class CallBonusServiceTest {
 
     @Test
     void grant_withoutBonusDate_usesKoreaToday() {
+        stubAdminExists();
         stubMemberExists();
         stubSaveReturnsArgument();
         given(member.getId()).willReturn(memberId);
         given(admin.getId()).willReturn(adminId);
 
-        CallBonusResponse response = createService().grant(admin, memberId,
+        CallBonusResponse response = createService().grant(adminId, memberId,
             new CallBonusGrantRequest(600, null, "장애 보상"));
 
         assertThat(response.bonusDate()).isEqualTo(KST_TODAY);
         assertThat(response.memberId()).isEqualTo(memberId);
         assertThat(response.seconds()).isEqualTo(600);
         assertThat(response.reason()).isEqualTo("장애 보상");
-        assertThat(response.grantedByMemberId()).isEqualTo(adminId);
+        assertThat(response.grantedByAdminId()).isEqualTo(adminId);
         assertThat(response.canceled()).isFalse();
     }
 
     @Test
     void grant_todayAndFutureDate_allowed() {
+        stubAdminExists();
         stubMemberExists();
         stubSaveReturnsArgument();
 
-        CallBonusResponse today = createService().grant(admin, memberId,
+        CallBonusResponse today = createService().grant(adminId, memberId,
             new CallBonusGrantRequest(60, KST_TODAY, "오늘"));
-        CallBonusResponse future = createService().grant(admin, memberId,
+        CallBonusResponse future = createService().grant(adminId, memberId,
             new CallBonusGrantRequest(60, KST_TODAY.plusDays(3), "미래"));
 
         assertThat(today.bonusDate()).isEqualTo(KST_TODAY);
@@ -97,9 +108,10 @@ class CallBonusServiceTest {
 
     @Test
     void grant_pastDate_rejected() {
+        stubAdminExists();
         stubMemberExists();
 
-        assertThatThrownBy(() -> createService().grant(admin, memberId,
+        assertThatThrownBy(() -> createService().grant(adminId, memberId,
             new CallBonusGrantRequest(60, KST_TODAY.minusDays(1), "과거")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
@@ -108,12 +120,24 @@ class CallBonusServiceTest {
 
     @Test
     void grant_memberNotFound_throws() {
+        stubAdminExists();
         given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().grant(admin, memberId,
+        assertThatThrownBy(() -> createService().grant(adminId, memberId,
             new CallBonusGrantRequest(60, null, "사유")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
+        verify(callBonusRepository, never()).save(any());
+    }
+
+    @Test
+    void grant_adminNotFound_throwsAdminNotFound() {
+        given(adminRepository.findByIdAndDeletedFalse(adminId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> createService().grant(adminId, memberId,
+            new CallBonusGrantRequest(60, null, "사유")))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ADMIN_NOT_FOUND));
         verify(callBonusRepository, never()).save(any());
     }
 
@@ -130,17 +154,18 @@ class CallBonusServiceTest {
 
         assertThat(responses).extracting(CallBonusResponse::canceled).containsExactly(false, true);
         assertThat(responses.get(1).canceledAt()).isEqualTo(NOW);
-        assertThat(responses.get(1).canceledByMemberId()).isEqualTo(adminId);
+        assertThat(responses.get(1).canceledByAdminId()).isEqualTo(adminId);
     }
 
     @Test
     void cancel_recordsCanceler() {
+        stubAdminExists();
         UUID callBonusId = UUID.randomUUID();
         CallBonus callBonus = CallBonus.grant(member, KST_TODAY, 60, "사유", admin);
         given(callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId))
             .willReturn(Optional.of(callBonus));
 
-        createService().cancel(admin, memberId, callBonusId);
+        createService().cancel(adminId, memberId, callBonusId);
 
         assertThat(callBonus.isDeleted()).isTrue();
         assertThat(callBonus.getDeletedAt()).isEqualTo(NOW);
@@ -149,13 +174,24 @@ class CallBonusServiceTest {
 
     @Test
     void cancel_notFoundOrAlreadyCanceledOrOtherMember_throws() {
+        stubAdminExists();
         UUID callBonusId = UUID.randomUUID();
         given(callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId))
             .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().cancel(admin, memberId, callBonusId))
+        assertThatThrownBy(() -> createService().cancel(adminId, memberId, callBonusId))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_BONUS_NOT_FOUND));
+    }
+
+    @Test
+    void cancel_adminNotFound_throwsAdminNotFound() {
+        UUID callBonusId = UUID.randomUUID();
+        given(adminRepository.findByIdAndDeletedFalse(adminId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> createService().cancel(adminId, memberId, callBonusId))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ADMIN_NOT_FOUND));
     }
 
 }

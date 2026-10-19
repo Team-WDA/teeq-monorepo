@@ -48,7 +48,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private boolean privacyPolicyAgreed;
 
-    // 가입 계정은 항상 USER다. ADMIN 생성은 별도 절차에서 다룬다
+    // 가입 계정은 항상 USER다. 관리자 계정은 Admin 엔티티로 분리되어 있다
     @Builder
     private Member(String email, String password, String nickname, boolean serviceTermsAgreed,
         boolean privacyPolicyAgreed) {

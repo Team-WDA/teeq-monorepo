@@ -17,7 +17,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@Tag(name = "관리자 통화 사용량", description = "관리자 전용 통화 사용량 조회(ADMIN 권한 필요)")
+@Tag(name = "관리자 통화 사용량", description = "관리자 전용 통화 사용량 조회(관리자 로그인 세션 필요)")
 public interface CallUsageAdminControllerDocs {
 
     @Operation(summary = "통화 사용량 조회",
@@ -32,10 +32,7 @@ public interface CallUsageAdminControllerDocs {
             description = "`INVALID_REQUEST`: `unit`, `from`, `to` 누락 또는 형식 오류(`unit`은 DAY, MONTH, 날짜는 yyyy-MM-dd), `from`이 `to`보다 늦음, 조회 기간이 단위별 최대치 초과",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
             description = "`MEMBER_NOT_FOUND`: `memberId`에 해당하는 회원이 없거나 탈퇴함",

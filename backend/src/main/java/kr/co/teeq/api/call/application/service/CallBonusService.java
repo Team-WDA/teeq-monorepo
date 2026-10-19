@@ -11,7 +11,9 @@ import kr.co.teeq.api.call.core.entity.CallBonus;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Admin;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.member.core.repository.AdminRepository;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,11 +25,13 @@ public class CallBonusService {
 
     private final CallBonusRepository callBonusRepository;
     private final MemberRepository memberRepository;
+    private final AdminRepository adminRepository;
     private final Clock clock;
     private final ZoneId koreaZoneId;
 
     @Transactional
-    public CallBonusResponse grant(Member grantedBy, UUID memberId, CallBonusGrantRequest request) {
+    public CallBonusResponse grant(UUID adminId, UUID memberId, CallBonusGrantRequest request) {
+        Admin grantedBy = findAdmin(adminId);
         Member member = memberRepository.findByIdAndDeletedFalse(memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
@@ -52,10 +56,17 @@ public class CallBonusService {
     }
 
     @Transactional
-    public void cancel(Member canceledBy, UUID memberId, UUID callBonusId) {
+    public void cancel(UUID adminId, UUID memberId, UUID callBonusId) {
+        Admin canceledBy = findAdmin(adminId);
         CallBonus callBonus = callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId)
             .orElseThrow(() -> new CustomException(ErrorCode.CALL_BONUS_NOT_FOUND));
         callBonus.cancel(canceledBy, clock);
+    }
+
+    // 세션의 관리자는 분리 상태이므로 id로 다시 조회한다
+    private Admin findAdmin(UUID adminId) {
+        return adminRepository.findByIdAndDeletedFalse(adminId)
+            .orElseThrow(() -> new CustomException(ErrorCode.ADMIN_NOT_FOUND));
     }
 
 }

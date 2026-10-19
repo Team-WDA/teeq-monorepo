@@ -26,6 +26,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
     MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
+    ADMIN_NOT_FOUND(404, "관리자를 찾을 수 없습니다."),
     SOCIAL_TOKEN_INVALID(401, "소셜 로그인 인증 정보가 올바르지 않습니다."),
     SOCIAL_SERVER_UNAVAILABLE(502, "소셜 로그인 서버와 통신할 수 없습니다."),
     LOGIN_METHOD_MISMATCH(401, "가입한 로그인 방식이 다릅니다."),

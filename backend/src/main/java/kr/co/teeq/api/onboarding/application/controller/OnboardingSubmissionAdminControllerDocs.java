@@ -18,7 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@Tag(name = "관리자 온보딩 제출 이력", description = "관리자 전용 온보딩 제출 이력 조회(ADMIN 권한 필요)")
+@Tag(name = "관리자 온보딩 제출 이력", description = "관리자 전용 온보딩 제출 이력 조회(관리자 로그인 세션 필요)")
 public interface OnboardingSubmissionAdminControllerDocs {
 
     @Operation(summary = "온보딩 제출 이력 조회",
@@ -33,10 +33,7 @@ public interface OnboardingSubmissionAdminControllerDocs {
             description = "`INVALID_REQUEST`: `memberId`, `from`, `to`, `optionCode`, `active`의 형식 오류(날짜는 yyyy-MM-dd, `optionCode`는 정의된 선택지 코드), `from`이 `to`보다 늦음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "403",
-            description = "`ACCESS_DENIED`: ADMIN 권한이 없음",
+            description = "`UNAUTHENTICATED`: 로그인 세션이 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<OnboardingSubmissionPageResponse> search(
