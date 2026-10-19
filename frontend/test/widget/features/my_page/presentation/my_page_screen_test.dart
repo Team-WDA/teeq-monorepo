@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/login_type.dart';
+import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 
 import '../../../../support/my_page_harness.dart';
@@ -43,7 +46,7 @@ void main() {
       '소연',
       '계정 정보',
       '이메일',
-      '서비스 (앱정보 v1.0.0)',
+      '서비스 (앱정보 v0.15.0)',
       '서비스 이용약관',
       '개인정보 처리방침',
       '로그아웃',
@@ -51,6 +54,41 @@ void main() {
     ]) {
       expect(find.text(text), findsOneWidget, reason: text);
     }
+  });
+
+  testWidgets('shows version in service section title', (tester) async {
+    await _pumpMyPage(tester, MyPageHarness());
+
+    expect(find.text('서비스 (앱정보 v0.15.0)'), findsOneWidget);
+  });
+
+  testWidgets('shows only service while version is loading', (tester) async {
+    final completer = Completer<String>();
+    final harness = MyPageHarness(
+      appVersionOverride: appVersionProvider.overrideWith(
+        (ref) => completer.future,
+      ),
+    );
+    await _pumpMyPage(tester, harness);
+
+    expect(find.text('서비스'), findsOneWidget);
+    expect(find.textContaining('앱정보'), findsNothing);
+  });
+
+  testWidgets('shows only service when version fails and reports no error', (
+    tester,
+  ) async {
+    final harness = MyPageHarness(
+      appVersionOverride: appVersionProvider.overrideWith(
+        (ref) async => throw Exception('plugin unavailable'),
+      ),
+    );
+    await _pumpMyPage(tester, harness);
+
+    expect(find.text('서비스'), findsOneWidget);
+    expect(find.textContaining('앱정보'), findsNothing);
+    expect(harness.errorHandler.handledErrors, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('email login member sees password row', (tester) async {
@@ -78,6 +116,20 @@ void main() {
     expect(harness.repository.logoutCount, 1);
     expect(harness.currentMember, isNull);
     expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('double tap on logout calls logout once', (tester) async {
+    final harness = MyPageHarness();
+    harness.repository.logoutGate = Completer<void>();
+    await _pumpMyPage(tester, harness);
+
+    final logoutButton = find.text('로그아웃');
+    await tester.tap(logoutButton);
+    await tester.tap(logoutButton);
+
+    expect(harness.repository.logoutCount, 1);
+    harness.repository.logoutGate!.complete();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('rows without destinations do nothing on tap', (tester) async {

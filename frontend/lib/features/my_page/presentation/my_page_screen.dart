@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
+import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
@@ -14,9 +15,6 @@ import 'package:teeq/features/my_page/presentation/widgets/profile_summary_card.
 import 'package:teeq/features/my_page/presentation/widgets/settings_row.dart';
 import 'package:teeq/features/my_page/presentation/widgets/settings_section_card.dart';
 
-/// 시안의 서비스 섹션 제목. 앱 버전이 문구에 박혀 있어 정해질 때까지 이 한 곳에서 관리한다.
-const String _serviceSectionTitle = '서비스 (앱정보 v1.0.0)';
-
 /// 마이 화면. 하단 탭 바는 탭 셸이 제공하므로 여기서는 본문만 그린다.
 class MyPageScreen extends ConsumerStatefulWidget {
   const MyPageScreen({super.key});
@@ -26,6 +24,8 @@ class MyPageScreen extends ConsumerStatefulWidget {
 }
 
 class _MyPageScreenState extends ConsumerState<MyPageScreen> {
+  bool _isLogoutInProgress = false;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +48,15 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     }
   }
 
+  /// 로그아웃은 서버 실패와 무관하게 항상 로그아웃 상태로 끝나므로 재진입만 막는다.
+  void _logout() {
+    if (_isLogoutInProgress) {
+      return;
+    }
+    _isLogoutInProgress = true;
+    ref.read(authFlowProvider).logout();
+  }
+
   @override
   Widget build(BuildContext context) {
     // 로그아웃·탈퇴 순간 회원이 비면 이전 회원 정보를 그리지 않는다.
@@ -55,6 +64,11 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     if (member == null) {
       return const SizedBox.shrink();
     }
+    // 버전을 못 읽으면(로딩·오류) 버전 표기 없이 '서비스'만 보여 주고 에러 처리는 하지 않는다.
+    final appVersion = ref.watch(appVersionProvider).value;
+    final serviceSectionTitle = appVersion == null
+        ? '서비스'
+        : '서비스 (앱정보 v$appVersion)';
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
         AppLayout.horizontalMargin,
@@ -91,9 +105,9 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.space24),
-          const SettingsSectionCard(
-            title: _serviceSectionTitle,
-            rows: [
+          SettingsSectionCard(
+            title: serviceSectionTitle,
+            rows: const [
               SettingsRow(
                 label: '서비스 이용약관',
                 leadingIconAssetPath: AppAssets.documentIcon,
@@ -107,10 +121,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.space52),
-          DestructiveTonalButton(
-            label: '로그아웃',
-            onPressed: () => ref.read(authFlowProvider).logout(),
-          ),
+          DestructiveTonalButton(label: '로그아웃', onPressed: _logout),
           const SizedBox(height: AppSpacing.space4),
           DestructiveTonalButton(
             label: '회원 탈퇴',

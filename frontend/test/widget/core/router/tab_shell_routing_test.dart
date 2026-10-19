@@ -7,6 +7,7 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
+import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/app_routes.dart';
@@ -68,7 +69,10 @@ Future<ProviderContainer> _pumpApp(
   RecordingErrorHandler? errorHandler,
 }) async {
   final container = ProviderContainer(
+    // 실패 응답이 재시도되지 않도록 한다.
+    retry: (retryCount, error) => null,
     overrides: [
+      appVersionProvider.overrideWith((ref) async => '0.15.0'),
       authStatusControllerProvider.overrideWith(
         () => FakeAuthStatusController(AuthStatus.signedIn),
       ),
@@ -124,6 +128,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(homeRepository.fetchCount, 1);
+  });
+
+  testWidgets('repeated taps on same tab do not throw or duplicate pages', (
+    tester,
+  ) async {
+    final homeRepository = FakeHomeRepository(summary: _homeSummary);
+    await _pumpApp(
+      tester,
+      member: _memberWithCharacter,
+      homeRepository: homeRepository,
+    );
+
+    await tester.tap(find.text('홈'));
+    await tester.tap(find.text('홈'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    await tester.tap(find.text('마이'));
+    await tester.tap(find.text('마이'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MyPageScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(homeRepository.fetchCount, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

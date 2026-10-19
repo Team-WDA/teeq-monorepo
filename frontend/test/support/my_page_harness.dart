@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
-import 'package:teeq/core/config/app_config.dart';
+import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
@@ -54,12 +55,6 @@ const memberWithoutEmail = Member(
   loginType: LoginType.email,
 );
 
-const testAppConfig = AppConfig(
-  apiBaseUrl: 'https://a.kr',
-  appleServiceId: 'x',
-  appleRedirectUri: 'x',
-);
-
 /// 마이 화면과 탈퇴 모달 테스트가 함께 쓰는 실제 `AuthFlow` 구성.
 class MyPageHarness {
   MyPageHarness({
@@ -67,6 +62,7 @@ class MyPageHarness {
     Member? fetchedMember,
     Object? fetchMeError,
     Object? deleteAccountError,
+    Override? appVersionOverride,
   }) : repository = FakeAuthRepository(
          member: fetchedMember ?? member,
          fetchMeError: fetchMeError,
@@ -74,8 +70,11 @@ class MyPageHarness {
        ) {
     tokenStorage = RecordingTokenStorage(events);
     container = ProviderContainer(
+      // 실패 응답이 재시도되지 않도록 한다.
+      retry: (retryCount, error) => null,
       overrides: [
-        appConfigProvider.overrideWithValue(testAppConfig),
+        appVersionOverride ??
+            appVersionProvider.overrideWith((ref) async => '0.15.0'),
         authRepositoryProvider.overrideWithValue(repository),
         tokenStorageProvider.overrideWithValue(tokenStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
