@@ -17,11 +17,36 @@ import 'package:teeq/features/home/presentation/widgets/personality_tag_row.dart
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
 
 /// 홈 화면. 하단 탭 바는 탭 셸이 제공하므로 여기서는 본문만 그린다.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _isEditDialogOpen = false;
+
+  /// 팝업이 떠 있는 동안 같은 카드가 다시 눌려도 팝업을 또 띄우지 않는다.
+  Future<void> _openEditDialog(String characterName) async {
+    if (_isEditDialogOpen) {
+      return;
+    }
+    setState(() => _isEditDialogOpen = true);
+    try {
+      await showCharacterEditConfirmationDialog(
+        context,
+        characterName: characterName,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isEditDialogOpen = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // 로그아웃·탈퇴 순간 회원이 비면 이전 회원 데이터를 지우고 오류 페이지로 새지 않게 비워 둔다.
     final memberId = ref.watch(
       currentMemberControllerProvider.select((member) => member?.memberId),
@@ -38,14 +63,18 @@ class HomeScreen extends ConsumerWidget {
     if (summary == null) {
       return const SizedBox.shrink();
     }
-    return _HomeContent(summary: summary);
+    return _HomeContent(
+      summary: summary,
+      onEditCharacter: () => _openEditDialog(summary.characterName),
+    );
   }
 }
 
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.summary});
+  const _HomeContent({required this.summary, required this.onEditCharacter});
 
   final HomeSummary summary;
+  final VoidCallback onEditCharacter;
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +130,7 @@ class _HomeContent extends StatelessWidget {
                       const SizedBox(height: AppSpacing.space24),
                       const CallStartButton(),
                       const SizedBox(height: AppSpacing.space8),
-                      CharacterEditEntryCard(
-                        onTap: () => showCharacterEditConfirmationDialog(
-                          context,
-                          characterName: summary.characterName,
-                        ),
-                      ),
+                      CharacterEditEntryCard(onTap: onEditCharacter),
                     ],
                   ),
                 ),

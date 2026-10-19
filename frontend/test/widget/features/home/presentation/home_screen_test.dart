@@ -8,6 +8,7 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/ui/button/app_close_button.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
@@ -161,6 +162,39 @@ void main() {
 
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.text('티티의 성향을 다시 설정할까?'), findsOneWidget);
+  });
+
+  testWidgets('double tap on edit card opens dialog once', (tester) async {
+    final setUp = _setUp(FakeHomeRepository(summary: _summary));
+    await _pumpHome(tester, setUp.container);
+
+    // 프레임이 그려지기 전에 같은 탭 핸들러가 연달아 호출되는 상황을 만든다.
+    final onTap = tester
+        .widget<CharacterEditEntryCard>(find.byType(CharacterEditEntryCard))
+        .onTap;
+    onTap();
+    onTap();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.text('티티의 성향을 다시 설정할까?'), findsOneWidget);
+  });
+
+  testWidgets('edit dialog can reopen after closing', (tester) async {
+    final setUp = _setUp(FakeHomeRepository(summary: _summary));
+    await _pumpHome(tester, setUp.container);
+
+    await tester.tap(find.byType(CharacterEditEntryCard));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
+
+    await tester.tap(find.byType(AppCloseButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsNothing);
+
+    await tester.tap(find.byType(CharacterEditEntryCard));
+    await tester.pumpAndSettle();
+    expect(find.byType(Dialog), findsOneWidget);
   });
 
   testWidgets(
