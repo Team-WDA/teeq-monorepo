@@ -24,7 +24,8 @@ public record AuthResponse(
     @Schema(description = "로그인 방식(EMAIL, APPLE)", example = "EMAIL")
     LoginType loginType,
 
-    @Schema(description = "프로필 사진 URL. 사진이 없으면 null", example = "/media/profile-images/0192f3a4.jpg", nullable = true)
+    @Schema(description = "프로필 사진 절대 URL. 사진이 없으면 null",
+        example = "https://api.teeq.co.kr/media/profile-images/0192f3a4.jpg", nullable = true)
     String profileImageUrl
 ) {
 
