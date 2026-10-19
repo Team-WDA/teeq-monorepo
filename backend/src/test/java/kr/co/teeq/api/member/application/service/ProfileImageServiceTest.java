@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -15,11 +15,12 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
-import kr.co.teeq.api.member.core.port.ProfileImageStoragePort;
+import kr.co.teeq.api.media.application.service.MediaService;
+import kr.co.teeq.api.media.core.constant.MediaCategory;
+import kr.co.teeq.api.media.core.model.StoredMedia;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,82 +30,57 @@ import org.springframework.mock.web.MockMultipartFile;
 class ProfileImageServiceTest {
 
     private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
-    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n', 0, 0};
+    private static final StoredMedia STORED = new StoredMedia("stored-key.png", "image/png", 10L);
 
     @Mock
-    private ProfileImageStoragePort profileImageStoragePort;
+    private MediaService mediaService;
 
     @Mock
     private ProfileImageCommandService profileImageCommandService;
 
     private ProfileImageService profileImageService;
 
+    private final MockMultipartFile image = new MockMultipartFile("image", "photo.png", "image/png", new byte[10]);
+
     @BeforeEach
     void setUp() {
-        profileImageService = new ProfileImageService(profileImageStoragePort, profileImageCommandService);
-    }
-
-    private MockMultipartFile image(byte[] content) {
-        return new MockMultipartFile("image", "photo.exe", "application/octet-stream", content);
-    }
-
-    private void assertFailsWith(byte[] content, ErrorCode expected) {
-        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image(content)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(expected));
-        verifyNoInteractions(profileImageStoragePort, profileImageCommandService);
+        profileImageService = new ProfileImageService(mediaService, profileImageCommandService);
     }
 
     @Test
-    void replace_emptyFile_throwsInvalid() {
-        assertFailsWith(new byte[0], ErrorCode.PROFILE_IMAGE_INVALID);
+    void replace_success_passesStoredValuesToCommandService() {
+        given(mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image)).willReturn(STORED);
+
+        profileImageService.replace(MEMBER_ID, image);
+
+        InOrder order = inOrder(mediaService, profileImageCommandService);
+        order.verify(mediaService).storeImage(MediaCategory.PROFILE_IMAGE, image);
+        order.verify(profileImageCommandService).replace(MEMBER_ID, "stored-key.png", "image/png", 10L);
+        verify(mediaService, never()).delete(any(), anyString());
     }
 
     @Test
-    void replace_unsupportedFormat_throwsInvalid() {
-        assertFailsWith("not an image".getBytes(), ErrorCode.PROFILE_IMAGE_INVALID);
-    }
-
-    @Test
-    void replace_overFiveMegabytes_throwsTooLarge() {
-        assertFailsWith(new byte[5 * 1024 * 1024 + 1], ErrorCode.PROFILE_IMAGE_TOO_LARGE);
-    }
-
-    @Test
-    void replace_success_storesFileBeforeSavingRowWithDetectedFormat() {
-        profileImageService.replace(MEMBER_ID, image(PNG));
-
-        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        InOrder order = inOrder(profileImageStoragePort, profileImageCommandService);
-        order.verify(profileImageStoragePort).store(keyCaptor.capture(), eq(PNG));
-        order.verify(profileImageCommandService)
-            .replace(MEMBER_ID, keyCaptor.getValue(), "image/png", PNG.length);
-        assertThat(keyCaptor.getValue()).endsWith(".png");
-        verify(profileImageStoragePort, never()).delete(anyString());
-    }
-
-    @Test
-    void replace_databaseFailure_deletesStoredFileAndRethrows() {
+    void replace_commandFails_deletesStoredFileAndRethrows() {
+        given(mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image)).willReturn(STORED);
         IllegalStateException failure = new IllegalStateException("db down");
         doThrow(failure).when(profileImageCommandService).replace(any(), anyString(), anyString(), anyLong());
 
-        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image(PNG))).isSameAs(failure);
+        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image)).isSameAs(failure);
 
-        ArgumentCaptor<String> storedKey = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> deletedKey = ArgumentCaptor.forClass(String.class);
-        verify(profileImageStoragePort).store(storedKey.capture(), any());
-        verify(profileImageStoragePort).delete(deletedKey.capture());
-        assertThat(deletedKey.getValue()).isEqualTo(storedKey.getValue());
+        verify(mediaService).delete(MediaCategory.PROFILE_IMAGE, "stored-key.png");
     }
 
     @Test
-    void replace_storageFailure_doesNotTouchDatabase() {
-        CustomException failure = new CustomException(ErrorCode.INTERNAL_SERVER_ERROR);
-        doThrow(failure).when(profileImageStoragePort).store(anyString(), any());
+    void replace_storeRejected_doesNotTouchDatabase() {
+        CustomException failure = new CustomException(ErrorCode.PROFILE_IMAGE_INVALID);
+        given(mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image)).willThrow(failure);
 
-        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image(PNG))).isSameAs(failure);
+        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PROFILE_IMAGE_INVALID));
 
         verifyNoInteractions(profileImageCommandService);
+        verify(mediaService, never()).delete(any(), anyString());
     }
 
     @Test
@@ -112,7 +88,7 @@ class ProfileImageServiceTest {
         profileImageService.delete(MEMBER_ID);
 
         verify(profileImageCommandService).delete(MEMBER_ID);
-        verifyNoInteractions(profileImageStoragePort);
+        verifyNoInteractions(mediaService);
     }
 
 }
