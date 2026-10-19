@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
@@ -26,6 +30,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isEditDialogOpen = false;
+  bool _isCallFlowOpening = false;
 
   /// 팝업이 떠 있는 동안 같은 카드가 다시 눌려도 팝업을 또 띄우지 않는다.
   Future<void> _openEditDialog(String characterName) async {
@@ -46,6 +51,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 흐름이 스택을 교체하며 끝나 홈 라우트가 다시 맨 위가 되면, 홈 데이터가 그대로여도 다시 열 수 있어야 한다.
+    if (ModalRoute.of(context)?.isCurrent ?? false) {
+      _releaseCallFlowOpening();
+    }
+  }
+
+  /// 피드백 흐름을 연다. 흐름은 `context.go`로 스택을 교체하며 끝나 push의 Future가 끝나지 않을 수 있으므로
+  /// await하지 않고, 플래그는 Future 완료와 홈 요약 데이터 변경 두 곳에서 내린다.
+  void _openFeedbackFlow(String callSessionId) {
+    if (_isCallFlowOpening) {
+      return;
+    }
+    _isCallFlowOpening = true;
+    unawaited(
+      context
+          .push<void>(AppRoutes.feedbackClosingLocation(callSessionId))
+          .whenComplete(_releaseCallFlowOpening),
+    );
+  }
+
+  void _releaseCallFlowOpening() {
+    _isCallFlowOpening = false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     // 로그아웃·탈퇴 순간 회원이 비면 이전 회원 데이터를 지우고 오류 페이지로 새지 않게 비워 둔다.
     final memberId = ref.watch(
@@ -56,24 +88,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     ref.listen(homeSummaryProvider(memberId), (previous, next) {
       if (next case AsyncError(:final error)) {
-        ref.read(errorHandlerProvider).handle(error, blocking: true);
+        // 이전 값이 있으면 화면을 유지한 채 알리기만 하고, 첫 조회 실패일 때만 막는다.
+        ref.read(errorHandlerProvider).handle(error, blocking: !next.hasValue);
+      }
+      // 필수 제출 뒤 홈이 갱신되면 피드백 흐름 진입 잠금을 푼다.
+      if (next case AsyncData(:final value) when value != previous?.value) {
+        _releaseCallFlowOpening();
       }
     });
     final summary = ref.watch(homeSummaryProvider(memberId)).value;
     if (summary == null) {
       return const SizedBox.shrink();
     }
+    final pendingFeedback = summary.pendingFeedback;
     return _HomeContent(
       summary: summary,
+      onStartCall: pendingFeedback == null
+          ? null
+          : () => _openFeedbackFlow(pendingFeedback.callSessionId),
       onEditCharacter: () => _openEditDialog(summary.characterName),
     );
   }
 }
 
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({required this.summary, required this.onEditCharacter});
+  const _HomeContent({
+    required this.summary,
+    required this.onStartCall,
+    required this.onEditCharacter,
+  });
 
   final HomeSummary summary;
+  final VoidCallback? onStartCall;
   final VoidCallback onEditCharacter;
 
   @override
@@ -128,7 +174,7 @@ class _HomeContent extends StatelessWidget {
                       const SizedBox(height: AppSpacing.space8),
                       PersonalityTagRow(tags: summary.personalityTags),
                       const SizedBox(height: AppSpacing.space24),
-                      const CallStartButton(),
+                      CallStartButton(onPressed: onStartCall),
                       const SizedBox(height: AppSpacing.space8),
                       CharacterEditEntryCard(onTap: onEditCharacter),
                     ],
