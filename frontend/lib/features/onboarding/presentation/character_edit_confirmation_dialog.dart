@@ -10,6 +10,7 @@ import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_close_button.dart';
 import 'package:teeq/core/ui/button/rounded_pill_button.dart';
+import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
 import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
@@ -59,11 +60,19 @@ class CharacterEditConfirmationDialog extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  AppAssets.characterEditPrompt,
-                  width: AppLayout.dialogIllustrationWidth,
-                  height: AppLayout.dialogIllustrationHeight,
-                  fit: BoxFit.fill,
+                Flexible(
+                  child: DesignFrameScaleBuilder(
+                    designWidth: AppLayout.dialogContentWidth,
+                    builder: (context, scale) => FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Image.asset(
+                        AppAssets.characterEditPrompt,
+                        width: AppLayout.dialogIllustrationWidth * scale,
+                        height: AppLayout.dialogIllustrationHeight * scale,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
                 ),
                 const AccentOutlineHintTag(message: '걱정 마! 우리의 기억은 그대로야.'),
                 const SizedBox(height: AppSpacing.space32),

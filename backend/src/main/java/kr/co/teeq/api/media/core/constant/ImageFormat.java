@@ -1,12 +1,12 @@
-package kr.co.teeq.api.member.core.constant;
+package kr.co.teeq.api.media.core.constant;
 
 import java.util.Arrays;
 import java.util.Optional;
 
 /**
- * 프로필 사진으로 허용하는 이미지 형식. 클라이언트가 보낸 파일명과 content type은 믿지 않고 파일 앞부분(매직 바이트)으로 판별한다.
+ * 미디어로 허용하는 이미지 형식. 클라이언트가 보낸 파일명과 content type은 믿지 않고 파일 앞부분(매직 바이트)으로 판별한다.
  */
-public enum ProfileImageFormat {
+public enum ImageFormat {
 
     JPEG("image/jpeg", "jpg"),
     PNG("image/png", "png"),
@@ -21,7 +21,7 @@ public enum ProfileImageFormat {
     private final String contentType;
     private final String extension;
 
-    ProfileImageFormat(String contentType, String extension) {
+    ImageFormat(String contentType, String extension) {
         this.contentType = contentType;
         this.extension = extension;
     }
@@ -34,7 +34,7 @@ public enum ProfileImageFormat {
         return extension;
     }
 
-    public static Optional<ProfileImageFormat> detect(byte[] content) {
+    public static Optional<ImageFormat> detect(byte[] content) {
         return Arrays.stream(values())
             .filter(format -> format.matches(content))
             .findFirst();

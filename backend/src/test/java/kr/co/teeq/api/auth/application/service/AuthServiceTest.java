@@ -30,12 +30,13 @@ import kr.co.teeq.api.auth.core.port.TokenProvider;
 import kr.co.teeq.api.auth.core.repository.RefreshTokenRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.media.application.service.MediaService;
+import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.constant.Role;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.entity.ProfileImage;
 import kr.co.teeq.api.member.core.port.AiCharacterExistencePort;
-import kr.co.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +76,7 @@ class AuthServiceTest {
     private ProfileImageRepository profileImageRepository;
 
     @Mock
-    private ProfileImageStoragePort profileImageStoragePort;
+    private MediaService mediaService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
@@ -86,7 +87,7 @@ class AuthServiceTest {
     void setUp() {
         AuthTokenIssuer authTokenIssuer =
             new AuthTokenIssuer(refreshTokenRepository, tokenProvider, aiCharacterExistencePort,
-                profileImageRepository, profileImageStoragePort);
+                profileImageRepository, mediaService);
         authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder, clock,
             authTokenIssuer, new SocialLoginCommandService(memberRepository, authTokenIssuer),
             List.of(socialIdentityVerifier), profileImageRepository);
@@ -314,7 +315,7 @@ class AuthServiceTest {
 
         assertThat(image.isDeleted()).isTrue();
         assertThat(image.getDeletedAt()).isEqualTo(NOW);
-        verifyNoInteractions(profileImageStoragePort);
+        verifyNoInteractions(mediaService);
     }
 
     @Test
@@ -325,11 +326,12 @@ class AuthServiceTest {
         given(refreshTokenRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.empty());
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
             .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.jpg", "image/jpeg", 10L)));
-        given(profileImageStoragePort.urlFor("key.jpg")).willReturn("/media/profile-images/key.jpg");
+        given(mediaService.urlFor(MediaCategory.PROFILE_IMAGE, "key.jpg"))
+            .willReturn("https://api.teeq.co.kr/media/profile-images/key.jpg");
 
         AuthResponse response = authService.login(new LoginRequest("soyeon@teeq.com", "abcd1234"));
 
-        assertThat(response.profileImageUrl()).isEqualTo("/media/profile-images/key.jpg");
+        assertThat(response.profileImageUrl()).isEqualTo("https://api.teeq.co.kr/media/profile-images/key.jpg");
     }
 
     // ---------- login / changePassword with social account ----------

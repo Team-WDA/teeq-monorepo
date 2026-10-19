@@ -32,7 +32,7 @@ abstract final class AppTheme {
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.accent,
         foregroundColor: AppColors.textPrimary,
-        disabledBackgroundColor: AppColors.disabled,
+        disabledBackgroundColor: AppColors.neutralSurface,
         disabledForegroundColor: AppColors.textSecondary,
         minimumSize: const Size.fromHeight(AppLayout.buttonHeight),
         shape: const RoundedRectangleBorder(

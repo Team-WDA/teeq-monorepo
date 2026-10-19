@@ -12,5 +12,6 @@ abstract final class AppRoutes {
   static const String characterName = '/onboarding/character-name';
   static const String characterResult = '/onboarding/character-result';
   static const String home = '/';
+  static const String myPage = '/my-page';
   static const String error = '/error';
 }

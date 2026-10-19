@@ -16,6 +16,9 @@ class AuthSession {
 
   final Ref _ref;
 
+  /// 지금 보관 중인 회원. 로그아웃 상태면 null이다.
+  Member? get currentMember => _ref.read(currentMemberControllerProvider);
+
   /// 로그인 성공: 토큰 저장 → 회원 보관 → 상태 전환 순서.
   Future<void> signIn(SignInResult result) async {
     await _ref.read(tokenStorageProvider).save(result.tokens);
@@ -27,6 +30,11 @@ class AuthSession {
   Future<void> restored(Member member) async {
     _ref.read(currentMemberControllerProvider.notifier).update(member);
     _ref.read(authStatusControllerProvider.notifier).markSignedIn();
+  }
+
+  /// 로그인 상태는 그대로 두고 보관 중인 회원만 최신 값으로 바꾼다.
+  void updateMember(Member member) {
+    _ref.read(currentMemberControllerProvider.notifier).update(member);
   }
 
   /// 상태 → 회원 → 저장소 순서로 지운다. 라우터가 상태와 회원을 함께 들으므로

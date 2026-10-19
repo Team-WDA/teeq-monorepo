@@ -5,9 +5,10 @@ import kr.co.teeq.api.auth.core.entity.RefreshToken;
 import kr.co.teeq.api.auth.core.port.IssuedRefreshToken;
 import kr.co.teeq.api.auth.core.port.TokenProvider;
 import kr.co.teeq.api.auth.core.repository.RefreshTokenRepository;
+import kr.co.teeq.api.media.application.service.MediaService;
+import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.port.AiCharacterExistencePort;
-import kr.co.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ public class AuthTokenIssuer {
     private final TokenProvider tokenProvider;
     private final AiCharacterExistencePort aiCharacterExistencePort;
     private final ProfileImageRepository profileImageRepository;
-    private final ProfileImageStoragePort profileImageStoragePort;
+    private final MediaService mediaService;
 
     public AuthResponse issue(Member member) {
         String accessToken = tokenProvider.issueAccessToken(member.getId());
@@ -36,7 +37,7 @@ public class AuthTokenIssuer {
                 .expiresAt(issued.expiresAt())
                 .build()));
         String profileImageUrl = profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
-            .map(image -> profileImageStoragePort.urlFor(image.getStorageKey()))
+            .map(image -> mediaService.urlFor(MediaCategory.PROFILE_IMAGE, image.getStorageKey()))
             .orElse(null);
         return AuthResponse.of(accessToken, issued.token(), member,
             aiCharacterExistencePort.existsByMemberId(member.getId()), profileImageUrl);

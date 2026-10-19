@@ -100,7 +100,7 @@ public interface MemberControllerDocs {
             프로필 사진을 올린다. 이미 사진이 있으면 새 사진으로 교체한다.
             요청은 `multipart/form-data`이고 파일 파트 이름은 `image`다. JPEG, PNG, WebP만 허용하며 최대 5MB다.
             형식은 파일 내용으로 판별하므로 확장자와 content type이 달라도 내용이 허용 형식이면 통과한다.
-            응답의 `profileImageUrl`은 서버 기준 상대 경로이므로 앱이 API base URL을 붙여 요청한다.""")
+            응답의 `profileImageUrl`은 절대 URL이므로 앱이 그대로 요청한다.""")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "교체 성공. 갱신된 회원 정보 반환"),
         @ApiResponse(responseCode = "400",

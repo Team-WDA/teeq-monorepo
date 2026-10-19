@@ -14,6 +14,17 @@ abstract final class AppAssets {
   static const String stageInProgressRingIcon =
       '$_icons/stage_in_progress_ring.png';
 
+  // 홈·마이 화면 아이콘. SVG는 단색이라 ColorFilter로 색을 바꾸고, wandIcon만 색이 고정된 PNG다.
+  static const String homeTabIcon = '$_icons/home_tab.svg';
+  static const String myTabIcon = '$_icons/my_tab.svg';
+  static const String callIcon = '$_icons/call.svg';
+  static const String wandIcon = '$_icons/wand.png';
+  static const String mailIcon = '$_icons/mail.svg';
+  static const String lockIcon = '$_icons/lock.svg';
+  static const String documentIcon = '$_icons/document.svg';
+  static const String chevronRightIcon = '$_icons/chevron_right.svg';
+  static const String pencilIcon = '$_icons/pencil.svg';
+
   static const String glowSmall = '$_images/welcome_glow_small.svg';
   static const String glowMedium = '$_images/welcome_glow_medium.svg';
   static const String glowLarge = '$_images/welcome_glow_large.svg';
@@ -46,4 +57,11 @@ abstract final class AppAssets {
   static const String glowNaming = '$_images/glow_naming.png';
   static const String glowWelcome = '$_images/glow_welcome.png';
   static const String glowEdit = '$_images/glow_edit.png';
+
+  // 홈·마이 화면 이미지. 홈 빛 번짐은 캐릭터 수정 결과 화면의 빛 번짐과 같은 원본이라 그 이미지를 쓴다.
+  static const String brandLogo = '$_images/brand_logo.svg';
+  static const String defaultAvatarIllustration =
+      '$_images/default_avatar_illustration.png';
+  static const String homeCharacterWink = '$_images/home_character_wink.png';
+  static const String glowHome = glowEdit;
 }

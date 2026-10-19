@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.media.application.service.MediaService;
+import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
@@ -17,7 +19,6 @@ import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.entity.ProfileImage;
 import kr.co.teeq.api.member.core.port.AiCharacterExistencePort;
-import kr.co.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,14 +45,14 @@ class MemberServiceTest {
     private ProfileImageRepository profileImageRepository;
 
     @Mock
-    private ProfileImageStoragePort profileImageStoragePort;
+    private MediaService mediaService;
 
     private MemberService memberService;
 
     @BeforeEach
     void setUp() {
         memberService = new MemberService(memberRepository, aiCharacterExistencePort, profileImageRepository,
-            profileImageStoragePort);
+            mediaService);
     }
 
     private Member member(UUID id, String nickname) {
@@ -181,9 +182,11 @@ class MemberServiceTest {
         Member me = member(MEMBER_ID, "soyeon");
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
             .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.png", "image/png", 10L)));
-        given(profileImageStoragePort.urlFor("key.png")).willReturn("/media/profile-images/key.png");
+        given(mediaService.urlFor(MediaCategory.PROFILE_IMAGE, "key.png"))
+            .willReturn("https://api.teeq.co.kr/media/profile-images/key.png");
 
-        assertThat(memberService.getMe(me).profileImageUrl()).isEqualTo("/media/profile-images/key.png");
+        assertThat(memberService.getMe(me).profileImageUrl())
+            .isEqualTo("https://api.teeq.co.kr/media/profile-images/key.png");
     }
 
     @Test

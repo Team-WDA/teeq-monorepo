@@ -13,6 +13,7 @@ import 'package:teeq/core/error/error_presentation.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
+import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
 import 'package:teeq/core/ui/progress/step_progress_bar.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
@@ -140,23 +141,32 @@ class _CharacterGeneratingScreenState
                   description: '네가 고른 취향을 바탕으로\n너와 잘 맞는 친구를 만들고 있어.',
                 ),
                 Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: [
-                      const SoftGlowDecoration(
-                        assetPath: AppAssets.glowGeneration,
-                        width: AppLayout.generationGlowSize,
-                        height: AppLayout.generationGlowSize,
-                      ),
-                      AnimatedSwitcher(
-                        duration: AppAnimationDurations.fast,
-                        child: CharacterGenerationStageIllustration(
-                          key: ValueKey(_stage),
-                          stage: _stage,
+                  child: DesignFrameScaleBuilder(
+                    designWidth: AppLayout.designContentWidth,
+                    builder: (context, scale) => Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        OverflowBox(
+                          minWidth: 0,
+                          minHeight: 0,
+                          maxWidth: AppLayout.generationGlowSize * scale,
+                          maxHeight: AppLayout.generationGlowSize * scale,
+                          child: SoftGlowDecoration(
+                            assetPath: AppAssets.glowGeneration,
+                            width: AppLayout.generationGlowSize * scale,
+                            height: AppLayout.generationGlowSize * scale,
+                          ),
                         ),
-                      ),
-                    ],
+                        AnimatedSwitcher(
+                          duration: AppAnimationDurations.fast,
+                          child: CharacterGenerationStageIllustration(
+                            key: ValueKey(_stage),
+                            stage: _stage,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 AnimatedSwitcher(

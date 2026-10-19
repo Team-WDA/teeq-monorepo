@@ -38,7 +38,7 @@ void main() {
     expect(result.member.isSignupCompleted, isFalse);
   });
 
-  test('memberResponse_ignoresEmailAndMapsMember', () {
+  test('memberResponse_mapsEmailToMember', () {
     final member = MemberResponseDto.fromJson({
       'memberId': 'member-1',
       'email': 'user@example.com',
@@ -49,10 +49,24 @@ void main() {
     }).toMember();
 
     expect(member.memberId, 'member-1');
+    expect(member.email, 'user@example.com');
     expect(member.nickname, '티큐');
     expect(member.hasAiCharacter, isFalse);
     expect(member.loginType, LoginType.email);
     expect(member.profileImageUrl, isNull);
+  });
+
+  test('memberResponse_parsesWhenEmailIsNull', () {
+    final member = MemberResponseDto.fromJson({
+      'memberId': 'member-1',
+      'email': null,
+      'nickname': '티큐',
+      'hasAiCharacter': false,
+      'loginType': 'EMAIL',
+      'profileImageUrl': null,
+    }).toMember();
+
+    expect(member.email, isNull);
   });
 
   test('unknownLoginType_throws', () {

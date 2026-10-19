@@ -10,6 +10,7 @@ abstract class Member with _$Member {
 
   const factory Member({
     required String memberId,
+    String? email,
     String? nickname,
     required bool hasAiCharacter,
     required LoginType loginType,

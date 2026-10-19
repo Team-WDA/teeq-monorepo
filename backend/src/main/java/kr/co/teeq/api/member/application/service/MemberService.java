@@ -2,13 +2,14 @@ package kr.co.teeq.api.member.application.service;
 
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.media.application.service.MediaService;
+import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.port.AiCharacterExistencePort;
-import kr.co.teeq.api.member.core.port.ProfileImageStoragePort;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final AiCharacterExistencePort aiCharacterExistencePort;
     private final ProfileImageRepository profileImageRepository;
-    private final ProfileImageStoragePort profileImageStoragePort;
+    private final MediaService mediaService;
 
     @Transactional(readOnly = true)
     public NicknameAvailabilityResponse checkNicknameAvailability(String nickname) {
@@ -90,7 +91,7 @@ public class MemberService {
 
     private MemberResponse toResponse(Member member) {
         String profileImageUrl = profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
-            .map(image -> profileImageStoragePort.urlFor(image.getStorageKey()))
+            .map(image -> mediaService.urlFor(MediaCategory.PROFILE_IMAGE, image.getStorageKey()))
             .orElse(null);
         return MemberResponse.from(member, aiCharacterExistencePort.existsByMemberId(member.getId()), profileImageUrl);
     }

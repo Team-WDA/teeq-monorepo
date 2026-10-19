@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/config/app_config.dart';
+import 'package:teeq/core/error/app_exception.dart';
+import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
@@ -158,5 +161,40 @@ void main() {
       'privacyPolicyAgreed': true,
     });
     expect(member.nickname, '티큐');
+  });
+
+  test('deleteAccount_sendsDeleteToMe_andAccepts204', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/members/me', [ScriptedReply.json(204, null)]);
+
+    await repository.deleteAccount();
+
+    final request = adapter.requestsTo('/api/members/me').single;
+    expect(request.method, 'DELETE');
+  });
+
+  test('deleteAccount_serverFailure_propagatesError', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/members/me', [
+      ScriptedReply.json(502, {
+        'errorCode': 'AI_SERVER_UNAVAILABLE',
+        'errorMessage': 'unavailable',
+      }),
+    ]);
+
+    await expectLater(
+      repository.deleteAccount(),
+      throwsA(
+        isA<DioException>().having(
+          (error) => error.error,
+          'error',
+          isA<ApiException>().having(
+            (exception) => exception.errorCode,
+            'errorCode',
+            ErrorCode.aiServerUnavailable,
+          ),
+        ),
+      ),
+    );
   });
 }

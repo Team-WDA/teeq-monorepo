@@ -93,7 +93,7 @@ class _StageColumn extends StatelessWidget {
           label,
           textAlign: TextAlign.center,
           style: AppTextStyles.caption12.copyWith(
-            color: isPending ? AppColors.disabled : AppColors.textSecondary,
+            color: isPending ? AppColors.neutralSurface : AppColors.textSecondary,
           ),
         ),
       ],
@@ -132,7 +132,7 @@ class _StageIndicator extends StatelessWidget {
           decoration: BoxDecoration(
             color: status == StageProgressStatus.completed
                 ? AppColors.accentStrong
-                : AppColors.disabled,
+                : AppColors.neutralSurface,
             shape: BoxShape.circle,
           ),
           child: Center(child: SvgPicture.asset(AppAssets.checkIcon)),
@@ -153,7 +153,7 @@ class _StageConnector extends StatelessWidget {
 
   List<Color> get _colors {
     if (leadingStatus != StageProgressStatus.completed) {
-      return const [AppColors.background, AppColors.disabled];
+      return const [AppColors.background, AppColors.neutralSurface];
     }
     return trailingStatus == StageProgressStatus.completed
         ? const [AppColors.accentStrong, AppColors.accentStrong]

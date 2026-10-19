@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
@@ -132,6 +133,24 @@ void main() {
     controller.recordCharacter(_character);
 
     controller.reset();
+
+    expect(
+      container.read(characterSetupFlowControllerProvider),
+      CharacterSetupFlowState.initial,
+    );
+  });
+
+  test('flowState_resetsWhenAuthStatusLeavesSignedIn', () {
+    final container = _createContainer();
+    container.read(authStatusControllerProvider.notifier).markSignedIn();
+    final controller = container.read(
+      characterSetupFlowControllerProvider.notifier,
+    );
+    controller.start(CharacterSetupMode.edit);
+    controller.toggleOption(OnboardingOption.relationshipCloseFriend);
+    controller.recordCharacter(_character);
+
+    container.read(authStatusControllerProvider.notifier).markSignedOut();
 
     expect(
       container.read(characterSetupFlowControllerProvider),

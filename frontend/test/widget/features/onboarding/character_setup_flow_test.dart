@@ -9,6 +9,8 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
@@ -20,6 +22,7 @@ import 'package:teeq/features/onboarding/presentation/onboarding_introduction_sc
 
 import '../../../support/fake_ai_character_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_home_repository.dart';
 
 class _FakeCurrentMemberController extends CurrentMemberController {
   _FakeCurrentMemberController(this._initialMember);
@@ -52,6 +55,12 @@ const _namedCharacter = AiCharacter(
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 
+const _homeSummary = HomeSummary(
+  characterName: '티티',
+  personalityTags: ['다정함', '차분함', '유쾌함'],
+  greeting: '안녕',
+);
+
 Future<ProviderContainer> _pumpApp(
   WidgetTester tester, {
   required Member member,
@@ -66,6 +75,9 @@ Future<ProviderContainer> _pumpApp(
         () => _FakeCurrentMemberController(member),
       ),
       aiCharacterRepositoryProvider.overrideWithValue(repository),
+      homeRepositoryProvider.overrideWithValue(
+        FakeHomeRepository(summary: _homeSummary),
+      ),
     ],
   );
   addTearDown(container.dispose);

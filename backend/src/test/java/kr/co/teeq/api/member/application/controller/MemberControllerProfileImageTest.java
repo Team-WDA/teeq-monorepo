@@ -134,11 +134,12 @@ class MemberControllerProfileImageTest {
     @Test
     void replace_success_returns200WithUpdatedMember() throws Exception {
         given(memberService.getMe(any())).willReturn(new MemberResponse(
-            MEMBER_ID, "soyeon@teeq.com", "소연", false, LoginType.EMAIL, "/media/profile-images/key.png"));
+            MEMBER_ID, "soyeon@teeq.com", "소연", false, LoginType.EMAIL,
+            "https://api.teeq.co.kr/media/profile-images/key.png"));
 
         mockMvc.perform(multipart(HttpMethod.PUT, PATH).file(imagePart()).header(HttpHeaders.AUTHORIZATION, bearer()))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.profileImageUrl").value("/media/profile-images/key.png"));
+            .andExpect(jsonPath("$.profileImageUrl").value("https://api.teeq.co.kr/media/profile-images/key.png"));
         verify(profileImageService).replace(any(), any());
     }
 

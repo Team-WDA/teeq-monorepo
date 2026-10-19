@@ -9,6 +9,7 @@ import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
+import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/onboarding_introduction_step_card.dart';
@@ -71,11 +72,9 @@ class _IntroductionGlows extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned.fill(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final scale =
-              constraints.maxWidth /
-              (AppLayout.figmaFrameWidth - 2 * AppLayout.horizontalMargin);
+      child: DesignFrameScaleBuilder(
+        designWidth: AppLayout.designContentWidth,
+        builder: (context, scale) {
           return Stack(
             clipBehavior: Clip.none,
             children: [

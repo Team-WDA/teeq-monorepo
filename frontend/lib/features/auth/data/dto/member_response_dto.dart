@@ -5,11 +5,12 @@ import 'package:teeq/features/auth/data/dto/login_type_json.dart';
 
 part 'member_response_dto.g.dart';
 
-/// 회원 조회·가입 완료 응답(`MemberResponse`). 앱이 쓰지 않는 `email`은 받지 않는다.
+/// 회원 조회·가입 완료 응답(`MemberResponse`).
 @JsonSerializable(createToJson: false)
 class MemberResponseDto {
   const MemberResponseDto({
     required this.memberId,
+    required this.email,
     required this.nickname,
     required this.hasAiCharacter,
     required this.loginType,
@@ -20,6 +21,7 @@ class MemberResponseDto {
       _$MemberResponseDtoFromJson(json);
 
   final String memberId;
+  final String? email;
   final String? nickname;
   final bool hasAiCharacter;
   @JsonKey(fromJson: loginTypeFromJson)
@@ -28,6 +30,7 @@ class MemberResponseDto {
 
   Member toMember() => Member(
     memberId: memberId,
+    email: email,
     nickname: nickname,
     hasAiCharacter: hasAiCharacter,
     loginType: loginType,

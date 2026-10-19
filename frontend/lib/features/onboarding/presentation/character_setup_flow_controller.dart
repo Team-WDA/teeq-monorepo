@@ -1,4 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:teeq/core/auth/auth_status.dart';
+import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
@@ -11,7 +13,15 @@ part 'character_setup_flow_controller.g.dart';
 @Riverpod(keepAlive: true)
 class CharacterSetupFlowController extends _$CharacterSetupFlowController {
   @override
-  CharacterSetupFlowState build() => CharacterSetupFlowState.initial;
+  CharacterSetupFlowState build() {
+    // 로그아웃·세션 만료·탈퇴 뒤에 다음 계정으로 이전 흐름 상태가 새지 않게 비운다.
+    ref.listen(authStatusControllerProvider, (previous, next) {
+      if (next != AuthStatus.signedIn) {
+        reset();
+      }
+    });
+    return CharacterSetupFlowState.initial;
+  }
 
   /// 이전 상태를 모두 비우고 [mode]로 흐름을 시작한다.
   void start(CharacterSetupMode mode) {
