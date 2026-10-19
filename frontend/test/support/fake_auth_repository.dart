@@ -29,6 +29,9 @@ class FakeAuthRepository implements AuthRepository {
   /// 지정하면 [deleteAccount]가 이 게이트가 완료될 때까지 응답을 미룬다.
   Completer<void>? deleteAccountGate;
 
+  /// 지정하면 [logout]이 이 게이트가 완료될 때까지 응답을 미룬다.
+  Completer<void>? logoutGate;
+
   /// 지정하면 [fetchMe]가 이 게이트가 완료될 때까지 응답을 미룬다.
   Completer<void>? fetchMeGate;
 
@@ -61,6 +64,7 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> logout() async {
     logoutCount++;
+    await logoutGate?.future;
     final error = logoutError;
     if (error != null) {
       throw error;
