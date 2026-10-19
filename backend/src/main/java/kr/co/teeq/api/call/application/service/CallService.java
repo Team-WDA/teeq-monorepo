@@ -4,6 +4,7 @@ import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.CallStartResponse;
 import kr.co.teeq.api.call.core.port.AiCallSession;
 import kr.co.teeq.api.call.core.port.AiCallSessionPort;
+import kr.co.teeq.api.member.core.entity.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,11 @@ public class CallService {
     private final CallHistoryService callHistoryService;
     private final AiCallSessionPort aiCallSessionPort;
 
-    public CallStartResponse start(UUID memberId) {
-        long allowedSeconds = callLimitService.checkStartable(memberId);
-        UUID callHistoryId = callHistoryService.startPending(memberId);
+    public CallStartResponse start(Member member) {
+        long allowedSeconds = callLimitService.checkStartable(member);
+        UUID callHistoryId = callHistoryService.startPending(member);
         try {
-            AiCallSession session = aiCallSessionPort.createSession(memberId, allowedSeconds);
+            AiCallSession session = aiCallSessionPort.createSession(member.getId(), allowedSeconds);
             callHistoryService.activate(callHistoryId, session.callSessionId());
             return new CallStartResponse(session.callSessionId(), allowedSeconds, session.connection());
         } catch (RuntimeException exception) {

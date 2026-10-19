@@ -32,7 +32,7 @@ public class AuthTokenIssuer {
         refreshTokenRepository.findByMemberId(member.getId()).ifPresentOrElse(
             existing -> existing.rotate(issued.token(), issued.expiresAt()),
             () -> refreshTokenRepository.save(RefreshToken.builder()
-                .memberId(member.getId())
+                .member(member)
                 .token(issued.token())
                 .expiresAt(issued.expiresAt())
                 .build()));

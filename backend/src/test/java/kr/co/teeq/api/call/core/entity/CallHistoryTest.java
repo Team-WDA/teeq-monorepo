@@ -4,20 +4,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
-import java.util.UUID;
 import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class CallHistoryTest {
 
     private static final Instant STARTED_AT = Instant.parse("2026-10-16T03:00:00Z");
     private static final Instant ENDED_AT = Instant.parse("2026-10-16T03:05:00Z");
 
+    @Mock
+    private Member member;
+
     private CallHistory pending() {
-        return CallHistory.pending(UUID.randomUUID(), STARTED_AT);
+        return CallHistory.pending(member, STARTED_AT);
     }
 
     private CallHistory inProgress() {
@@ -29,11 +36,9 @@ class CallHistoryTest {
     @Test
     @DisplayName("pending은 PENDING 상태, 0초, 세션 ID 없음으로 만든다")
     void pendingInitialState() {
-        UUID memberId = UUID.randomUUID();
+        CallHistory callHistory = CallHistory.pending(member, STARTED_AT);
 
-        CallHistory callHistory = CallHistory.pending(memberId, STARTED_AT);
-
-        assertThat(callHistory.getMemberId()).isEqualTo(memberId);
+        assertThat(callHistory.getMember()).isSameAs(member);
         assertThat(callHistory.getStartedAt()).isEqualTo(STARTED_AT);
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.PENDING);
         assertThat(callHistory.getDurationSeconds()).isZero();

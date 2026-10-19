@@ -72,8 +72,10 @@ class HomeControllerTest {
     @MockitoBean
     private HomeService homeService;
 
+    private Member member;
+
     private String bearer() {
-        Member member = Member.builder()
+        member = Member.builder()
             .email("soyeon@teeq.com")
             .password("encoded")
             .nickname("소연")
@@ -95,11 +97,12 @@ class HomeControllerTest {
 
     @Test
     void getHome_returns200() throws Exception {
-        given(homeService.getHome(MEMBER_ID, "소연")).willReturn(new HomeResponse("티큐",
+        String bearer = bearer();
+        given(homeService.getHome(member)).willReturn(new HomeResponse("티큐",
             List.of("다정한", "차분한", "든든한"), "소연아,\n오늘 하루 어땠어?",
             new CallLimitStatusResponse(300, 1500, 1200, true), null));
 
-        mockMvc.perform(get("/api/home").header(HttpHeaders.AUTHORIZATION, bearer()))
+        mockMvc.perform(get("/api/home").header(HttpHeaders.AUTHORIZATION, bearer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.characterName").value("티큐"))
             .andExpect(jsonPath("$.personalityTags[0]").value("다정한"))

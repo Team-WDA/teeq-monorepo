@@ -65,13 +65,13 @@ public class MemberController implements MemberControllerDocs {
     public ResponseEntity<MemberResponse> replaceProfileImage(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @RequestPart("image") MultipartFile image) {
-        profileImageService.replace(authenticatedMember.member().getId(), image);
+        profileImageService.replace(authenticatedMember.member(), image);
         return ResponseEntity.ok(memberService.getMe(authenticatedMember.member()));
     }
 
     @DeleteMapping("/me/profile-image")
     public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
-        profileImageService.delete(authenticatedMember.member().getId());
+        profileImageService.delete(authenticatedMember.member());
         return ResponseEntity.noContent().build();
     }
 

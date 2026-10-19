@@ -30,7 +30,7 @@ public class FeedbackController implements FeedbackControllerDocs {
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @PathVariable("call-session-id") String callSessionId) {
         return ResponseEntity.ok(
-            callFeedbackService.getStatus(authenticatedMember.member().getId(), callSessionId));
+            callFeedbackService.getStatus(authenticatedMember.member(), callSessionId));
     }
 
     @PostMapping("/required-feedback")
@@ -39,7 +39,7 @@ public class FeedbackController implements FeedbackControllerDocs {
         @PathVariable("call-session-id") String callSessionId,
         @Valid @RequestBody RequiredFeedbackRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            callFeedbackService.submitRequired(authenticatedMember.member().getId(), callSessionId, request));
+            callFeedbackService.submitRequired(authenticatedMember.member(), callSessionId, request));
     }
 
     @PostMapping("/detailed-feedback")
@@ -47,7 +47,7 @@ public class FeedbackController implements FeedbackControllerDocs {
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @PathVariable("call-session-id") String callSessionId,
         @Valid @RequestBody DetailedFeedbackRequest request) {
-        callFeedbackService.submitDetailed(authenticatedMember.member().getId(), callSessionId, request);
+        callFeedbackService.submitDetailed(authenticatedMember.member(), callSessionId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

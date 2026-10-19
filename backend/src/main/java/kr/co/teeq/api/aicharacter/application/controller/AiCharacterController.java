@@ -29,7 +29,7 @@ public class AiCharacterController implements AiCharacterControllerDocs {
     public ResponseEntity<AiCharacterResponse> generate(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @Valid @RequestBody GenerateAiCharacterRequest request) {
-        AiCharacterGenerationResult result = aiCharacterService.generate(authenticatedMember.member().getId(), request);
+        AiCharacterGenerationResult result = aiCharacterService.generate(authenticatedMember.member(), request);
         HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
         return ResponseEntity.status(status).body(result.response());
     }
@@ -38,12 +38,12 @@ public class AiCharacterController implements AiCharacterControllerDocs {
     public ResponseEntity<AiCharacterResponse> rename(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @Valid @RequestBody RenameAiCharacterRequest request) {
-        return ResponseEntity.ok(aiCharacterService.rename(authenticatedMember.member().getId(), request));
+        return ResponseEntity.ok(aiCharacterService.rename(authenticatedMember.member(), request));
     }
 
     @GetMapping("/me")
     public ResponseEntity<AiCharacterResponse> get(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
-        return ResponseEntity.ok(aiCharacterService.get(authenticatedMember.member().getId()));
+        return ResponseEntity.ok(aiCharacterService.get(authenticatedMember.member()));
     }
 
 }

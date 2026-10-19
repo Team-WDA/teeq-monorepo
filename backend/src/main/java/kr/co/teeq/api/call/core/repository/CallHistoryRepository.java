@@ -42,7 +42,7 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
     @Query("""
         select coalesce(sum(c.durationSeconds), 0L)
         from CallHistory c
-        where c.memberId = :memberId
+        where c.member.id = :memberId
           and c.deleted = false
           and c.startedAt >= :fromInclusive
           and c.startedAt < :toExclusive
@@ -74,38 +74,23 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
 
     }
 
-    // 전체 회원의 기간별(unit: day, month) 사용량. 시작 시각이 [fromInclusive, toExclusive)인 활성 기록만 집계하며
-    // 통화 횟수에서는 실패·대기 중 기록을 제외한다
+    // 기간별(unit: day, month) 사용량. allMembers가 true면 전체 회원, false면 memberId 회원만 집계한다.
+    // 시작 시각이 [fromInclusive, toExclusive)인 활성 기록만 집계하며 통화 횟수에서는 실패·대기 중 기록을 제외한다.
+    // 타입 없는 null은 PostgreSQL에서 bytea로 바인딩돼 실패하므로 memberId는 항상 non-null로 넘긴다
     @Query(value = """
         select to_char(date_trunc(:unit, started_at at time zone :zoneName), 'YYYY-MM-DD') as "periodStart",
                coalesce(sum(duration_seconds), 0) as "usedSeconds",
                count(*) filter (where status not in ('FAILED', 'PENDING')) as "callCount"
         from call_history
         where deleted = false
+          and (:allMembers = true or member_id = :memberId)
           and started_at >= :fromInclusive
           and started_at < :toExclusive
         group by 1
         order by 1
         """, nativeQuery = true)
-    List<CallUsageRow> aggregateUsageOfAllMembers(@Param("unit") String unit,
-        @Param("zoneName") String zoneName, @Param("fromInclusive") Instant fromInclusive,
-        @Param("toExclusive") Instant toExclusive);
-
-    // 특정 회원의 기간별(unit: day, month) 사용량
-    @Query(value = """
-        select to_char(date_trunc(:unit, started_at at time zone :zoneName), 'YYYY-MM-DD') as "periodStart",
-               coalesce(sum(duration_seconds), 0) as "usedSeconds",
-               count(*) filter (where status not in ('FAILED', 'PENDING')) as "callCount"
-        from call_history
-        where deleted = false
-          and member_id = :memberId
-          and started_at >= :fromInclusive
-          and started_at < :toExclusive
-        group by 1
-        order by 1
-        """, nativeQuery = true)
-    List<CallUsageRow> aggregateUsageOfMember(@Param("memberId") UUID memberId, @Param("unit") String unit,
-        @Param("zoneName") String zoneName, @Param("fromInclusive") Instant fromInclusive,
-        @Param("toExclusive") Instant toExclusive);
+    List<CallUsageRow> aggregateUsage(@Param("allMembers") boolean allMembers, @Param("memberId") UUID memberId,
+        @Param("unit") String unit, @Param("zoneName") String zoneName,
+        @Param("fromInclusive") Instant fromInclusive, @Param("toExclusive") Instant toExclusive);
 
 }

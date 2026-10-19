@@ -12,6 +12,7 @@ import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
 import lombok.RequiredArgsConstructor;
@@ -34,18 +35,19 @@ public class CallHistoryService {
 
     // 1회 한도를 넘긴 활성 기록을 만료시켜 자리를 비운 뒤, AI 서버 호출 전에 PENDING 기록을 선삽입한다
     @Transactional
-    public UUID startPending(UUID memberId) {
+    public UUID startPending(Member member) {
         Instant now = clock.instant();
         long maxSecondsPerSession = settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_SESSION);
         // startedAt + 1회 한도 <= 지금 이면 만료 대상이므로 cutoff 이하(포함)로 조회한다
         Instant expiryCutoff = now.minusSeconds(maxSecondsPerSession);
         List<CallHistory> expiredCandidates = callHistoryRepository
-            .findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(memberId, ACTIVE_STATUSES, expiryCutoff);
+            .findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(
+                member.getId(), ACTIVE_STATUSES, expiryCutoff);
         expiredCandidates.forEach(CallHistory::expire);
         // UPDATE가 INSERT보다 먼저 나가야 회원당 활성 1건 partial unique index에 걸리지 않는다
         callHistoryRepository.flush();
         try {
-            return callHistoryRepository.saveAndFlush(CallHistory.pending(memberId, now)).getId();
+            return callHistoryRepository.saveAndFlush(CallHistory.pending(member, now)).getId();
         } catch (DataIntegrityViolationException exception) {
             throw new CustomException(ErrorCode.CALL_ALREADY_IN_PROGRESS, exception);
         }

@@ -24,7 +24,7 @@ public record CallHistoryResponse(
 ) {
 
     public static CallHistoryResponse from(CallHistory callHistory) {
-        return new CallHistoryResponse(callHistory.getCallSessionId(), callHistory.getMemberId(),
+        return new CallHistoryResponse(callHistory.getCallSessionId(), callHistory.getMember().getId(),
             callHistory.getStartedAt(), callHistory.getDurationSeconds(), callHistory.getStatus());
     }
 

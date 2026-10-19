@@ -110,7 +110,7 @@ class FeedbackControllerTest {
 
     @Test
     void getFeedbackStatus_returns200() throws Exception {
-        given(callFeedbackService.getStatus(MEMBER_ID, "session-1"))
+        given(callFeedbackService.getStatus(any(Member.class), eq("session-1")))
             .willReturn(new FeedbackStatusResponse(3, true, false));
 
         mockMvc.perform(get(BASE_PATH + "/feedback-status").header(HttpHeaders.AUTHORIZATION, bearer()))
@@ -122,7 +122,8 @@ class FeedbackControllerTest {
 
     @Test
     void submitRequiredFeedback_returns201WithInvitation() throws Exception {
-        given(callFeedbackService.submitRequired(eq(MEMBER_ID), eq("session-1"), any(RequiredFeedbackRequest.class)))
+        given(callFeedbackService.submitRequired(
+            any(Member.class), eq("session-1"), any(RequiredFeedbackRequest.class)))
             .willReturn(new RequiredFeedbackResponse(true));
 
         mockMvc.perform(post(BASE_PATH + "/required-feedback").header(HttpHeaders.AUTHORIZATION, bearer())
@@ -159,7 +160,7 @@ class FeedbackControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content(VALID_DETAILED_BODY))
             .andExpect(status().isCreated())
             .andExpect(content().string(""));
-        verify(callFeedbackService).submitDetailed(eq(MEMBER_ID), eq("session-1"),
+        verify(callFeedbackService).submitDetailed(any(Member.class), eq("session-1"),
             any(DetailedFeedbackRequest.class));
     }
 

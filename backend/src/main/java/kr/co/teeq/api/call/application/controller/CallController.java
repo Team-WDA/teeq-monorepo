@@ -21,7 +21,7 @@ public class CallController implements CallControllerDocs {
     @PostMapping
     public ResponseEntity<CallStartResponse> start(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(callService.start(authenticatedMember.member().getId()));
+            .body(callService.start(authenticatedMember.member()));
     }
 
 }

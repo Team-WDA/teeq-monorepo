@@ -15,6 +15,7 @@
 - 허용 의존: `application → core`, `infrastructure → core`, `core → common.core`, `infrastructure → common.application`.
 - 금지: core가 application·infrastructure를 참조, application이 infrastructure를 직접 import(외부 연동은 core의 port로), 도메인 간 순환 의존. `LayerDependencyTest`(ArchUnit)가 강제하며 완화·삭제하지 않는다.
 - port·adapter는 교체·확장 가능성이 있는 외부 연동에만 둔다. 구현체가 하나뿐인 서비스에는 인터페이스를 만들지 않는다(예외: `TokenProvider`는 계층 규칙 때문에 둔다).
+- 엔티티의 도메인 간 연관은 `@ManyToOne(LAZY)` 단방향으로 허용한다. `member`처럼 다른 도메인이 참조하는 쪽(의존의 종점에 가까운 도메인)을 가리키는 것을 기본으로 하고, 도메인 간 순환 의존은 금지한다(`LayerDependencyTest`).
 - member는 `auth`를 참조하지 않고, auth는 `member.core`를 참조한다.
 - common은 도메인에 의존하지 않고, 도메인은 common에 의존할 수 있다.
 

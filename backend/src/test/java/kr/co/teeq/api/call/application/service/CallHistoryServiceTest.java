@@ -21,6 +21,7 @@ import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,9 @@ class CallHistoryServiceTest {
     private final UUID memberId = UUID.randomUUID();
 
     @Mock
+    private Member member;
+
+    @Mock
     private CallHistoryRepository callHistoryRepository;
 
     @Mock
@@ -55,6 +59,7 @@ class CallHistoryServiceTest {
     }
 
     private void stubExpiryCandidates(List<CallHistory> candidates) {
+        given(member.getId()).willReturn(memberId);
         given(callHistoryRepository.findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(
             memberId, ACTIVE_STATUSES, EXPIRY_CUTOFF)).willReturn(candidates);
     }
@@ -62,11 +67,11 @@ class CallHistoryServiceTest {
     @Test
     void startPending_expiredCandidate_expiresAndFlushesBeforeInsert() {
         stubMaxSecondsPerSession();
-        CallHistory expiredCandidate = CallHistory.pending(memberId, EXPIRY_CUTOFF);
+        CallHistory expiredCandidate = CallHistory.pending(member, EXPIRY_CUTOFF);
         stubExpiryCandidates(List.of(expiredCandidate));
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(memberId);
+        createService().startPending(member);
 
         assertThat(expiredCandidate.getStatus()).isEqualTo(CallStatus.EXPIRED);
         // UPDATE가 INSERT보다 먼저 나가야 partial unique index에 걸리지 않는다
@@ -81,7 +86,7 @@ class CallHistoryServiceTest {
         stubExpiryCandidates(List.of());
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(memberId);
+        createService().startPending(member);
 
         // startedAt + 1회 한도 == 지금이면 startedAt == 지금 - 한도 이므로 cutoff 이하(포함)에 걸린다
         verify(callHistoryRepository).findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(
@@ -94,10 +99,10 @@ class CallHistoryServiceTest {
         stubExpiryCandidates(List.of());
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(memberId);
+        createService().startPending(member);
 
         verify(callHistoryRepository).saveAndFlush(org.mockito.ArgumentMatchers.argThat(saved ->
-            saved.getMemberId().equals(memberId)
+            saved.getMember() == member
                 && saved.getStartedAt().equals(NOW)
                 && saved.getStatus() == CallStatus.PENDING));
     }
@@ -109,7 +114,7 @@ class CallHistoryServiceTest {
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class)))
             .willThrow(new DataIntegrityViolationException("unique"));
 
-        assertThatThrownBy(() -> createService().startPending(memberId))
+        assertThatThrownBy(() -> createService().startPending(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_ALREADY_IN_PROGRESS));
     }
@@ -117,7 +122,7 @@ class CallHistoryServiceTest {
     @Test
     void activate_pendingRecord_becomesInProgressWithSessionId() {
         UUID callHistoryId = UUID.randomUUID();
-        CallHistory callHistory = CallHistory.pending(memberId, NOW);
+        CallHistory callHistory = CallHistory.pending(member, NOW);
         given(callHistoryRepository.findByIdAndDeletedFalse(callHistoryId)).willReturn(Optional.of(callHistory));
 
         createService().activate(callHistoryId, "call-session-1");
@@ -139,7 +144,7 @@ class CallHistoryServiceTest {
     @Test
     void fail_pendingRecord_becomesFailed() {
         UUID callHistoryId = UUID.randomUUID();
-        CallHistory callHistory = CallHistory.pending(memberId, NOW);
+        CallHistory callHistory = CallHistory.pending(member, NOW);
         given(callHistoryRepository.findByIdAndDeletedFalse(callHistoryId)).willReturn(Optional.of(callHistory));
 
         createService().fail(callHistoryId);
@@ -160,7 +165,7 @@ class CallHistoryServiceTest {
     private static final Instant REPORTED_ENDED_AT = Instant.parse("2026-10-16T03:05:00Z");
 
     private CallHistory inProgressRecord() {
-        CallHistory callHistory = CallHistory.pending(memberId, NOW.minusSeconds(300));
+        CallHistory callHistory = CallHistory.pending(member, NOW.minusSeconds(300));
         callHistory.activate("call-session-1");
         return callHistory;
     }

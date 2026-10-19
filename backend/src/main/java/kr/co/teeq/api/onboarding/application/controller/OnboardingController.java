@@ -20,7 +20,7 @@ public class OnboardingController implements OnboardingControllerDocs {
     @GetMapping("/answers")
     public ResponseEntity<OnboardingAnswersResponse> getAnswers(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
-        return ResponseEntity.ok(onboardingAnswerService.getAnswers(authenticatedMember.member().getId()));
+        return ResponseEntity.ok(onboardingAnswerService.getAnswers(authenticatedMember.member()));
     }
 
 }

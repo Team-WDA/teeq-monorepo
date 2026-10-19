@@ -3,7 +3,6 @@ package kr.co.teeq.api.aicharacter.application.service;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import kr.co.teeq.api.aicharacter.application.dto.request.GenerateAiCharacterRequest;
 import kr.co.teeq.api.aicharacter.application.dto.request.RenameAiCharacterRequest;
 import kr.co.teeq.api.aicharacter.application.dto.response.AiCharacterResponse;
@@ -13,6 +12,7 @@ import kr.co.teeq.api.aicharacter.core.port.GeneratedAiCharacter;
 import kr.co.teeq.api.aicharacter.core.repository.AiCharacterRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
@@ -33,20 +33,20 @@ public class AiCharacterService {
     private final AiCharacterCommandService aiCharacterCommandService;
     private final AiCharacterRepository aiCharacterRepository;
 
-    public AiCharacterGenerationResult generate(UUID memberId, GenerateAiCharacterRequest request) {
-        onboardingAnswerService.validateAnswers(memberId, request.onboardingAnswers());
+    public AiCharacterGenerationResult generate(Member member, GenerateAiCharacterRequest request) {
+        onboardingAnswerService.validateAnswers(request.onboardingAnswers());
         GeneratedAiCharacter generated = aiCharacterGenerationPort.generate(
-            memberId, toAnswersByQuestion(request.onboardingAnswers()));
-        return aiCharacterCommandService.save(memberId, generated, request.onboardingAnswers());
+            member.getId(), toAnswersByQuestion(request.onboardingAnswers()));
+        return aiCharacterCommandService.save(member, generated, request.onboardingAnswers());
     }
 
-    public AiCharacterResponse rename(UUID memberId, RenameAiCharacterRequest request) {
-        return aiCharacterCommandService.rename(memberId, request.name());
+    public AiCharacterResponse rename(Member member, RenameAiCharacterRequest request) {
+        return aiCharacterCommandService.rename(member, request.name());
     }
 
     @Transactional(readOnly = true)
-    public AiCharacterResponse get(UUID memberId) {
-        return aiCharacterRepository.findByMemberId(memberId)
+    public AiCharacterResponse get(Member member) {
+        return aiCharacterRepository.findByMemberId(member.getId())
             .filter(AiCharacter::isNamed)
             .map(AiCharacterResponse::from)
             .orElseThrow(() -> new CustomException(ErrorCode.AI_CHARACTER_NOT_FOUND));

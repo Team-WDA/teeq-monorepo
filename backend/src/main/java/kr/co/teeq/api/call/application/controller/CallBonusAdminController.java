@@ -34,7 +34,7 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
         @PathVariable("member-id") UUID memberId,
         @Valid @RequestBody CallBonusGrantRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-            callBonusService.grant(memberId, authenticatedMember.member().getId(), request));
+            callBonusService.grant(authenticatedMember.member(), memberId, request));
     }
 
     @GetMapping
@@ -47,7 +47,7 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
         @PathVariable("member-id") UUID memberId,
         @PathVariable("call-bonus-id") UUID callBonusId) {
-        callBonusService.cancel(memberId, callBonusId, authenticatedMember.member().getId());
+        callBonusService.cancel(authenticatedMember.member(), memberId, callBonusId);
         return ResponseEntity.noContent().build();
     }
 

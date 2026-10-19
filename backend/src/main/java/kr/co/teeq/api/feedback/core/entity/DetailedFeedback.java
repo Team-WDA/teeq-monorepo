@@ -2,8 +2,11 @@ package kr.co.teeq.api.feedback.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
+import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,8 +21,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "detailed_feedback")
 public class DetailedFeedback extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID callHistoryId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "call_history_id", nullable = false)
+    private CallHistory callHistory;
 
     @Column(nullable = false)
     private int timingScore;
@@ -65,7 +69,7 @@ public class DetailedFeedback extends BaseEntity {
     @Column(length = 100)
     private String startReasonOtherText;
 
-    private DetailedFeedback(UUID callHistoryId,
+    private DetailedFeedback(CallHistory callHistory,
         int timingScore, String timingReason,
         int personaFitScore, String personaFitReason,
         Integer memoryScore, String memoryReason, boolean memoryNotApplicable,
@@ -73,7 +77,7 @@ public class DetailedFeedback extends BaseEntity {
         int personalComfortScore, String personalComfortReason,
         int storageComfortScore, String storageComfortReason,
         String freeText, String startReasonOtherText) {
-        this.callHistoryId = callHistoryId;
+        this.callHistory = callHistory;
         this.timingScore = timingScore;
         this.timingReason = timingReason;
         this.personaFitScore = personaFitScore;
@@ -91,7 +95,7 @@ public class DetailedFeedback extends BaseEntity {
         this.startReasonOtherText = startReasonOtherText;
     }
 
-    public static DetailedFeedback of(UUID callHistoryId,
+    public static DetailedFeedback of(CallHistory callHistory,
         int timingScore, String timingReason,
         int personaFitScore, String personaFitReason,
         Integer memoryScore, String memoryReason, boolean memoryNotApplicable,
@@ -99,7 +103,7 @@ public class DetailedFeedback extends BaseEntity {
         int personalComfortScore, String personalComfortReason,
         int storageComfortScore, String storageComfortReason,
         String freeText, String startReasonOtherText) {
-        return new DetailedFeedback(callHistoryId,
+        return new DetailedFeedback(callHistory,
             timingScore, timingReason,
             personaFitScore, personaFitReason,
             memoryScore, memoryReason, memoryNotApplicable,

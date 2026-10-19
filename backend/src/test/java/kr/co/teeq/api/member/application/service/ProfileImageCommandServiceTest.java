@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.entity.ProfileImage;
 import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,9 @@ class ProfileImageCommandServiceTest {
     @Mock
     private ProfileImageRepository profileImageRepository;
 
+    @Mock
+    private Member member;
+
     private ProfileImageCommandService commandService;
 
     @BeforeEach
@@ -42,10 +46,11 @@ class ProfileImageCommandServiceTest {
 
     @Test
     void replace_softDeletesAndFlushesPreviousRowBeforeSavingNewRow() {
-        ProfileImage previous = ProfileImage.of(MEMBER_ID, "old.jpg", "image/jpeg", 10L);
+        given(member.getId()).willReturn(MEMBER_ID);
+        ProfileImage previous = ProfileImage.of(member, "old.jpg", "image/jpeg", 10L);
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(previous));
 
-        commandService.replace(MEMBER_ID, "new.png", "image/png", 20L);
+        commandService.replace(member, "new.png", "image/png", 20L);
 
         assertThat(previous.isDeleted()).isTrue();
         assertThat(previous.getDeletedAt()).isEqualTo(NOW);
@@ -56,31 +61,34 @@ class ProfileImageCommandServiceTest {
 
     @Test
     void replace_concurrentReplaceOnActiveIndex_mapsToStateConflict() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.empty());
         given(profileImageRepository.saveAndFlush(any(ProfileImage.class))).willThrow(
             new DataIntegrityViolationException("constraint", new RuntimeException(
                 "duplicate key value violates unique constraint \"uq_profile_image_member_active\"")));
 
-        assertThatThrownBy(() -> commandService.replace(MEMBER_ID, "new.png", "image/png", 20L))
+        assertThatThrownBy(() -> commandService.replace(member, "new.png", "image/png", 20L))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
     }
 
     @Test
     void delete_withActiveRow_softDeletesIt() {
-        ProfileImage current = ProfileImage.of(MEMBER_ID, "old.jpg", "image/jpeg", 10L);
+        given(member.getId()).willReturn(MEMBER_ID);
+        ProfileImage current = ProfileImage.of(member, "old.jpg", "image/jpeg", 10L);
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(current));
 
-        commandService.delete(MEMBER_ID);
+        commandService.delete(member);
 
         assertThat(current.isDeleted()).isTrue();
     }
 
     @Test
     void delete_withoutActiveRow_doesNothing() {
+        given(member.getId()).willReturn(MEMBER_ID);
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.empty());
 
-        commandService.delete(MEMBER_ID);
+        commandService.delete(member);
 
         verify(profileImageRepository).findByMemberIdAndDeletedFalse(MEMBER_ID);
     }

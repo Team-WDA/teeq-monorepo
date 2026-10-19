@@ -10,7 +10,7 @@
 ## Code style
 
 - BE: 들여쓰기 4칸, 줄 길이 120. 생성자 주입(`@RequiredArgsConstructor`)만 쓰고 필드 주입은 쓰지 않는다. `@Data` 금지. `@Transactional`은 메서드 단위로 붙이고 조회는 `readOnly = true`.
-- 엔티티: `BaseEntity` 상속(UUID v7 PK, `createdAt`/`updatedAt`, soft delete `deleted`/`deletedAt`), `@Table` 명시, enum은 `EnumType.STRING`, 연관은 `@ManyToOne(LAZY)`만 쓰고 `@OneToMany`와 cascade는 금지, 상태 변경은 도메인 메서드로 하며 허용 전이는 상태 enum의 `canTransitionTo`에 둔다(위반 시 `STATE_CONFLICT`).
+- 엔티티: `BaseEntity` 상속(UUID v7 PK, `createdAt`/`updatedAt`, soft delete `deleted`/`deletedAt`), `@Table` 명시, enum은 `EnumType.STRING`, 다른 엔티티를 가리키는 id를 UUID 컬럼으로 저장하지 않고 `@ManyToOne(LAZY)` 연관으로 선언한다(도메인 간 참조 포함). `@OneToMany`와 cascade는 금지하고 하위 목록은 리포지토리로 조회한다. 상태 변경은 도메인 메서드로 하며 허용 전이는 상태 enum의 `canTransitionTo`에 둔다(위반 시 `STATE_CONFLICT`).
 - soft delete 조회 필터(`deleted = false`)는 리포지토리 메서드에서 명시한다(`@SQLRestriction` 금지). UNIQUE는 활성 행에만 걸리게 partial unique index로 만든다.
 - 시간: `Clock` 주입 + `Instant`(저장은 `timestamptz`, API는 ISO-8601 UTC). `Instant.now()`, `LocalDateTime.now()` 직접 호출 금지. 한국 시간 규칙은 `ZoneId`(`Asia/Seoul`) 빈을 쓴다.
 - 에러: 중앙 `ErrorCode` enum + `CustomException`, 응답은 `{ "errorCode", "errorMessage" }` 두 필드. 도메인별 예외 클래스를 만들지 않는다. 예외를 삼키지 않고 내부 정보(스택, SQL)를 노출하지 않는다.
@@ -23,6 +23,7 @@
 ## Responsibility separation
 
 - controller는 요청·응답 변환과 서비스 호출만, 비즈니스 로직은 service·도메인 메서드에 둔다. 서비스는 도메인당 하나를 기본으로 하고 비대해지면 Query/Command로 나눈다.
+- 서비스는 행위 주체·소유자 회원을 `Member`로 받는다. 컨트롤러가 `@AuthenticationPrincipal`에서 꺼내 넘기고, UUID만 있는 경로(관리자 경로 변수, 서버 간 콜백)는 서비스가 id로 조회한다. 검색 필터 조건과 외부 연동 포트의 id는 UUID로 둔다. 컨트롤러가 넘긴 `Member`는 분리 상태라 연관 대상으로만 쓰고, 수정은 id로 다시 조회한 엔티티에서 한다.
 - FE 위젯에는 비즈니스 로직을 두지 않고 provider·도메인에 둔다. 서버 상태는 Riverpod provider로 다루고 별도 스토어에 복제하지 않는다.
 
 ## FE 불변 규칙

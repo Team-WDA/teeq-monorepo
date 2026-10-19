@@ -181,7 +181,7 @@ class MemberServiceTest {
     void getMe_withActiveProfileImage_returnsImageUrl() {
         Member me = member(MEMBER_ID, "soyeon");
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID))
-            .willReturn(Optional.of(ProfileImage.of(MEMBER_ID, "key.png", "image/png", 10L)));
+            .willReturn(Optional.of(ProfileImage.of(me, "key.png", "image/png", 10L)));
         given(mediaService.urlFor(MediaCategory.PROFILE_IMAGE, "key.png"))
             .willReturn("https://api.teeq.co.kr/media/profile-images/key.png");
 

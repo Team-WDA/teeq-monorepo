@@ -12,12 +12,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.media.application.service.MediaService;
 import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.media.core.model.StoredMedia;
+import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,11 +29,13 @@ import org.springframework.mock.web.MockMultipartFile;
 @ExtendWith(MockitoExtension.class)
 class ProfileImageServiceTest {
 
-    private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
     private static final StoredMedia STORED = new StoredMedia("stored-key.png", "image/png", 10L);
 
     @Mock
     private MediaService mediaService;
+
+    @Mock
+    private Member member;
 
     @Mock
     private ProfileImageCommandService profileImageCommandService;
@@ -51,11 +53,11 @@ class ProfileImageServiceTest {
     void replace_success_passesStoredValuesToCommandService() {
         given(mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image)).willReturn(STORED);
 
-        profileImageService.replace(MEMBER_ID, image);
+        profileImageService.replace(member, image);
 
         InOrder order = inOrder(mediaService, profileImageCommandService);
         order.verify(mediaService).storeImage(MediaCategory.PROFILE_IMAGE, image);
-        order.verify(profileImageCommandService).replace(MEMBER_ID, "stored-key.png", "image/png", 10L);
+        order.verify(profileImageCommandService).replace(member, "stored-key.png", "image/png", 10L);
         verify(mediaService, never()).delete(any(), anyString());
     }
 
@@ -65,7 +67,7 @@ class ProfileImageServiceTest {
         IllegalStateException failure = new IllegalStateException("db down");
         doThrow(failure).when(profileImageCommandService).replace(any(), anyString(), anyString(), anyLong());
 
-        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image)).isSameAs(failure);
+        assertThatThrownBy(() -> profileImageService.replace(member, image)).isSameAs(failure);
 
         verify(mediaService).delete(MediaCategory.PROFILE_IMAGE, "stored-key.png");
     }
@@ -75,7 +77,7 @@ class ProfileImageServiceTest {
         CustomException failure = new CustomException(ErrorCode.PROFILE_IMAGE_INVALID);
         given(mediaService.storeImage(MediaCategory.PROFILE_IMAGE, image)).willThrow(failure);
 
-        assertThatThrownBy(() -> profileImageService.replace(MEMBER_ID, image))
+        assertThatThrownBy(() -> profileImageService.replace(member, image))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PROFILE_IMAGE_INVALID));
 
@@ -85,9 +87,9 @@ class ProfileImageServiceTest {
 
     @Test
     void delete_delegatesToCommandServiceWithoutTouchingFiles() {
-        profileImageService.delete(MEMBER_ID);
+        profileImageService.delete(member);
 
-        verify(profileImageCommandService).delete(MEMBER_ID);
+        verify(profileImageCommandService).delete(member);
         verifyNoInteractions(mediaService);
     }
 

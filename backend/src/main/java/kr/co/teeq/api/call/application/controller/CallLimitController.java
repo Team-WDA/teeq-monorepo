@@ -20,7 +20,7 @@ public class CallLimitController implements CallLimitControllerDocs {
     @GetMapping("/today")
     public ResponseEntity<CallLimitStatusResponse> getTodayStatus(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
-        return ResponseEntity.ok(callLimitService.getTodayStatus(authenticatedMember.member().getId()));
+        return ResponseEntity.ok(callLimitService.getTodayStatus(authenticatedMember.member()));
     }
 
 }

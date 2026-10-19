@@ -47,6 +47,9 @@ class CallBonusServiceTest {
     @Mock
     private Member member;
 
+    @Mock
+    private Member admin;
+
     private CallBonusService createService() {
         return new CallBonusService(callBonusRepository, memberRepository, Clock.fixed(NOW, ZoneOffset.UTC),
             ZoneId.of("Asia/Seoul"));
@@ -64,8 +67,10 @@ class CallBonusServiceTest {
     void grant_withoutBonusDate_usesKoreaToday() {
         stubMemberExists();
         stubSaveReturnsArgument();
+        given(member.getId()).willReturn(memberId);
+        given(admin.getId()).willReturn(adminId);
 
-        CallBonusResponse response = createService().grant(memberId, adminId,
+        CallBonusResponse response = createService().grant(admin, memberId,
             new CallBonusGrantRequest(600, null, "장애 보상"));
 
         assertThat(response.bonusDate()).isEqualTo(KST_TODAY);
@@ -81,9 +86,9 @@ class CallBonusServiceTest {
         stubMemberExists();
         stubSaveReturnsArgument();
 
-        CallBonusResponse today = createService().grant(memberId, adminId,
+        CallBonusResponse today = createService().grant(admin, memberId,
             new CallBonusGrantRequest(60, KST_TODAY, "오늘"));
-        CallBonusResponse future = createService().grant(memberId, adminId,
+        CallBonusResponse future = createService().grant(admin, memberId,
             new CallBonusGrantRequest(60, KST_TODAY.plusDays(3), "미래"));
 
         assertThat(today.bonusDate()).isEqualTo(KST_TODAY);
@@ -94,7 +99,7 @@ class CallBonusServiceTest {
     void grant_pastDate_rejected() {
         stubMemberExists();
 
-        assertThatThrownBy(() -> createService().grant(memberId, adminId,
+        assertThatThrownBy(() -> createService().grant(admin, memberId,
             new CallBonusGrantRequest(60, KST_TODAY.minusDays(1), "과거")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_REQUEST));
@@ -105,7 +110,7 @@ class CallBonusServiceTest {
     void grant_memberNotFound_throws() {
         given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().grant(memberId, adminId,
+        assertThatThrownBy(() -> createService().grant(admin, memberId,
             new CallBonusGrantRequest(60, null, "사유")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
@@ -114,9 +119,10 @@ class CallBonusServiceTest {
 
     @Test
     void getAll_includesCanceledRows() {
-        CallBonus active = CallBonus.grant(memberId, KST_TODAY, 60, "유효", adminId);
-        CallBonus canceled = CallBonus.grant(memberId, KST_TODAY, 120, "취소됨", adminId);
-        canceled.cancel(adminId, Clock.fixed(NOW, ZoneOffset.UTC));
+        CallBonus active = CallBonus.grant(member, KST_TODAY, 60, "유효", admin);
+        CallBonus canceled = CallBonus.grant(member, KST_TODAY, 120, "취소됨", admin);
+        canceled.cancel(admin, Clock.fixed(NOW, ZoneOffset.UTC));
+        given(admin.getId()).willReturn(adminId);
         given(callBonusRepository.findByMemberIdOrderByCreatedAtDesc(memberId))
             .willReturn(List.of(active, canceled));
 
@@ -130,16 +136,15 @@ class CallBonusServiceTest {
     @Test
     void cancel_recordsCanceler() {
         UUID callBonusId = UUID.randomUUID();
-        UUID cancelerId = UUID.randomUUID();
-        CallBonus callBonus = CallBonus.grant(memberId, KST_TODAY, 60, "사유", adminId);
+        CallBonus callBonus = CallBonus.grant(member, KST_TODAY, 60, "사유", admin);
         given(callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId))
             .willReturn(Optional.of(callBonus));
 
-        createService().cancel(memberId, callBonusId, cancelerId);
+        createService().cancel(admin, memberId, callBonusId);
 
         assertThat(callBonus.isDeleted()).isTrue();
         assertThat(callBonus.getDeletedAt()).isEqualTo(NOW);
-        assertThat(callBonus.getCanceledByMemberId()).isEqualTo(cancelerId);
+        assertThat(callBonus.getCanceledBy()).isSameAs(admin);
     }
 
     @Test
@@ -148,7 +153,7 @@ class CallBonusServiceTest {
         given(callBonusRepository.findByIdAndMemberIdAndDeletedFalse(callBonusId, memberId))
             .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().cancel(memberId, callBonusId, adminId))
+        assertThatThrownBy(() -> createService().cancel(admin, memberId, callBonusId))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_BONUS_NOT_FOUND));
     }

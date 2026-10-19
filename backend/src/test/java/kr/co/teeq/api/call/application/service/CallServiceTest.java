@@ -19,6 +19,7 @@ import kr.co.teeq.api.call.core.port.AiCallSession;
 import kr.co.teeq.api.call.core.port.AiCallSessionPort;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -31,6 +32,9 @@ class CallServiceTest {
 
     private final UUID memberId = UUID.randomUUID();
     private final UUID callHistoryId = UUID.randomUUID();
+
+    @Mock
+    private Member member;
 
     @Mock
     private CallLimitService callLimitService;
@@ -47,17 +51,18 @@ class CallServiceTest {
     @Test
     void start_success_runsStepsInOrderAndReturnsResponse() {
         Map<String, Object> connection = Map.of("room", "room-1");
-        given(callLimitService.checkStartable(memberId)).willReturn(900L);
-        given(callHistoryService.startPending(memberId)).willReturn(callHistoryId);
+        given(callLimitService.checkStartable(member)).willReturn(900L);
+        given(callHistoryService.startPending(member)).willReturn(callHistoryId);
+        given(member.getId()).willReturn(memberId);
         given(aiCallSessionPort.createSession(memberId, 900L))
             .willReturn(new AiCallSession("call-session-1", connection));
 
-        CallStartResponse response = callService.start(memberId);
+        CallStartResponse response = callService.start(member);
 
         assertThat(response).isEqualTo(new CallStartResponse("call-session-1", 900L, connection));
         InOrder inOrder = inOrder(callLimitService, callHistoryService, aiCallSessionPort);
-        inOrder.verify(callLimitService).checkStartable(memberId);
-        inOrder.verify(callHistoryService).startPending(memberId);
+        inOrder.verify(callLimitService).checkStartable(member);
+        inOrder.verify(callHistoryService).startPending(member);
         inOrder.verify(aiCallSessionPort).createSession(memberId, 900L);
         inOrder.verify(callHistoryService).activate(callHistoryId, "call-session-1");
         verify(callHistoryService, never()).fail(any());
@@ -65,10 +70,10 @@ class CallServiceTest {
 
     @Test
     void start_limitInsufficient_doesNotInsertOrCallAiServer() {
-        given(callLimitService.checkStartable(memberId))
+        given(callLimitService.checkStartable(member))
             .willThrow(new CustomException(ErrorCode.CALL_LIMIT_INSUFFICIENT));
 
-        assertThatThrownBy(() -> callService.start(memberId))
+        assertThatThrownBy(() -> callService.start(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_LIMIT_INSUFFICIENT));
 
@@ -77,11 +82,11 @@ class CallServiceTest {
 
     @Test
     void start_alreadyInProgress_doesNotCallAiServer() {
-        given(callLimitService.checkStartable(memberId)).willReturn(900L);
-        given(callHistoryService.startPending(memberId))
+        given(callLimitService.checkStartable(member)).willReturn(900L);
+        given(callHistoryService.startPending(member))
             .willThrow(new CustomException(ErrorCode.CALL_ALREADY_IN_PROGRESS));
 
-        assertThatThrownBy(() -> callService.start(memberId))
+        assertThatThrownBy(() -> callService.start(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_ALREADY_IN_PROGRESS));
 
@@ -90,12 +95,13 @@ class CallServiceTest {
 
     @Test
     void start_aiServerUnavailable_failsPendingRecordAndRethrows() {
-        given(callLimitService.checkStartable(memberId)).willReturn(900L);
-        given(callHistoryService.startPending(memberId)).willReturn(callHistoryId);
+        given(callLimitService.checkStartable(member)).willReturn(900L);
+        given(callHistoryService.startPending(member)).willReturn(callHistoryId);
+        given(member.getId()).willReturn(memberId);
         given(aiCallSessionPort.createSession(memberId, 900L))
             .willThrow(new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE));
 
-        assertThatThrownBy(() -> callService.start(memberId))
+        assertThatThrownBy(() -> callService.start(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_SERVER_UNAVAILABLE));
 
@@ -106,13 +112,14 @@ class CallServiceTest {
     @Test
     void start_activateFails_failsPendingRecordAndRethrows() {
         RuntimeException activateFailure = new IllegalStateException("db down");
-        given(callLimitService.checkStartable(memberId)).willReturn(900L);
-        given(callHistoryService.startPending(memberId)).willReturn(callHistoryId);
+        given(callLimitService.checkStartable(member)).willReturn(900L);
+        given(callHistoryService.startPending(member)).willReturn(callHistoryId);
+        given(member.getId()).willReturn(memberId);
         given(aiCallSessionPort.createSession(memberId, 900L))
             .willReturn(new AiCallSession("call-session-1", Map.of()));
         willThrow(activateFailure).given(callHistoryService).activate(callHistoryId, "call-session-1");
 
-        assertThatThrownBy(() -> callService.start(memberId)).isSameAs(activateFailure);
+        assertThatThrownBy(() -> callService.start(member)).isSameAs(activateFailure);
 
         verify(callHistoryService).fail(callHistoryId);
     }
@@ -120,12 +127,13 @@ class CallServiceTest {
     @Test
     void start_failItselfFails_originalExceptionIsKept() {
         CustomException original = new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE);
-        given(callLimitService.checkStartable(memberId)).willReturn(900L);
-        given(callHistoryService.startPending(memberId)).willReturn(callHistoryId);
+        given(callLimitService.checkStartable(member)).willReturn(900L);
+        given(callHistoryService.startPending(member)).willReturn(callHistoryId);
+        given(member.getId()).willReturn(memberId);
         given(aiCallSessionPort.createSession(memberId, 900L)).willThrow(original);
         willThrow(new IllegalStateException("fail failed")).given(callHistoryService).fail(callHistoryId);
 
-        assertThatThrownBy(() -> callService.start(memberId)).isSameAs(original);
+        assertThatThrownBy(() -> callService.start(member)).isSameAs(original);
     }
 
 }

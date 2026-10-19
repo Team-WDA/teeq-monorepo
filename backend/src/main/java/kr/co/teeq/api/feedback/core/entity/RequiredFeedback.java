@@ -4,8 +4,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
+import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
 import kr.co.teeq.api.feedback.core.constant.PreviousCallRecall;
 import kr.co.teeq.api.feedback.core.constant.RevisitIntention;
@@ -22,8 +25,9 @@ import lombok.NoArgsConstructor;
 @Table(name = "required_feedback")
 public class RequiredFeedback extends BaseEntity {
 
-    @Column(nullable = false)
-    private UUID callHistoryId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "call_history_id", nullable = false)
+    private CallHistory callHistory;
 
     @Column(nullable = false)
     private int rating;
@@ -37,17 +41,17 @@ public class RequiredFeedback extends BaseEntity {
     @Column(length = 20)
     private PreviousCallRecall previousCallRecall;
 
-    private RequiredFeedback(UUID callHistoryId, int rating, RevisitIntention revisitIntention,
+    private RequiredFeedback(CallHistory callHistory, int rating, RevisitIntention revisitIntention,
         PreviousCallRecall previousCallRecall) {
-        this.callHistoryId = callHistoryId;
+        this.callHistory = callHistory;
         this.rating = rating;
         this.revisitIntention = revisitIntention;
         this.previousCallRecall = previousCallRecall;
     }
 
-    public static RequiredFeedback of(UUID callHistoryId, int rating, RevisitIntention revisitIntention,
+    public static RequiredFeedback of(CallHistory callHistory, int rating, RevisitIntention revisitIntention,
         PreviousCallRecall previousCallRecall) {
-        return new RequiredFeedback(callHistoryId, rating, revisitIntention, previousCallRecall);
+        return new RequiredFeedback(callHistory, rating, revisitIntention, previousCallRecall);
     }
 
 }

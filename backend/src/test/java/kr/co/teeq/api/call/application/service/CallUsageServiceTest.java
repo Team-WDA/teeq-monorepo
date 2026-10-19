@@ -69,7 +69,7 @@ class CallUsageServiceTest {
 
     @Test
     void getUsages_day_fillsMissingDaysWithZeroInAscendingOrder() {
-        given(callHistoryRepository.aggregateUsageOfAllMembers("day", "Asia/Seoul",
+        given(callHistoryRepository.aggregateUsage(true, CallUsageService.ALL_MEMBERS_PLACEHOLDER, "day", "Asia/Seoul",
             kstStart("2026-10-01"), kstStart("2026-10-04")))
             .willReturn(List.of(row("2026-10-01", 600, 2), row("2026-10-03", 300, 1)));
 
@@ -84,7 +84,7 @@ class CallUsageServiceTest {
 
     @Test
     void getUsages_month_alignsToMonthBoundariesAndFillsZero() {
-        given(callHistoryRepository.aggregateUsageOfAllMembers("month", "Asia/Seoul",
+        given(callHistoryRepository.aggregateUsage(true, CallUsageService.ALL_MEMBERS_PLACEHOLDER, "month", "Asia/Seoul",
             kstStart("2026-08-01"), kstStart("2026-11-01")))
             .willReturn(List.of(row("2026-08-01", 900, 3), row("2026-10-01", 1200, 4)));
 
@@ -98,9 +98,9 @@ class CallUsageServiceTest {
     }
 
     @Test
-    void getUsages_withMemberId_usesMemberQuery() {
+    void getUsages_withMemberId_aggregatesOnlyThatMember() {
         given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.of(member));
-        given(callHistoryRepository.aggregateUsageOfMember(memberId, "day", "Asia/Seoul",
+        given(callHistoryRepository.aggregateUsage(false, memberId, "day", "Asia/Seoul",
             kstStart("2026-10-01"), kstStart("2026-10-02")))
             .willReturn(List.of(row("2026-10-01", 100, 1)));
 
@@ -132,7 +132,7 @@ class CallUsageServiceTest {
     @Test
     void getUsages_dayRangeOf93DaysIsAllowedAnd94DaysIsRejected() {
         LocalDate from = LocalDate.of(2026, 7, 1);
-        given(callHistoryRepository.aggregateUsageOfAllMembers("day", "Asia/Seoul",
+        given(callHistoryRepository.aggregateUsage(true, CallUsageService.ALL_MEMBERS_PLACEHOLDER, "day", "Asia/Seoul",
             kstStart("2026-07-01"), kstStart("2026-10-02")))
             .willReturn(List.of());
 
@@ -144,7 +144,7 @@ class CallUsageServiceTest {
 
     @Test
     void getUsages_monthRangeOf24MonthsIsAllowedAnd25MonthsIsRejected() {
-        given(callHistoryRepository.aggregateUsageOfAllMembers("month", "Asia/Seoul",
+        given(callHistoryRepository.aggregateUsage(true, CallUsageService.ALL_MEMBERS_PLACEHOLDER, "month", "Asia/Seoul",
             kstStart("2025-01-01"), kstStart("2027-01-01")))
             .willReturn(List.of());
 

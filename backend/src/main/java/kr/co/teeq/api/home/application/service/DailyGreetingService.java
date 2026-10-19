@@ -3,7 +3,6 @@ package kr.co.teeq.api.home.application.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.UUID;
 import kr.co.teeq.api.aicharacter.application.dto.response.AiCharacterResponse;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
@@ -11,6 +10,7 @@ import kr.co.teeq.api.home.core.entity.DailyGreeting;
 import kr.co.teeq.api.home.core.port.GreetingGenerationPort;
 import kr.co.teeq.api.home.core.port.GreetingRequest;
 import kr.co.teeq.api.home.core.repository.DailyGreetingRepository;
+import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
@@ -37,32 +37,32 @@ public class DailyGreetingService {
     private final Clock clock;
     private final ZoneId koreaZoneId;
 
-    public String getOrCreate(UUID memberId, String nickname, AiCharacterResponse character) {
+    public String getOrCreate(Member member, AiCharacterResponse character) {
         // 하루는 KST 0시 기준이다
         LocalDate today = clock.instant().atZone(koreaZoneId).toLocalDate();
-        return dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(memberId, today)
+        return dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(member.getId(), today)
             .map(DailyGreeting::getMessage)
-            .orElseGet(() -> create(memberId, nickname, character, today));
+            .orElseGet(() -> create(member, character, today));
     }
 
-    private String create(UUID memberId, String nickname, AiCharacterResponse character, LocalDate today) {
+    private String create(Member member, AiCharacterResponse character, LocalDate today) {
         // 말투 답변이 없는 상태는 default로 숨기지 않고 전파해야 하므로 AI 실패 처리 밖에서 먼저 읽는다
-        OnboardingOption speechStyle = onboardingAnswerService.getSpeechStyle(memberId);
+        OnboardingOption speechStyle = onboardingAnswerService.getSpeechStyle(member);
         GreetingSpeech speech = GreetingSpeech.from(speechStyle);
-        String message = generateOrDefault(memberId, nickname, character, speechStyle, speech);
+        String message = generateOrDefault(member, character, speechStyle, speech);
         try {
-            return dailyGreetingCommandService.save(memberId, today, message);
+            return dailyGreetingCommandService.save(member, today, message);
         } catch (DataIntegrityViolationException exception) {
             // 동시 첫 진입으로 다른 요청이 먼저 저장한 경우다. 이 클래스가 트랜잭션 밖이라 새 조회가 오염되지 않는다
-            return dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(memberId, today)
+            return dailyGreetingRepository.findByMemberIdAndGreetingDateAndDeletedFalse(member.getId(), today)
                 .map(DailyGreeting::getMessage)
                 .orElseThrow(() -> exception);
         }
     }
 
-    private String generateOrDefault(UUID memberId, String nickname, AiCharacterResponse character,
+    private String generateOrDefault(Member member, AiCharacterResponse character,
         OnboardingOption speechStyle, GreetingSpeech speech) {
-        GreetingRequest request = new GreetingRequest(memberId, nickname, character.name(),
+        GreetingRequest request = new GreetingRequest(member.getId(), member.getNickname(), character.name(),
             character.characterNumber(), character.personalityTags(), speechStyle.name());
         try {
             String generated = greetingGenerationPort.generate(request);
@@ -70,15 +70,15 @@ public class DailyGreetingService {
                 return generated;
             }
             log.warn("오늘의 한마디 AI 응답이 규칙에 맞지 않아 기본 문구를 사용합니다. memberId={}, 응답 길이={}",
-                memberId, generated == null ? 0 : generated.length());
+                member.getId(), generated == null ? 0 : generated.length());
         } catch (CustomException exception) {
             if (exception.getErrorCode() != ErrorCode.AI_SERVER_UNAVAILABLE) {
                 throw exception;
             }
-            log.warn("오늘의 한마디 AI 생성에 실패해 기본 문구를 사용합니다. memberId={}", memberId, exception);
+            log.warn("오늘의 한마디 AI 생성에 실패해 기본 문구를 사용합니다. memberId={}", member.getId(), exception);
         }
         return settingConfigService.getString(speech.defaultMessageKey())
-            .replace(GreetingMessageRule.HONORIFIC_PLACEHOLDER, speech.honorific(nickname));
+            .replace(GreetingMessageRule.HONORIFIC_PLACEHOLDER, speech.honorific(member.getNickname()));
     }
 
 }
