@@ -1,14 +1,40 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-19T07:03:10Z",
-    "currentVersion": "0.17.0",
+    "lastUpdated": "2026-10-19T17:58:11Z",
+    "currentVersion": "0.18.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 20
+    "totalReleases": 21
   },
   "releases": [
+    {
+      "version": "0.18.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-19",
+      "pr_number": null,
+      "raw_summary": "## [0.18.0]\n\n### ✨ 기능\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 온보딩 응답 이력 화면 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 통화 보너스 부여·취소 화면 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 통화 사용량 화면 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 대시보드 홈과 읽기 전용 집계 쿼리 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 공통 레이아웃과 서비스 설정 화면 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 전용 세션 보안 체인과 로그인, admin REST 전환, 통화 보너스 행위자 Admin 교체\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 기동 시 관리자 계정 시드와 설정 키 안내 추가\n- 관리자_페이지_Thymeleaf_와_세션_로그인_추가 — Admin 계정 엔티티와 admin 테이블 마이그레이션 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 온보딩 응답 이력 화면 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 통화 보너스 부여·취소 화면 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 통화 사용량 화면 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 대시보드 홈과 읽기 전용 집계 쿼리 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 공통 레이아웃과 서비스 설정 화면 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 관리자 전용 세션 보안 체인과 로그인, admin REST 전환, 통화 보너스 행위자 Admin 교체",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — 기동 시 관리자 계정 시드와 설정 키 안내 추가",
+            "관리자_페이지_Thymeleaf_와_세션_로그인_추가 — Admin 계정 엔티티와 admin 테이블 마이그레이션 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.17.0",
       "project_types": [
