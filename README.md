@@ -24,6 +24,6 @@ open -a "Android Studio" frontend
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->
-## 최신 버전 : v0.18.0 (2026-10-20)
+## 최신 버전 : v0.19.0 (2026-10-20)
 
 [전체 버전 기록 보기](CHANGELOG.md)
