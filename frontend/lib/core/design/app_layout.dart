@@ -98,6 +98,15 @@ abstract final class AppLayout {
   static const double settingsRowHeight = 52;
   static const double textButtonHeight = 44;
 
+  // 닉네임 변경 화면. Figma 393폭 프레임 기준 값이다.
+  static const double nicknameHelperMascotWidth = 168;
+  static const double nicknameHelperBubbleMinHeight = 76;
+  // 마스코트 칸과 말풍선 칸의 폭 비율.
+  static const int nicknameHelperMascotFlex = 168;
+  static const int nicknameHelperBubbleFlex = 177;
+  // 빛 번짐 중심의 세로 위치. 헤더 위쪽 가장자리에서 캐릭터·말풍선 줄 중심까지의 거리다.
+  static const double nicknameGlowCenterOffsetY = 152;
+
   // 캐릭터 생성 흐름 일러스트와 빛 번짐 크기. Figma 393폭 프레임 기준 값이다.
   static const double characterNamingIllustrationWidth = 310.275;
   static const double characterNamingIllustrationHeight = 267;

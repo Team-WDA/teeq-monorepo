@@ -41,6 +41,15 @@ abstract final class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const TextStyle heading20Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w500,
+    height: 28 / 20,
+    letterSpacing: 20 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
   static const TextStyle body16Bold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
@@ -216,6 +225,33 @@ abstract final class AppTextStyles {
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w400,
+    height: 18 / 12,
+    letterSpacing: 12 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle heading18Medium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    height: 26 / 18,
+    letterSpacing: 18 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14BoldMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: 22 / 14,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption12BoldMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
     height: 18 / 12,
     letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,

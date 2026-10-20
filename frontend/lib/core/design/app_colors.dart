@@ -15,6 +15,7 @@ abstract final class AppColors {
   static const Color accentSurface = Color(0xFFFAFFED);
   static const Color scrim = Color(0x80000000);
   static const Color scrimSoft = Color(0x5C000000);
+  static const Color documentCardSurface = Color(0xFFF7F7F5);
   static const Color tabBarBackground = Color(0xFFF7F7F7);
   static const Color destructiveSurface = Color(0xFFFFF6F5);
   static const Color destructiveText = Color(0xFFFF3B30);
