@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
@@ -8,9 +9,11 @@ import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/destructive_tonal_button.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/my_page/presentation/account_withdrawal_confirmation_dialog.dart';
+import 'package:teeq/features/my_page/presentation/profile_image_sheet.dart';
 import 'package:teeq/features/my_page/presentation/widgets/profile_summary_card.dart';
 import 'package:teeq/features/my_page/presentation/widgets/settings_row.dart';
 import 'package:teeq/features/my_page/presentation/widgets/settings_section_card.dart';
@@ -85,6 +88,8 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
             nickname: member.nickname ?? '',
             email: member.email,
             profileImageUrl: member.profileImageUrl,
+            onTap: () => context.push(AppRoutes.nicknameChange),
+            onEditPhotoTap: () => showProfileImageSheet(context),
           ),
           const SizedBox(height: AppSpacing.space24),
           SettingsSectionCard(
@@ -97,26 +102,29 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
               ),
               // 비밀번호가 없는 회원(Apple 등)에게는 숨긴다.
               if (member.loginType == LoginType.email)
-                const SettingsRow(
+                SettingsRow(
                   label: '비밀번호 변경',
                   leadingIconAssetPath: AppAssets.lockIcon,
                   showsChevron: true,
+                  onTap: () => context.push(AppRoutes.passwordChange),
                 ),
             ],
           ),
           const SizedBox(height: AppSpacing.space24),
           SettingsSectionCard(
             title: serviceSectionTitle,
-            rows: const [
+            rows: [
               SettingsRow(
                 label: '서비스 이용약관',
                 leadingIconAssetPath: AppAssets.documentIcon,
                 showsChevron: true,
+                onTap: () => context.push(AppRoutes.serviceTerms),
               ),
               SettingsRow(
                 label: '개인정보 처리방침',
                 leadingIconAssetPath: AppAssets.lockIcon,
                 showsChevron: true,
+                onTap: () => context.push(AppRoutes.privacyPolicy),
               ),
             ],
           ),

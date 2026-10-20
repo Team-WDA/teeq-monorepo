@@ -2,15 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
+import 'package:teeq/core/auth/auth_tokens.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
+import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
+import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
+import 'package:teeq/features/my_page/domain/legal_document.dart';
+import 'package:teeq/features/my_page/domain/profile_image_picker.dart';
+import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
+import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
+import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 
 import 'fake_auth_repository.dart';
 import 'fake_token_storage.dart';
@@ -62,11 +74,25 @@ class MyPageHarness {
     Member? fetchedMember,
     Object? fetchMeError,
     Object? deleteAccountError,
+    Object? changeNicknameError,
+    Object? changePasswordError,
+    Object? replaceProfileImageError,
     Override? appVersionOverride,
+    ProfileImagePicker? profileImagePicker,
   }) : repository = FakeAuthRepository(
          member: fetchedMember ?? member,
          fetchMeError: fetchMeError,
          deleteAccountError: deleteAccountError,
+         changeNicknameError: changeNicknameError,
+         changePasswordError: changePasswordError,
+         replaceProfileImageError: replaceProfileImageError,
+         signInResult: SignInResult(
+           tokens: const AuthTokens(
+             accessToken: 'new-access',
+             refreshToken: 'new-refresh',
+           ),
+           member: fetchedMember ?? member,
+         ),
        ) {
     tokenStorage = RecordingTokenStorage(events);
     container = ProviderContainer(
@@ -78,6 +104,8 @@ class MyPageHarness {
         authRepositoryProvider.overrideWithValue(repository),
         tokenStorageProvider.overrideWithValue(tokenStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
+        if (profileImagePicker != null)
+          profileImagePickerProvider.overrideWithValue(profileImagePicker),
       ],
     );
     addTearDown(container.dispose);
@@ -101,4 +129,47 @@ class MyPageHarness {
       home: Scaffold(body: SafeArea(child: home)),
     ),
   );
+
+  /// 마이 화면에서 `context.push`로 하위 화면에 들어가는 흐름을 확인하는 라우터 구성.
+  /// 하위 화면이 pop되면 `events`에 'pop'이 남는다.
+  Widget routedApp() {
+    final router = GoRouter(
+      initialLocation: AppRoutes.myPage,
+      observers: [_PopRecordingObserver(events)],
+      routes: [
+        GoRoute(
+          path: AppRoutes.myPage,
+          builder: (context, state) =>
+              const Scaffold(body: SafeArea(child: MyPageScreen())),
+        ),
+        GoRoute(
+          path: AppRoutes.nicknameChange,
+          builder: (context, state) => const NicknameChangeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.passwordChange,
+          builder: (context, state) => const PasswordChangeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.passwordChangeCompletion,
+          builder: (context, state) => const PasswordChangeCompletionScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.serviceTerms,
+          builder: (context, state) =>
+              const LegalDocumentScreen(type: LegalDocumentType.serviceTerms),
+        ),
+        GoRoute(
+          path: AppRoutes.privacyPolicy,
+          builder: (context, state) =>
+              const LegalDocumentScreen(type: LegalDocumentType.privacyPolicy),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    return UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    );
+  }
 }
