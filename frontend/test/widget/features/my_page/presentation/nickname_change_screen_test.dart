@@ -72,6 +72,33 @@ void main() {
     expect(_isSaveEnabled(tester), isFalse);
   });
 
+  testWidgets('does not flag a jamo that the IME is still composing', (
+    tester,
+  ) async {
+    const characterError = '한글, 영문, 숫자만 입력할 수 있어. 특수문자와 공백은 빼줘.';
+    await _openNicknameChange(tester, MyPageHarness());
+    await _enterNickname(tester, '가나');
+
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '가나ㅅ',
+        selection: TextSelection.collapsed(offset: 3),
+        composing: TextRange(start: 2, end: 3),
+      ),
+    );
+    await tester.pump();
+    expect(find.text(characterError), findsNothing);
+
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '가나ㅅ',
+        selection: TextSelection.collapsed(offset: 3),
+      ),
+    );
+    await tester.pump();
+    expect(find.text(characterError), findsOneWidget);
+  });
+
   testWidgets('clear button empties the input', (tester) async {
     await _openNicknameChange(tester, MyPageHarness());
     await _enterNickname(tester, '새닉네임');

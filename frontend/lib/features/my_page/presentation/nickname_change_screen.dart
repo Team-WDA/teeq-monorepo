@@ -33,6 +33,17 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
 
   String get _input => _nicknameController.text;
 
+  /// IME가 조합 중인 글자(예: 'ㅅ')는 빼고 확정된 입력만 돌려준다.
+  /// 조합 중인 자모를 그대로 검사하면 음절마다 문자 오류가 깜빡인다.
+  String get _committedInput {
+    final value = _nicknameController.value;
+    final composing = value.composing;
+    if (!composing.isValid || composing.isCollapsed) {
+      return value.text;
+    }
+    return composing.textBefore(value.text) + composing.textAfter(value.text);
+  }
+
   bool get _canSubmit =>
       !_isRequestInProgress &&
       NicknameInputRule.isSubmittable(
@@ -46,10 +57,21 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
       );
 
   @override
+  void initState() {
+    super.initState();
+    // IME 조합이 끝나도 글자가 그대로면 onChanged가 오지 않으므로 컨트롤러 변경을 직접 듣는다.
+    _nicknameController.addListener(_rebuild);
+  }
+
+  @override
   void dispose() {
-    _nicknameController.dispose();
+    _nicknameController
+      ..removeListener(_rebuild)
+      ..dispose();
     super.dispose();
   }
+
+  void _rebuild() => setState(() {});
 
   void _onNicknameChanged(String _) {
     // 입력이 바뀌면 이전 중복 응답은 더 이상 유효하지 않다.
@@ -140,7 +162,7 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
                           controller: _nicknameController,
                           onChanged: _onNicknameChanged,
                           enabled: !_isRequestInProgress,
-                          issue: NicknameInputRule.issueOf(_input),
+                          issue: NicknameInputRule.issueOf(_committedInput),
                           duplicateErrorMessage: _isDuplicateNickname
                               ? ErrorCode.duplicateNickname.userMessage
                               : null,
