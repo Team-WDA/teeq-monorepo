@@ -369,4 +369,33 @@ void main() {
     expect(harness.adapter.callCount(_refreshPath), 0);
     expect(harness.sessionExpiredCount, 0);
   });
+
+  test('expiredToken_retriesMultipartRequestWithClonedFormData', () async {
+    final harness = _Harness(storedTokens: _oldTokens);
+    harness.adapter
+      ..on('/api/members/me/profile-image', [
+        _error(401, 'EXPIRED_TOKEN'),
+        _ok({'profileImageUrl': 'https://image.example.test/a.jpg'}),
+      ])
+      ..on(_refreshPath, [_refreshed()]);
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(
+        [1, 2, 3],
+        filename: 'photo.jpg',
+        contentType: DioMediaType('image', 'jpeg'),
+      ),
+    });
+
+    final response = await harness.dio.put<dynamic>(
+      '/api/members/me/profile-image',
+      data: formData,
+    );
+
+    expect(response.statusCode, 200);
+    expect(harness.adapter.callCount('/api/members/me/profile-image'), 2);
+    expect(harness.authorizationsTo('/api/members/me/profile-image'), [
+      'Bearer old-access',
+      'Bearer new-access',
+    ]);
+  });
 }

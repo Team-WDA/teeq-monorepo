@@ -203,14 +203,18 @@ class AuthInterceptor extends Interceptor {
     return null;
   }
 
-  RequestOptions _retryOptions(RequestOptions options, String accessToken) =>
-      options.copyWith(
-        headers: {
-          ...options.headers,
-          _authorizationHeader: '$_bearerPrefix$accessToken',
-        },
-        extra: {...options.extra, retriedKey: true},
-      );
+  RequestOptions _retryOptions(RequestOptions options, String accessToken) {
+    final data = options.data;
+    return options.copyWith(
+      // 전송을 마친 FormData는 다시 쓸 수 없어 복제본으로 재시도한다.
+      data: data is FormData ? data.clone() : data,
+      headers: {
+        ...options.headers,
+        _authorizationHeader: '$_bearerPrefix$accessToken',
+      },
+      extra: {...options.extra, retriedKey: true},
+    );
+  }
 }
 
 /// 한 번의 갱신과, 그 갱신이 대체하는 만료 access 토큰.
