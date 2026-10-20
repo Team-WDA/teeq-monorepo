@@ -6,6 +6,7 @@ import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/auth/data/dto/auth_response_dto.dart';
 import 'package:teeq/features/auth/data/dto/member_response_dto.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
 part 'auth_repository_impl.g.dart';
 
@@ -88,6 +89,52 @@ final class AuthRepositoryImpl implements AuthRepository {
       },
     );
     return MemberResponseDto.fromJson(response.data!).toMember();
+  }
+
+  @override
+  Future<Member> changeNickname({required String nickname}) async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/api/members/me/nickname',
+      data: {'nickname': nickname},
+    );
+    return MemberResponseDto.fromJson(response.data!).toMember();
+  }
+
+  @override
+  Future<SignInResult> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '/api/members/me/password',
+      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+    );
+    return AuthResponseDto.fromJson(response.data!).toSignInResult();
+  }
+
+  @override
+  Future<Member> replaceProfileImage(ProfileImageFile image) async {
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(
+        image.bytes,
+        filename: image.fileName,
+        contentType: _contentTypeOf(image.fileName),
+      ),
+    });
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/api/members/me/profile-image',
+      data: formData,
+    );
+    return MemberResponseDto.fromJson(response.data!).toMember();
+  }
+
+  /// 확장자로 업로드 형식을 정한다. 서버는 내용으로 형식을 다시 판별한다.
+  DioMediaType _contentTypeOf(String fileName) {
+    final lowerCaseName = fileName.toLowerCase();
+    if (lowerCaseName.endsWith('.png')) {
+      return DioMediaType('image', 'png');
+    }
+    return DioMediaType('image', 'jpeg');
   }
 }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/features/auth/domain/apple_credential_provider.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
 import '../../../../support/fake_auth_repository.dart';
 import '../../../../support/fake_token_storage.dart';
@@ -342,6 +344,180 @@ void main() {
       );
 
       await expectLater(harness.flow.refreshMember(), throwsA(error));
+    });
+  });
+
+  group('changeNickname', () {
+    const emailMember = Member(
+      memberId: 'member-1',
+      email: 'user@example.com',
+      nickname: '티큐',
+      hasAiCharacter: false,
+      loginType: LoginType.email,
+    );
+    final renamed = emailMember.copyWith(nickname: '새닉네임');
+
+    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
+      final harness = _Harness(repository: repository);
+      await harness.container.read(authSessionProvider).restored(emailMember);
+      return harness;
+    }
+
+    test('updatesCurrentMemberNickname', () async {
+      final repository = FakeAuthRepository(member: renamed);
+      final harness = await signedInHarness(repository);
+
+      await harness.flow.changeNickname('새닉네임');
+
+      expect(repository.changedNickname, '새닉네임');
+      expect(harness.currentMember?.nickname, '새닉네임');
+    });
+
+    test('logoutWhileWaiting_doesNotRestoreMember', () async {
+      final repository = FakeAuthRepository(member: renamed)
+        ..changeNicknameGate = Completer<void>();
+      final harness = await signedInHarness(repository);
+
+      final changing = harness.flow.changeNickname('새닉네임');
+      await harness.flow.logout();
+      repository.changeNicknameGate!.complete();
+      await changing;
+
+      expect(harness.status, AuthStatus.signedOut);
+      expect(harness.currentMember, isNull);
+    });
+
+    test('serverError_propagatesAndKeepsMember', () async {
+      final error = Exception('duplicate');
+      final harness = await signedInHarness(
+        FakeAuthRepository(member: renamed, changeNicknameError: error),
+      );
+
+      await expectLater(harness.flow.changeNickname('새닉네임'), throwsA(error));
+
+      expect(harness.currentMember, emailMember);
+    });
+  });
+
+  group('changePassword', () {
+    const emailMember = Member(
+      memberId: 'member-1',
+      email: 'user@example.com',
+      nickname: '티큐',
+      hasAiCharacter: false,
+      loginType: LoginType.email,
+    );
+    const newTokens = AuthTokens(
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+    );
+    const result = SignInResult(tokens: newTokens, member: _member);
+
+    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
+      final harness = _Harness(repository: repository, storedTokens: _tokens);
+      await harness.container.read(authSessionProvider).restored(emailMember);
+      return harness;
+    }
+
+    test('savesNewTokensAndKeepsMemberWithEmail', () async {
+      final repository = FakeAuthRepository(signInResult: result);
+      final harness = await signedInHarness(repository);
+
+      await harness.flow.changePassword(current: 'old-pw', next: 'new-pw');
+
+      expect(repository.changedPassword?.currentPassword, 'old-pw');
+      expect(repository.changedPassword?.newPassword, 'new-pw');
+      expect(harness.tokenStorage.storedTokens, newTokens);
+      expect(harness.currentMember, emailMember);
+      expect(harness.currentMember?.email, 'user@example.com');
+    });
+
+    test('serverError_propagatesAndKeepsTokens', () async {
+      final error = Exception('invalid current password');
+      final harness = await signedInHarness(
+        FakeAuthRepository(signInResult: result, changePasswordError: error),
+      );
+
+      await expectLater(
+        harness.flow.changePassword(current: 'old-pw', next: 'new-pw'),
+        throwsA(error),
+      );
+
+      expect(harness.tokenStorage.storedTokens, _tokens);
+      expect(harness.tokenStorage.savedTokens, isNull);
+    });
+
+    test('logoutWhileWaiting_doesNotSaveTokens', () async {
+      final repository = FakeAuthRepository(signInResult: result)
+        ..changePasswordGate = Completer<void>();
+      final harness = await signedInHarness(repository);
+
+      final changing = harness.flow.changePassword(
+        current: 'old-pw',
+        next: 'new-pw',
+      );
+      await harness.flow.logout();
+      repository.changePasswordGate!.complete();
+      await changing;
+
+      expect(harness.tokenStorage.storedTokens, isNull);
+      expect(harness.tokenStorage.savedTokens, isNull);
+    });
+  });
+
+  group('replaceProfileImage', () {
+    final image = ProfileImageFile(
+      fileName: 'photo.png',
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+    final withImage = _member.copyWith(
+      profileImageUrl: 'https://cdn.example.com/profile.png',
+    );
+
+    test('updatesProfileImageUrl', () async {
+      final repository = FakeAuthRepository(member: withImage);
+      final harness = _Harness(repository: repository);
+      await harness.container.read(authSessionProvider).restored(_member);
+
+      await harness.flow.replaceProfileImage(image);
+
+      expect(repository.replacedProfileImage, image);
+      expect(
+        harness.currentMember?.profileImageUrl,
+        'https://cdn.example.com/profile.png',
+      );
+    });
+
+    test('logoutWhileWaiting_doesNotRestoreMember', () async {
+      final repository = FakeAuthRepository(member: withImage)
+        ..replaceProfileImageGate = Completer<void>();
+      final harness = _Harness(repository: repository);
+      await harness.container.read(authSessionProvider).restored(_member);
+
+      final replacing = harness.flow.replaceProfileImage(image);
+      await harness.flow.logout();
+      repository.replaceProfileImageGate!.complete();
+      await replacing;
+
+      expect(harness.currentMember, isNull);
+    });
+
+    test('serverError_propagatesAndKeepsMember', () async {
+      final error = Exception('invalid image');
+      final harness = _Harness(
+        repository: FakeAuthRepository(
+          member: withImage,
+          replaceProfileImageError: error,
+        ),
+      );
+      await harness.container.read(authSessionProvider).restored(_member);
+
+      await expectLater(
+        harness.flow.replaceProfileImage(image),
+        throwsA(error),
+      );
+
+      expect(harness.currentMember, _member);
     });
   });
 }

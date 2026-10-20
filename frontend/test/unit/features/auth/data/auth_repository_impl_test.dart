@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +11,7 @@ import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
 import '../../../../support/fake_token_storage.dart';
 import '../../../../support/scripted_http_client_adapter.dart';
@@ -196,5 +199,78 @@ void main() {
         ),
       ),
     );
+  });
+
+  test('changeNickname_patchesNicknameAndMapsMember', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/members/me/nickname', [
+      ScriptedReply.json(200, {..._memberJson, 'nickname': '새닉네임'}),
+    ]);
+
+    final member = await repository.changeNickname(nickname: '새닉네임');
+
+    final request = adapter.requestsTo('/api/members/me/nickname').single;
+    expect(request.method, 'PATCH');
+    expect(request.data, {'nickname': '새닉네임'});
+    expect(member.nickname, '새닉네임');
+  });
+
+  test('changePassword_patchesPasswordsAndMapsSignInResult', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/members/me/password', [
+      ScriptedReply.json(200, _authJson),
+    ]);
+
+    final result = await repository.changePassword(
+      currentPassword: 'oldpass1',
+      newPassword: 'newpass12',
+    );
+
+    final request = adapter.requestsTo('/api/members/me/password').single;
+    expect(request.method, 'PATCH');
+    expect(request.data, {
+      'currentPassword': 'oldpass1',
+      'newPassword': 'newpass12',
+    });
+    expect(result.tokens.accessToken, 'access');
+    expect(result.tokens.refreshToken, 'refresh');
+    expect(result.member.nickname, '티큐');
+  });
+
+  group('replaceProfileImage', () {
+    Future<RequestOptions> upload(String fileName) async {
+      final (:repository, :adapter) = _setUp();
+      adapter.on('/api/members/me/profile-image', [
+        ScriptedReply.json(200, {
+          ..._memberJson,
+          'profileImageUrl': 'https://image.example.test/a.jpg',
+        }),
+      ]);
+      final member = await repository.replaceProfileImage(
+        ProfileImageFile(fileName: fileName, bytes: Uint8List.fromList([1, 2])),
+      );
+      expect(member.profileImageUrl, 'https://image.example.test/a.jpg');
+      return adapter.requestsTo('/api/members/me/profile-image').single;
+    }
+
+    test('putsMultipartImagePartWithJpegContentType', () async {
+      final request = await upload('photo.JPG');
+
+      expect(request.method, 'PUT');
+      final formData = request.data as FormData;
+      expect(formData.files, hasLength(1));
+      final part = formData.files.single;
+      expect(part.key, 'image');
+      expect(part.value.filename, 'photo.JPG');
+      expect(part.value.contentType.toString(), 'image/jpeg');
+      expect(part.value.length, 2);
+    });
+
+    test('usesPngContentTypeForPngExtension', () async {
+      final request = await upload('photo.png');
+
+      final part = (request.data as FormData).files.single;
+      expect(part.value.contentType.toString(), 'image/png');
+    });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/sign_in_result.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
 /// 인증·회원 API 계약.
 abstract interface class AuthRepository {
@@ -29,4 +30,16 @@ abstract interface class AuthRepository {
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   });
+
+  /// 닉네임을 바꾸고 갱신된 회원을 돌려준다.
+  Future<Member> changeNickname({required String nickname});
+
+  /// 비밀번호를 바꾸고 새로 발급된 토큰을 돌려준다.
+  Future<SignInResult> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
+
+  /// 프로필 사진을 교체하고 갱신된 회원을 돌려준다.
+  Future<Member> replaceProfileImage(ProfileImageFile image);
 }
