@@ -9,18 +9,26 @@ class ScreenTitleWithDescriptionHeading extends StatelessWidget {
     super.key,
     required this.title,
     required this.description,
+    this.titleStyle = AppTextStyles.display32Bold,
+    this.titleDescriptionGap = AppSpacing.space12,
   });
 
   final String title;
   final String description;
+
+  /// 제목 글자 스타일. 기본은 가입 화면들이 쓰는 큰 제목이다.
+  final TextStyle titleStyle;
+
+  /// 제목과 설명 사이 간격.
+  final double titleDescriptionGap;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTextStyles.display32Bold),
-        const SizedBox(height: AppSpacing.space12),
+        Text(title, style: titleStyle),
+        SizedBox(height: titleDescriptionGap),
         Text(
           description,
           style: AppTextStyles.body14SemiBoldMultiline.copyWith(

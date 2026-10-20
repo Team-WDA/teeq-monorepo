@@ -17,6 +17,8 @@ class UnderlineLabeledTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.autofillHints,
+    this.errorMessage,
+    this.enabled = true,
   });
 
   final String label;
@@ -28,6 +30,12 @@ class UnderlineLabeledTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
 
+  /// 있으면 밑줄과 이 문구를 오류 색으로 필드 아래에 보인다.
+  final String? errorMessage;
+
+  /// false이면 입력과 포커스를 막는다.
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -36,10 +44,12 @@ class UnderlineLabeledTextField extends StatelessWidget {
         Text(label, style: AppTextStyles.body16Bold),
         const SizedBox(height: AppSpacing.space8),
         DecoratedBox(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: AppColors.borderSubtle,
+                color: errorMessage == null
+                    ? AppColors.borderSubtle
+                    : AppColors.destructiveText,
                 width: AppBorderWidths.thin,
               ),
             ),
@@ -50,6 +60,7 @@ class UnderlineLabeledTextField extends StatelessWidget {
             ),
             child: TextField(
               controller: controller,
+              enabled: enabled,
               onChanged: onChanged,
               obscureText: obscureText,
               keyboardType: keyboardType,
@@ -72,6 +83,15 @@ class UnderlineLabeledTextField extends StatelessWidget {
             ),
           ),
         ),
+        if (errorMessage != null) ...[
+          const SizedBox(height: AppSpacing.space4),
+          Text(
+            errorMessage!,
+            style: AppTextStyles.caption12Medium.copyWith(
+              color: AppColors.destructiveText,
+            ),
+          ),
+        ],
       ],
     );
   }
