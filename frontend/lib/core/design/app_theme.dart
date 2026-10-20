@@ -19,13 +19,13 @@ abstract final class AppTheme {
       outline: AppColors.borderSubtle,
     ),
     textTheme: const TextTheme(
-      displayLarge: AppTextStyles.display,
-      headlineMedium: AppTextStyles.heading,
-      titleMedium: AppTextStyles.label16,
-      titleSmall: AppTextStyles.label14,
-      bodyLarge: AppTextStyles.paragraph16,
-      bodyMedium: AppTextStyles.paragraph14,
-      labelSmall: AppTextStyles.caption12,
+      displayLarge: AppTextStyles.display32Bold,
+      headlineMedium: AppTextStyles.heading20Bold,
+      titleMedium: AppTextStyles.body16Bold,
+      titleSmall: AppTextStyles.body14Bold,
+      bodyLarge: AppTextStyles.body16SemiBold,
+      bodyMedium: AppTextStyles.body14SemiBold,
+      labelSmall: AppTextStyles.caption12SemiBold,
     ),
     // 디자인 시안 확정 전 임시: AppButton을 디자이너 컴포넌트 명세로 만들기 전까지 쓰는 Material 버튼 임시 스타일.
     filledButtonTheme: FilledButtonThemeData(
@@ -38,7 +38,7 @@ abstract final class AppTheme {
         shape: const RoundedRectangleBorder(
           borderRadius: AppRadius.borderRadiusMd,
         ),
-        textStyle: AppTextStyles.label16,
+        textStyle: AppTextStyles.body16Bold,
       ),
     ),
   );

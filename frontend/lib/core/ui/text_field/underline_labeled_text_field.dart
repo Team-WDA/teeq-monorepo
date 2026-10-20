@@ -33,7 +33,7 @@ class UnderlineLabeledTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.label16),
+        Text(label, style: AppTextStyles.body16Bold),
         const SizedBox(height: AppSpacing.space8),
         DecoratedBox(
           decoration: const BoxDecoration(
@@ -55,11 +55,11 @@ class UnderlineLabeledTextField extends StatelessWidget {
               keyboardType: keyboardType,
               textInputAction: textInputAction,
               autofillHints: autofillHints,
-              style: AppTextStyles.paragraph14,
+              style: AppTextStyles.body14SemiBold,
               cursorColor: AppColors.textPrimary,
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: AppTextStyles.paragraph14.copyWith(
+                hintStyle: AppTextStyles.body14SemiBold.copyWith(
                   color: AppColors.textMuted,
                 ),
                 border: InputBorder.none,

@@ -51,11 +51,11 @@ class OutlinedBoxTextField extends StatelessWidget {
             textInputAction: textInputAction,
             inputFormatters: inputFormatters,
             enabled: enabled,
-            style: AppTextStyles.paragraph16,
+            style: AppTextStyles.body16SemiBold,
             cursorColor: AppColors.textPrimary,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: AppTextStyles.paragraph16.copyWith(
+              hintStyle: AppTextStyles.body16SemiBold.copyWith(
                 color: AppColors.textMuted,
               ),
               border: InputBorder.none,

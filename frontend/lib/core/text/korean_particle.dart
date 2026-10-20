@@ -10,6 +10,14 @@ String withCopulaParticle(String text) =>
 String withSubjectParticle(String text) =>
     text + (_hasFinalConsonant(text) ? '이' : '가');
 
+/// 이름 뒤에 접속 조사를 붙인다. 받침이 있으면 "과", 없으면 "와".
+String withConjunctiveParticle(String text) =>
+    text + (_hasFinalConsonant(text) ? '과' : '와');
+
+/// 이름 뒤에 "함께" 뜻의 조사를 붙인다. 받침이 있으면 "이랑", 없으면 "랑".
+String withTogetherParticle(String text) =>
+    text + (_hasFinalConsonant(text) ? '이랑' : '랑');
+
 /// 마지막 글자가 받침이 있는 한글 음절인지 판별한다. 한글이 아닌 글자는 받침 없음으로 본다.
 bool _hasFinalConsonant(String text) {
   if (text.isEmpty) {

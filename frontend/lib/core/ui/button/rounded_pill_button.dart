@@ -45,7 +45,7 @@ class RoundedPillButton extends StatelessWidget {
                     width: AppBorderWidths.thin,
                   ),
           ),
-          child: Text(label, style: AppTextStyles.label16),
+          child: Text(label, style: AppTextStyles.body16Bold),
         ),
       ),
     );

@@ -27,7 +27,7 @@ class AppToast extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.space16),
             child: Text(
               message,
-              style: AppTextStyles.paragraph14.copyWith(
+              style: AppTextStyles.body14SemiBoldMultiline.copyWith(
                 color: AppColors.background,
               ),
             ),

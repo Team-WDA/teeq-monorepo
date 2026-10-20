@@ -35,7 +35,7 @@ class NeutralFilledButton extends StatelessWidget {
             color: AppColors.neutralSurface,
             borderRadius: AppRadius.borderRadiusMd,
           ),
-          child: Text(label, style: AppTextStyles.paragraph16),
+          child: Text(label, style: AppTextStyles.body16SemiBold),
         ),
       ),
     );

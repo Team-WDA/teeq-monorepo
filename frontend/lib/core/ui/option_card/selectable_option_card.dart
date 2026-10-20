@@ -51,7 +51,7 @@ class SelectableOptionCard extends StatelessWidget {
               width: AppBorderWidths.regular,
             ),
           ),
-          child: Text(label, style: AppTextStyles.paragraph16),
+          child: Text(label, style: AppTextStyles.body16SemiBold),
         ),
       ),
     );

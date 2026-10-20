@@ -47,13 +47,12 @@ class CharacterEditEntryCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('캐릭터 수정', style: AppTextStyles.label14),
+                      Text('캐릭터 수정', style: AppTextStyles.body14Bold),
                       const SizedBox(height: AppSpacing.space4),
                       Text(
                         '캐릭터의 성향과 모습을 다시 설정할 수 있어.',
-                        style: AppTextStyles.caption12.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                        style: AppTextStyles.caption12SemiBoldMultiline
+                            .copyWith(color: AppColors.textMuted),
                       ),
                     ],
                   ),

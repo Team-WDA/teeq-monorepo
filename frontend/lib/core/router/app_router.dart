@@ -13,6 +13,12 @@ import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
+import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
+import 'package:teeq/features/feedback/presentation/feedback_flow_redirect.dart';
+import 'package:teeq/features/feedback/presentation/screens/call_closing_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_completion_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
@@ -41,6 +47,14 @@ GoRouter appRouter(Ref ref) {
       ref.read(currentMemberControllerProvider)?.hasAiCharacter == true
       ? AppRoutes.home
       : AppRoutes.onboarding;
+
+  // 선행 단계를 마치지 않았거나 다른 통화의 흐름이면 홈으로 보낸다.
+  String? redirectFeedbackFlow(GoRouterState state, FeedbackFlowStep step) =>
+      feedbackFlowRedirect(
+        ref.read(feedbackFlowControllerProvider),
+        state.pathParameters['callSessionId']!,
+        step,
+      );
 
   final router = GoRouter(
     initialLocation: AppRoutes.home,
@@ -129,6 +143,36 @@ GoRouter appRouter(Ref ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: AppRoutes.feedbackClosing,
+        builder: (context, state) => CallClosingScreen(
+          callSessionId: state.pathParameters['callSessionId']!,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.feedbackCompletion,
+        redirect: (context, state) =>
+            redirectFeedbackFlow(state, FeedbackFlowStep.completion),
+        builder: (context, state) => FeedbackCompletionScreen(
+          callSessionId: state.pathParameters['callSessionId']!,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.detailedFeedback,
+        redirect: (context, state) =>
+            redirectFeedbackFlow(state, FeedbackFlowStep.detailedFeedback),
+        builder: (context, state) => DetailedFeedbackScreen(
+          callSessionId: state.pathParameters['callSessionId']!,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.detailedFeedbackCompletion,
+        redirect: (context, state) =>
+            redirectFeedbackFlow(state, FeedbackFlowStep.detailedCompletion),
+        builder: (context, state) => DetailedFeedbackCompletionScreen(
+          callSessionId: state.pathParameters['callSessionId']!,
+        ),
       ),
       GoRoute(
         path: AppRoutes.error,

@@ -64,4 +64,27 @@ abstract final class AppAssets {
       '$_images/default_avatar_illustration.png';
   static const String homeCharacterWink = '$_images/home_character_wink.png';
   static const String glowHome = glowEdit;
+
+  // 피드백 플로우 마스코트와 빛 번짐. 확정 전 임시 에셋이다.
+  static const String teeqBunnyWink = '$_images/teeq_bunny_wink.png';
+  static const String teeqBunnyJoyfulJump =
+      '$_images/teeq_bunny_joyful_jump.png';
+  static const String teeqBunnyCelebration =
+      '$_images/teeq_bunny_celebration.png';
+  static const String feedbackGlowEllipse =
+      '$_images/feedback_glow_ellipse.png';
+  static const String closingGlow = '$_images/closing_glow.png';
+
+  // 피드백 플로우 아이콘.
+  static const String feedbackStarFilledIcon =
+      '$_icons/feedback_star_filled.svg';
+  static const String feedbackStarEmptyIcon = '$_icons/feedback_star_empty.svg';
+  static const String outlineConversationIcon =
+      '$_icons/outline_conversation.svg';
+  static const String outlineHeartIcon = '$_icons/outline_heart.svg';
+  static const String outlineClockIcon = '$_icons/outline_clock.svg';
+  static const String outlineSparkleIcon = '$_icons/outline_sparkle.svg';
+  static const String radioCircleIcon = '$_icons/radio_circle.svg';
+  static const String radioCircleCheckedIcon =
+      '$_icons/radio_circle_checked.svg';
 }

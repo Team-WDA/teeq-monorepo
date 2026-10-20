@@ -49,7 +49,7 @@ class ProfileSummaryCard extends StatelessWidget {
                   nickname,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.heading,
+                  style: AppTextStyles.heading20Bold,
                 ),
                 if (emailText != null) ...[
                   const SizedBox(height: AppSpacing.space8),

@@ -42,7 +42,7 @@ class PrimaryFilledButton extends StatelessWidget {
           child: AnimatedDefaultTextStyle(
             duration: AppAnimationDurations.fast,
             curve: Curves.easeOut,
-            style: AppTextStyles.paragraph16.copyWith(
+            style: AppTextStyles.body16SemiBold.copyWith(
               color: isEnabled
                   ? AppColors.textPrimary
                   : AppColors.textSecondary,

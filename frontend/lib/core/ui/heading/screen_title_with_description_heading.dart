@@ -19,11 +19,13 @@ class ScreenTitleWithDescriptionHeading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppTextStyles.display),
+        Text(title, style: AppTextStyles.display32Bold),
         const SizedBox(height: AppSpacing.space12),
         Text(
           description,
-          style: AppTextStyles.paragraph14.copyWith(color: AppColors.textMuted),
+          style: AppTextStyles.body14SemiBoldMultiline.copyWith(
+            color: AppColors.textMuted,
+          ),
         ),
       ],
     );

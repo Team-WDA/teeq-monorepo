@@ -2,47 +2,69 @@ import 'package:flutter/painting.dart';
 
 import 'package:teeq/core/design/app_colors.dart';
 
-/// 디자인 토큰: 글자 스타일. 행간 1.4, 자간은 글자 크기의 -1.2%로 모든 스타일에 공통 적용한다.
+/// 디자인 토큰: 글자 스타일.
+///
+/// 이름은 `{용도}{크기}{굵기}[Multiline]` 규칙을 따른다. 용도는 글자 크기로 정한다
+/// (display 40·32, title 28·24, heading 20, body 16·14, caption 12·10).
+/// 줄 높이(px)는 한 줄 기준 40→52, 32→42, 28→38, 24→32, 20→28, 16→22, 14→20, 12→16, 10→14이고,
+/// 여러 줄이 될 수 있는 설명·도움말·본문·토스트·안내 문구용 `Multiline`은 16→24, 14→22, 12→18이다.
+/// 버튼·칩·탭·행 라벨·한 줄 제목·입력창 텍스트는 `Multiline`을 쓰지 않는다.
+/// 자간은 모든 스타일에 글자 크기의 -1.2%를 공통 적용한다.
 abstract final class AppTextStyles {
   static const String fontFamily = 'Pretendard';
-  static const double lineHeight = 1.4;
   static const double letterSpacingRatio = -0.012;
-  // 여러 줄 설명 본문용 행간. 14px 글자에 22px 줄 높이다.
-  static const double relaxedLineHeight = 22 / 14;
 
-  static const TextStyle display = TextStyle(
+  static const TextStyle display32Bold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32,
     fontWeight: FontWeight.w700,
-    height: lineHeight,
+    height: 42 / 32,
     letterSpacing: 32 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle heading = TextStyle(
+  static const TextStyle title24Bold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    height: 32 / 24,
+    letterSpacing: 24 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle heading20Bold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 20,
     fontWeight: FontWeight.w700,
-    height: lineHeight,
+    height: 28 / 20,
     letterSpacing: 20 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle label16 = TextStyle(
+  static const TextStyle body16Bold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w700,
-    height: lineHeight,
+    height: 22 / 16,
     letterSpacing: 16 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle label14 = TextStyle(
+  static const TextStyle body16SemiBold = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w700,
-    height: lineHeight,
-    letterSpacing: 14 * letterSpacingRatio,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 22 / 16,
+    letterSpacing: 16 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body16SemiBoldMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 24 / 16,
+    letterSpacing: 16 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
@@ -50,8 +72,35 @@ abstract final class AppTextStyles {
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    height: lineHeight,
+    height: 22 / 16,
     letterSpacing: 16 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14Bold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: 20 / 14,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14SemiBold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 20 / 14,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14SemiBoldMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: 22 / 14,
+    letterSpacing: 14 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
@@ -59,44 +108,35 @@ abstract final class AppTextStyles {
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    height: lineHeight,
+    height: 20 / 14,
     letterSpacing: 14 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle body14MediumRelaxed = TextStyle(
+  static const TextStyle body14MediumMultiline = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w500,
-    height: relaxedLineHeight,
+    height: 22 / 14,
     letterSpacing: 14 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle paragraph16 = TextStyle(
+  static const TextStyle caption12SemiBold = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: FontWeight.w600,
-    height: lineHeight,
-    letterSpacing: 16 * letterSpacingRatio,
+    height: 16 / 12,
+    letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle paragraph14 = TextStyle(
+  static const TextStyle caption12SemiBoldMultiline = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: FontWeight.w600,
-    height: lineHeight,
-    letterSpacing: 14 * letterSpacingRatio,
-    color: AppColors.textPrimary,
-  );
-
-  static const TextStyle title = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 24,
-    fontWeight: FontWeight.w700,
-    height: lineHeight,
-    letterSpacing: 24 * letterSpacingRatio,
+    height: 18 / 12,
+    letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
@@ -104,7 +144,7 @@ abstract final class AppTextStyles {
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    height: lineHeight,
+    height: 16 / 12,
     letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
@@ -113,25 +153,70 @@ abstract final class AppTextStyles {
     fontFamily: fontFamily,
     fontSize: 10,
     fontWeight: FontWeight.w500,
-    height: lineHeight,
+    height: 14 / 10,
     letterSpacing: 10 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle caption10 = TextStyle(
+  static const TextStyle caption10SemiBold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 10,
     fontWeight: FontWeight.w600,
-    height: lineHeight,
+    height: 14 / 10,
     letterSpacing: 10 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle caption12 = TextStyle(
+  static const TextStyle title28Bold = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: 38 / 28,
+    letterSpacing: 28 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body16BoldMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: 24 / 16,
+    letterSpacing: 16 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body16RegularMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 24 / 16,
+    letterSpacing: 16 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle body14RegularMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 22 / 14,
+    letterSpacing: 14 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption12MediumMultiline = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
-    fontWeight: FontWeight.w600,
-    height: lineHeight,
+    fontWeight: FontWeight.w500,
+    height: 18 / 12,
+    letterSpacing: 12 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
+  static const TextStyle caption12RegularMultiline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 18 / 12,
     letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );

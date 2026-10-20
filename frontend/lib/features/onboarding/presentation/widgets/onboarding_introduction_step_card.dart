@@ -38,7 +38,9 @@ class OnboardingIntroductionStepCard extends StatelessWidget {
             height: AppLayout.iconSize,
           ),
           const SizedBox(width: AppSpacing.space12),
-          Expanded(child: Text(message, style: AppTextStyles.paragraph16)),
+          Expanded(
+            child: Text(message, style: AppTextStyles.body16SemiBoldMultiline),
+          ),
         ],
       ),
     );

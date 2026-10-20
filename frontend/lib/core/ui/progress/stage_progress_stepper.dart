@@ -92,8 +92,10 @@ class _StageColumn extends StatelessWidget {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: AppTextStyles.caption12.copyWith(
-            color: isPending ? AppColors.neutralSurface : AppColors.textSecondary,
+          style: AppTextStyles.caption12SemiBold.copyWith(
+            color: isPending
+                ? AppColors.neutralSurface
+                : AppColors.textSecondary,
           ),
         ),
       ],

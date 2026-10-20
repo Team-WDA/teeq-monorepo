@@ -21,6 +21,22 @@ import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
+import 'package:teeq/features/feedback/data/feedback_repository_impl.dart';
+import 'package:teeq/features/feedback/domain/awkward_moment.dart';
+import 'package:teeq/features/feedback/domain/detailed_feedback_question.dart';
+import 'package:teeq/features/feedback/domain/feedback_input_limits.dart';
+import 'package:teeq/features/feedback/domain/feedback_status.dart';
+import 'package:teeq/features/feedback/domain/previous_call_recall.dart';
+import 'package:teeq/features/feedback/domain/revisit_intention.dart';
+import 'package:teeq/features/feedback/domain/start_reason.dart';
+import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
+import 'package:teeq/features/feedback/presentation/feedback_flow_state.dart';
+import 'package:teeq/features/feedback/presentation/screens/call_closing_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_completion_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_screen.dart';
+import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
+import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
@@ -35,6 +51,8 @@ import 'package:teeq/features/onboarding/presentation/onboarding_question_screen
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
 
 import '../support/fake_ai_character_repository.dart';
+import '../support/fake_feedback_repository.dart';
+import '../support/fake_home_repository.dart';
 import '../support/viewport_cases.dart';
 
 class _NoopAuthFlow extends Fake implements AuthFlow {
@@ -151,6 +169,83 @@ Widget _characterResult(CharacterSetupMode mode, String name) {
   );
 }
 
+const _feedbackCallSessionId = 'call-1';
+
+/// 두 번째 이후 통화라 기억 문항까지 모두 나오는(가장 긴) 피드백 상태.
+const _laterCallFeedbackStatus = FeedbackStatus(
+  callIndex: 12,
+  previousCallRecallRequired: true,
+  requiredFeedbackSubmitted: false,
+);
+
+/// 최악 길이의 응답을 채운 채로 시작하는 피드백 흐름 컨트롤러.
+class _WorstCaseFeedbackFlowController extends FeedbackFlowController {
+  _WorstCaseFeedbackFlowController({required this.isDetailedFeedbackInvited});
+
+  /// true이면 완료 화면이 상세 피드백 초대 시트를 연다.
+  final bool isDetailedFeedbackInvited;
+
+  @override
+  FeedbackFlowState build() {
+    super.build();
+    var detailedAnswers = const FeedbackFlowState().detailedAnswers
+        .withFreeText('가' * FeedbackInputLimits.freeTextMaxLength)
+        .toggleStartReason(StartReason.other)
+        .withStartReasonOtherText('나' * FeedbackInputLimits.reasonMaxLength);
+    for (final question in DetailedFeedbackQuestion.values) {
+      detailedAnswers = detailedAnswers
+          .withScore(question, 5)
+          .withReason(question, '다' * FeedbackInputLimits.reasonMaxLength);
+    }
+    final requiredAnswers = const FeedbackFlowState().requiredAnswers
+        .withRating(5)
+        .withRevisitIntention(RevisitIntention.yes)
+        .withPreviousCallRecall(PreviousCallRecall.remembered)
+        .toggleAwkwardMoment(AwkwardMoment.cut)
+        .toggleAwkwardMoment(AwkwardMoment.slow)
+        .toggleAwkwardMoment(AwkwardMoment.context)
+        .toggleAwkwardMoment(AwkwardMoment.repeat);
+    return FeedbackFlowState(
+      callSessionId: _feedbackCallSessionId,
+      status: _laterCallFeedbackStatus,
+      requiredAnswers: requiredAnswers,
+      detailedAnswers: detailedAnswers,
+      requiredSubmitted: true,
+      detailedFeedbackInvited: isDetailedFeedbackInvited,
+    );
+  }
+}
+
+Widget _feedbackScreen(
+  Widget screen, {
+  required String path,
+  bool isDetailedFeedbackInvited = false,
+}) {
+  final container = _newContainer(
+    overrides: [
+      feedbackRepositoryProvider.overrideWithValue(
+        FakeFeedbackRepository(status: _laterCallFeedbackStatus),
+      ),
+      homeRepositoryProvider.overrideWithValue(
+        FakeHomeRepository(
+          summary: const HomeSummary(
+            characterName: _longCharacterName,
+            personalityTags: ['다정함', '차분함', '유쾌함'],
+            greeting: '안녕',
+          ),
+        ),
+      ),
+      feedbackFlowControllerProvider.overrideWith(
+        () => _WorstCaseFeedbackFlowController(
+          isDetailedFeedbackInvited: isDetailedFeedbackInvited,
+        ),
+      ),
+    ],
+  );
+  container.read(currentMemberControllerProvider.notifier).update(_member);
+  return _hostRouted(container, path, screen);
+}
+
 final Map<String, _ScreenBuilder> _screens = {
   '환영': () => _hostPlain(_newContainer(), const WelcomeScreen()),
   '이메일 로그인': () => _hostPlain(_newContainer(), const EmailLoginScreen()),
@@ -243,6 +338,33 @@ final Map<String, _ScreenBuilder> _screens = {
     ),
   ),
   '스플래시': () => _hostPlain(_newContainer(), const SplashScreen()),
+  '통화 마무리': () => _feedbackScreen(
+    const CallClosingScreen(callSessionId: _feedbackCallSessionId),
+    path: AppRoutes.feedbackClosingLocation(_feedbackCallSessionId),
+  ),
+  '통화 마무리(필수 시트 열림)': () => _feedbackScreen(
+    const CallClosingScreen(callSessionId: _feedbackCallSessionId),
+    path: AppRoutes.feedbackClosingLocation(_feedbackCallSessionId),
+  ),
+  '피드백 완료': () => _feedbackScreen(
+    const FeedbackCompletionScreen(callSessionId: _feedbackCallSessionId),
+    path: AppRoutes.feedbackCompletionLocation(_feedbackCallSessionId),
+  ),
+  '피드백 완료(상세 초대 시트 열림)': () => _feedbackScreen(
+    const FeedbackCompletionScreen(callSessionId: _feedbackCallSessionId),
+    path: AppRoutes.feedbackCompletionLocation(_feedbackCallSessionId),
+    isDetailedFeedbackInvited: true,
+  ),
+  '상세 피드백': () => _feedbackScreen(
+    const DetailedFeedbackScreen(callSessionId: _feedbackCallSessionId),
+    path: AppRoutes.detailedFeedbackLocation(_feedbackCallSessionId),
+  ),
+  '상세 피드백 완료': () => _feedbackScreen(
+    const DetailedFeedbackCompletionScreen(
+      callSessionId: _feedbackCallSessionId,
+    ),
+    path: AppRoutes.detailedFeedbackCompletionLocation(_feedbackCallSessionId),
+  ),
   '수정 팝업': () {
     final container = _newContainer();
     return _hostRouted(
@@ -280,6 +402,12 @@ final Map<String, _ScreenFinder> _expectedScreens = {
   '오류 화면': () => find.byType(ErrorScreen),
   '스플래시': () => find.byType(SplashScreen),
   '수정 팝업': () => find.byType(CharacterEditConfirmationDialog),
+  '통화 마무리': () => find.byType(CallClosingScreen),
+  '통화 마무리(필수 시트 열림)': () => find.text('오늘 통화는 어땠어?'),
+  '피드백 완료': () => find.byType(FeedbackCompletionScreen),
+  '피드백 완료(상세 초대 시트 열림)': () => find.text('자세히 알려주기'),
+  '상세 피드백': () => find.byType(DetailedFeedbackScreen),
+  '상세 피드백 완료': () => find.byType(DetailedFeedbackCompletionScreen),
 };
 
 /// 팝업은 열고, 입력 화면은 최악 길이의 값을 넣어 가장 긴 내용으로 그린다.
@@ -287,6 +415,10 @@ Future<void> _fillWorstCaseContent(WidgetTester tester, String name) async {
   final opener = find.text('팝업 열기');
   if (opener.evaluate().isNotEmpty) {
     await tester.tap(opener);
+    await tester.pumpAndSettle();
+  }
+  if (name == '통화 마무리(필수 시트 열림)') {
+    await tester.tap(find.text('의견 남기기'));
     await tester.pumpAndSettle();
   }
   if (name == '이름 입력') {

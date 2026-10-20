@@ -49,7 +49,7 @@ class AccentOutlineHintTag extends StatelessWidget {
                   message,
                   maxLines: maxLines,
                   overflow: maxLines == null ? null : TextOverflow.ellipsis,
-                  style: AppTextStyles.paragraph14.copyWith(
+                  style: AppTextStyles.body14SemiBoldMultiline.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),

@@ -32,7 +32,7 @@ class ErrorScreen extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.paragraph16,
+                style: AppTextStyles.body16SemiBoldMultiline,
               ),
               const SizedBox(height: AppSpacing.space24),
               FilledButton(

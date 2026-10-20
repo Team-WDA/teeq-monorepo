@@ -9,6 +9,7 @@ abstract final class AppSpacing {
   static const double space16 = 16;
   static const double space20 = 20;
   static const double space24 = 24;
+  static const double space28 = 28;
   static const double space32 = 32;
   static const double space40 = 40;
   static const double space52 = 52;

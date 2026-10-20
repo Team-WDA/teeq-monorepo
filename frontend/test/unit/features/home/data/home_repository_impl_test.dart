@@ -71,4 +71,28 @@ void main() {
       ),
     );
   });
+
+  test('fetchHome_mapsPendingFeedback', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/home', [
+      ScriptedReply.json(200, {
+        ..._homeJson,
+        'pendingFeedback': {'callSessionId': 'call-session-1', 'callIndex': 2},
+      }),
+    ]);
+
+    final summary = await repository.fetchHome();
+
+    expect(summary.pendingFeedback?.callSessionId, 'call-session-1');
+    expect(summary.pendingFeedback?.callIndex, 2);
+  });
+
+  test('fetchHome_mapsNullPendingFeedback', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/home', [ScriptedReply.json(200, _homeJson)]);
+
+    final summary = await repository.fetchHome();
+
+    expect(summary.pendingFeedback, isNull);
+  });
 }

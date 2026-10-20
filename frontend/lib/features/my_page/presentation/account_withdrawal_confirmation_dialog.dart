@@ -72,13 +72,13 @@ class _AccountWithdrawalConfirmationDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('정말 탈퇴할까?', style: AppTextStyles.title),
+              const Text('정말 탈퇴할까?', style: AppTextStyles.title24Bold),
               const SizedBox(height: AppSpacing.space16),
               Text(
                 '탈퇴하면 이 계정으로\n'
                 'TeeQ를 이용할 수 없어.\n'
                 '계속하려면 아래에서 탈퇴를 선택해줘.',
-                style: AppTextStyles.body14MediumRelaxed,
+                style: AppTextStyles.body14MediumMultiline,
               ),
               const SizedBox(height: AppSpacing.space16),
               NeutralFilledButton(
