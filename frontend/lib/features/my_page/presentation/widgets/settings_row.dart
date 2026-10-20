@@ -6,7 +6,7 @@ import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 
-/// 설정 카드 안의 한 행. 아이콘, 라벨, 선택적 값 또는 `>`를 보여 주며 탭 동작은 없다.
+/// 설정 카드 안의 한 행. 아이콘, 라벨, 선택적 값 또는 `>`를 보여 준다. [onTap]이 있을 때만 탭할 수 있다.
 class SettingsRow extends StatelessWidget {
   const SettingsRow({
     super.key,
@@ -14,17 +14,19 @@ class SettingsRow extends StatelessWidget {
     required this.leadingIconAssetPath,
     this.value,
     this.showsChevron = false,
+    this.onTap,
   });
 
   final String label;
   final String leadingIconAssetPath;
   final String? value;
   final bool showsChevron;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final trailingValue = value;
-    return ConstrainedBox(
+    final content = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: AppLayout.settingsRowHeight),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -70,6 +72,17 @@ class SettingsRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+    final tapCallback = onTap;
+    if (tapCallback == null) {
+      return content;
+    }
+    return Semantics(
+      button: true,
+      excludeSemantics: true,
+      label: trailingValue == null ? label : '$label $trailingValue',
+      onTap: tapCallback,
+      child: InkWell(onTap: tapCallback, child: content),
     );
   }
 }

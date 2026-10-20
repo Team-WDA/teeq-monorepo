@@ -20,7 +20,12 @@ import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_co
 import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_screen.dart';
 import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/my_page/domain/legal_document.dart';
+import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
+import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
@@ -143,6 +148,29 @@ GoRouter appRouter(Ref ref) {
             ],
           ),
         ],
+      ),
+      // 탭 바 없이 뒤로 가기 헤더만 있는 화면이라 셸 밖에 둔다.
+      GoRoute(
+        path: AppRoutes.nicknameChange,
+        builder: (context, state) => const NicknameChangeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordChange,
+        builder: (context, state) => const PasswordChangeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordChangeCompletion,
+        builder: (context, state) => const PasswordChangeCompletionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.serviceTerms,
+        builder: (context, state) =>
+            const LegalDocumentScreen(type: LegalDocumentType.serviceTerms),
+      ),
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        builder: (context, state) =>
+            const LegalDocumentScreen(type: LegalDocumentType.privacyPolicy),
       ),
       GoRoute(
         path: AppRoutes.feedbackClosing,

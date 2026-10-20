@@ -4,6 +4,7 @@ import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/features/auth/domain/apple_credential_provider.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
 /// 화면이 부르는 인증 흐름(복원, 로그인, 가입, 로그아웃)을 한곳에 모은다.
 /// 협력자를 생성자로 받아 dio와 Riverpod을 모른 채 단위 테스트할 수 있다.
@@ -110,6 +111,42 @@ class AuthFlow {
     }
     if (_isStillCurrent(requestedMemberId)) {
       _session.updateMember(member);
+    }
+  }
+
+  /// 닉네임을 바꾸고 응답 회원으로 보관 중인 회원을 갱신한다.
+  /// 응답을 기다리는 사이 세션이 바뀌었다면 결과를 버린다. 서버 오류는 그대로 던진다.
+  Future<void> changeNickname(String nickname) async {
+    final requestedMemberId = _session.currentMember?.memberId;
+    final member = await _repository.changeNickname(nickname: nickname);
+    if (_isStillCurrent(requestedMemberId)) {
+      _session.updateMember(member);
+    }
+  }
+
+  /// 프로필 사진을 교체하고 응답 회원으로 보관 중인 회원을 갱신한다.
+  /// 응답을 기다리는 사이 세션이 바뀌었다면 결과를 버린다. 서버 오류는 그대로 던진다.
+  Future<void> replaceProfileImage(ProfileImageFile image) async {
+    final requestedMemberId = _session.currentMember?.memberId;
+    final member = await _repository.replaceProfileImage(image);
+    if (_isStillCurrent(requestedMemberId)) {
+      _session.updateMember(member);
+    }
+  }
+
+  /// 비밀번호를 바꾸고 새 토큰만 저장한다. 응답에 이메일이 없어 보관 중인 회원은 그대로 둔다.
+  /// 응답을 기다리는 사이 세션이 바뀌었다면 토큰을 저장하지 않는다. 서버 오류는 그대로 던진다.
+  Future<void> changePassword({
+    required String current,
+    required String next,
+  }) async {
+    final requestedMemberId = _session.currentMember?.memberId;
+    final result = await _repository.changePassword(
+      currentPassword: current,
+      newPassword: next,
+    );
+    if (_isStillCurrent(requestedMemberId)) {
+      await _tokenStorage.save(result.tokens);
     }
   }
 

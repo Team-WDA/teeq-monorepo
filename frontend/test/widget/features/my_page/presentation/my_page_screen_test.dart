@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
+import 'package:teeq/features/my_page/domain/legal_document.dart';
+import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
+import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
 
 import '../../../../support/my_page_harness.dart';
 import '../../../../support/viewport_cases.dart';
@@ -132,20 +135,54 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('rows without destinations do nothing on tap', (tester) async {
-    final harness = MyPageHarness();
-    await _pumpMyPage(tester, harness);
+  for (final (label, type) in [
+    ('서비스 이용약관', LegalDocumentType.serviceTerms),
+    ('개인정보 처리방침', LegalDocumentType.privacyPolicy),
+  ]) {
+    testWidgets('$label row opens the $type document screen', (tester) async {
+      final harness = MyPageHarness();
+      await pumpAtViewport(tester, _defaultViewport, harness.routedApp());
 
-    for (final text in ['소연', '비밀번호 변경', '서비스 이용약관', '개인정보 처리방침']) {
-      await tester.tap(find.text(text));
+      await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-    }
 
-    expect(find.byType(Dialog), findsNothing);
-    expect(harness.repository.logoutCount, 0);
-    expect(harness.currentMember, isNotNull);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.byType(MyPageScreen), findsNothing);
+      expect(
+        tester
+            .widget<LegalDocumentScreen>(find.byType(LegalDocumentScreen))
+            .type,
+        type,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'profile card exposes a button semantics that opens nickname change',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      final harness = MyPageHarness();
+      await pumpAtViewport(tester, _defaultViewport, harness.routedApp());
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('닉네임 변경')),
+        matchesSemantics(
+          label: '닉네임 변경',
+          isButton: true,
+          hasTapAction: true,
+          hasEnabledState: false,
+          isFocusable: false,
+        ),
+      );
+      // 연필 배지의 접근성 노드는 카드와 따로 남는다.
+      expect(find.bySemanticsLabel('프로필 사진 변경'), findsOneWidget);
+
+      await tester.tap(find.bySemanticsLabel('닉네임 변경'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NicknameChangeScreen), findsOneWidget);
+      handle.dispose();
+    },
+  );
 
   testWidgets('withdraw button opens dialog', (tester) async {
     await _pumpMyPage(tester, MyPageHarness());

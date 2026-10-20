@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +15,7 @@ import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
+import 'package:teeq/features/auth/domain/profile_image_file.dart';
 import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
@@ -37,6 +41,14 @@ import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_sc
 import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
+import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
+import 'package:teeq/features/my_page/data/legal_document_loader.dart';
+import 'package:teeq/features/my_page/domain/legal_document.dart';
+import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
+import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/profile_image_sheet.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
@@ -53,11 +65,32 @@ import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import '../support/fake_ai_character_repository.dart';
 import '../support/fake_feedback_repository.dart';
 import '../support/fake_home_repository.dart';
+import '../support/fake_profile_image_picker.dart';
 import '../support/viewport_cases.dart';
 
 class _NoopAuthFlow extends Fake implements AuthFlow {
   @override
   Future<void> restore() async {}
+}
+
+/// 사진 업로드 응답이 오지 않아 "업로드 중" 상태에 머무는 인증 흐름.
+class _PendingUploadAuthFlow extends _NoopAuthFlow {
+  @override
+  Future<void> replaceProfileImage(ProfileImageFile image) =>
+      Completer<void>().future;
+}
+
+/// 실제 약관 자산 파일을 동기로 읽어 가장 긴 실제 본문으로 그리게 하는 로더.
+class _FileLegalDocumentLoader extends LegalDocumentLoader {
+  _FileLegalDocumentLoader() : super(rootBundle);
+
+  @override
+  Future<LegalDocument> load(LegalDocumentType type) async =>
+      LegalDocument.fromJson(
+        jsonDecode(
+          File(LegalDocumentLoader.assetPathOf(type)).readAsStringSync(),
+        ) as Map<String, dynamic>,
+      );
 }
 
 class _NoopErrorHandler extends Fake implements ErrorHandler {
@@ -106,11 +139,14 @@ class _FixedSignupDraftController extends SignupDraftController {
   );
 }
 
-ProviderContainer _newContainer({List overrides = const []}) {
+ProviderContainer _newContainer({
+  List overrides = const [],
+  AuthFlow? authFlow,
+}) {
   final container = ProviderContainer(
     overrides: [
       errorHandlerProvider.overrideWithValue(_NoopErrorHandler()),
-      authFlowProvider.overrideWithValue(_NoopAuthFlow()),
+      authFlowProvider.overrideWithValue(authFlow ?? _NoopAuthFlow()),
       ...overrides,
     ],
   );
@@ -246,6 +282,38 @@ Widget _feedbackScreen(
   return _hostRouted(container, path, screen);
 }
 
+/// 버튼으로 프로필 사진 시트를 여는 화면. 시트에서 고를 사진과 업로드 동작을 정한다.
+Widget _profileImageSheetOpener({
+  required FakeProfileImagePicker picker,
+  required AuthFlow authFlow,
+}) {
+  final container = _newContainer(
+    overrides: [profileImagePickerProvider.overrideWithValue(picker)],
+    authFlow: authFlow,
+  );
+  return _hostPlain(
+    container,
+    Builder(
+      builder: (context) => Scaffold(
+        body: TextButton(
+          onPressed: () => showProfileImageSheet(context),
+          child: const Text('팝업 열기'),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _legalDocumentScreen(LegalDocumentType type, String path) => _hostRouted(
+  _newContainer(
+    overrides: [
+      legalDocumentLoaderProvider.overrideWithValue(_FileLegalDocumentLoader()),
+    ],
+  ),
+  path,
+  LegalDocumentScreen(type: type),
+);
+
 final Map<String, _ScreenBuilder> _screens = {
   '환영': () => _hostPlain(_newContainer(), const WelcomeScreen()),
   '이메일 로그인': () => _hostPlain(_newContainer(), const EmailLoginScreen()),
@@ -266,6 +334,33 @@ final Map<String, _ScreenBuilder> _screens = {
     const SignupNicknameScreen(),
   ),
   '가입 완료': () => _hostPlain(_newContainer(), const SignupCompletionScreen()),
+  '닉네임 변경': () {
+    final container = _newContainer();
+    container.read(currentMemberControllerProvider.notifier).update(_member);
+    return _hostRouted(
+      container,
+      AppRoutes.nicknameChange,
+      const NicknameChangeScreen(),
+    );
+  },
+  '비밀번호 변경': () => _hostRouted(
+    _newContainer(),
+    AppRoutes.passwordChange,
+    const PasswordChangeScreen(),
+  ),
+  '비밀번호 변경 완료': () => _hostRouted(
+    _newContainer(),
+    AppRoutes.passwordChangeCompletion,
+    const PasswordChangeCompletionScreen(),
+  ),
+  '서비스 이용약관': () => _legalDocumentScreen(
+    LegalDocumentType.serviceTerms,
+    AppRoutes.serviceTerms,
+  ),
+  '개인정보 처리방침': () => _legalDocumentScreen(
+    LegalDocumentType.privacyPolicy,
+    AppRoutes.privacyPolicy,
+  ),
   '온보딩 시작': () =>
       _hostPlain(_newContainer(), const OnboardingIntroductionScreen()),
   '질문(첫 질문)': () {
@@ -365,6 +460,16 @@ final Map<String, _ScreenBuilder> _screens = {
     ),
     path: AppRoutes.detailedFeedbackCompletionLocation(_feedbackCallSessionId),
   ),
+  '프로필 사진 시트(기본)': () => _profileImageSheetOpener(
+    picker: FakeProfileImagePicker(
+      result: FakeProfileImagePicker.imageOf(fileName: 'photo.gif'),
+    ),
+    authFlow: _NoopAuthFlow(),
+  ),
+  '프로필 사진 시트(업로드 중)': () => _profileImageSheetOpener(
+    picker: FakeProfileImagePicker(result: FakeProfileImagePicker.imageOf()),
+    authFlow: _PendingUploadAuthFlow(),
+  ),
   '수정 팝업': () {
     final container = _newContainer();
     return _hostRouted(
@@ -392,6 +497,11 @@ final Map<String, _ScreenFinder> _expectedScreens = {
   '이메일 가입 자격 증명': () => find.byType(EmailSignupCredentialsScreen),
   '닉네임': () => find.byType(SignupNicknameScreen),
   '가입 완료': () => find.byType(SignupCompletionScreen),
+  '닉네임 변경': () => find.byType(NicknameChangeScreen),
+  '비밀번호 변경': () => find.byType(PasswordChangeScreen),
+  '비밀번호 변경 완료': () => find.byType(PasswordChangeCompletionScreen),
+  '서비스 이용약관': () => find.byType(LegalDocumentScreen),
+  '개인정보 처리방침': () => find.byType(LegalDocumentScreen),
   '온보딩 시작': () => find.byType(OnboardingIntroductionScreen),
   '질문(첫 질문)': () => find.byType(OnboardingQuestionScreen),
   '질문(복수 선택 마지막 질문)': () => find.byType(OnboardingQuestionScreen),
@@ -402,6 +512,8 @@ final Map<String, _ScreenFinder> _expectedScreens = {
   '오류 화면': () => find.byType(ErrorScreen),
   '스플래시': () => find.byType(SplashScreen),
   '수정 팝업': () => find.byType(CharacterEditConfirmationDialog),
+  '프로필 사진 시트(기본)': () => find.text('프로필 사진 변경'),
+  '프로필 사진 시트(업로드 중)': () => find.text('프로필 사진 변경'),
   '통화 마무리': () => find.byType(CallClosingScreen),
   '통화 마무리(필수 시트 열림)': () => find.text('오늘 통화는 어땠어?'),
   '피드백 완료': () => find.byType(FeedbackCompletionScreen),
@@ -417,12 +529,29 @@ Future<void> _fillWorstCaseContent(WidgetTester tester, String name) async {
     await tester.tap(opener);
     await tester.pumpAndSettle();
   }
+  // 형식 오류 문구가 보이는 상태와 업로드 중 상태로 만든다. 스피너가 계속 돌아 settle하지 않는다.
+  if (name.startsWith('프로필 사진 시트')) {
+    await tester.tap(find.text('사진 선택하기'));
+    await tester.pump();
+    await tester.pump();
+  }
   if (name == '통화 마무리(필수 시트 열림)') {
     await tester.tap(find.text('의견 남기기'));
     await tester.pumpAndSettle();
   }
   if (name == '이름 입력') {
     await tester.enterText(find.byType(TextField), _longCharacterName);
+    await tester.pumpAndSettle();
+  }
+  // 오류 문구와 카운터가 모두 나오는 최악 내용으로 그린다.
+  if (name == '닉네임 변경') {
+    await tester.enterText(find.byType(TextField), '가 나다라마바사아자차카');
+    await tester.pumpAndSettle();
+  }
+  // 새 비밀번호 오류와 확인 불일치 문구가 모두 나오는 내용으로 그린다.
+  if (name == '비밀번호 변경') {
+    await tester.enterText(find.byType(TextField).at(1), 'abc');
+    await tester.enterText(find.byType(TextField).at(2), 'abcd');
     await tester.pumpAndSettle();
   }
   if (name == '닉네임') {
