@@ -13,43 +13,34 @@ class AiServerPropertiesTest {
 
     @Test
     void 정상_값이면_생성된다() {
-        AiServerProperties properties = new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE, 3000L);
+        AiServerProperties properties = new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE);
 
         assertThat(properties.baseUrl()).isEqualTo(BASE_URL);
         assertThat(properties.authHeaderName()).isEqualTo(HEADER_NAME);
         assertThat(properties.authHeaderValue()).isEqualTo(HEADER_VALUE);
-        assertThat(properties.timeoutMillis()).isEqualTo(3000L);
     }
 
     @Test
     void baseUrl이_null이거나_공백이면_예외() {
-        assertThatThrownBy(() -> new AiServerProperties(null, HEADER_NAME, HEADER_VALUE, 3000L))
+        assertThatThrownBy(() -> new AiServerProperties(null, HEADER_NAME, HEADER_VALUE))
             .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> new AiServerProperties(" ", HEADER_NAME, HEADER_VALUE, 3000L))
+        assertThatThrownBy(() -> new AiServerProperties(" ", HEADER_NAME, HEADER_VALUE))
             .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void authHeaderName이_null이거나_공백이면_예외() {
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, null, HEADER_VALUE, 3000L))
+        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, null, HEADER_VALUE))
             .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, "", HEADER_VALUE, 3000L))
+        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, "", HEADER_VALUE))
             .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void authHeaderValue가_null이거나_공백이면_예외() {
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, null, 3000L))
+        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, null))
             .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, "  ", 3000L))
-            .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
-    void timeoutMillis가_0이하이면_예외() {
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE, 0L))
-            .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE, -1L))
+        assertThatThrownBy(() -> new AiServerProperties(BASE_URL, HEADER_NAME, "  "))
             .isInstanceOf(IllegalStateException.class);
     }
 

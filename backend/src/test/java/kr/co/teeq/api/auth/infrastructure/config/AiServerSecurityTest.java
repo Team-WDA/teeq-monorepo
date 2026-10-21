@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.RestController;
     "ai-server.base-url=http://localhost:9999",
     "ai-server.auth-header-name=X-Teeq-Server-Key",
     "ai-server.auth-header-value=dummy-server-key-value",
-    "ai-server.timeout-millis=1000",
     "jwt.secret-key=security-slice-dummy-secret-key-0123456789-abcdefghijklmnopqrstuvwxyz-ABCDEFG",
     "jwt.access-exp-millis=3600000",
     "jwt.refresh-exp-millis=7200000",
