@@ -35,6 +35,19 @@ class ImageFormatTest {
     }
 
     @Test
+    void fromExtension_findsFormatIgnoringCase() {
+        assertThat(ImageFormat.fromExtension("jpg")).contains(ImageFormat.JPEG);
+        assertThat(ImageFormat.fromExtension("PNG")).contains(ImageFormat.PNG);
+        assertThat(ImageFormat.fromExtension("webp")).contains(ImageFormat.WEBP);
+    }
+
+    @Test
+    void fromExtension_rejectsUnsupportedOrEmptyExtension() {
+        assertThat(ImageFormat.fromExtension("gif")).isEmpty();
+        assertThat(ImageFormat.fromExtension("")).isEmpty();
+    }
+
+    @Test
     void detect_rejectsRiffContainerThatIsNotWebp() {
         byte[] wave = {'R', 'I', 'F', 'F', 1, 2, 3, 4, 'W', 'A', 'V', 'E'};
 
