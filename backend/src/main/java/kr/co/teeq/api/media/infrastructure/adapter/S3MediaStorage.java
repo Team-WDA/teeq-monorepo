@@ -19,7 +19,9 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 /**
  * 미디어를 S3 버킷에 {@code {keyPrefix}{도메인}/{디렉터리}/{저장 키}} 객체로 저장한다. 공개 경로는 CloudFront가 서빙하는
  * {@code /{도메인}/{디렉터리}/{저장 키}}이며, 환경 prefix는 CloudFront 오리진 경로가 대신한다.
- * {@link Primary}로 선택된다. 볼륨 저장소({@link VolumeMediaStorage})로 되돌리려면 {@link Primary}만 옮기면 된다.
+ * {@link Primary}로 선택된다. 볼륨 저장소({@link VolumeMediaStorage})로 되돌리려면 {@link Primary}만 옮기면 되지만,
+ * DB에는 저장소 출처를 두지 않고 파일을 복사해 두지도 않으므로 S3를 쓰는 동안 올라간 파일은 되돌린 뒤 볼륨에서 찾을 수 없다.
+ * 되돌릴 때는 그 파일을 볼륨으로 옮기는 작업이 따로 필요하다.
  */
 @Slf4j
 @Primary
