@@ -10,6 +10,7 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
@@ -27,12 +28,12 @@ class _RecordingErrorHandler extends Fake implements ErrorHandler {
 
 const _unnamed = AiCharacter(
   name: null,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 const _named = AiCharacter(
   name: '티티',
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 
@@ -123,12 +124,13 @@ void main() {
     expect(_startButtonOnPressed(tester), isNotNull);
   });
 
-  testWidgets('rejects characters outside hangul letters digits and limits '
-      'to ten', (tester) async {
+  testWidgets('rejects characters outside hangul and limits to ten', (
+    tester,
+  ) async {
     await _pumpScreen(tester, FakeAiCharacterRepository());
 
-    await _enterName(tester, 'a!b c');
-    expect(_fieldText(tester), 'abc');
+    await _enterName(tester, '가a!1 나');
+    expect(_fieldText(tester), '가나');
 
     await _enterName(tester, '가나다라마바사아자차카');
     expect(_fieldText(tester), '가나다라마바사아자차');

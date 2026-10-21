@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:teeq/features/onboarding/data/dto/character_type_json.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 part 'ai_character_response_dto.g.dart';
 
@@ -8,7 +10,7 @@ part 'ai_character_response_dto.g.dart';
 class AiCharacterResponseDto {
   const AiCharacterResponseDto({
     required this.name,
-    required this.characterNumber,
+    required this.characterType,
     required this.personalityTags,
   });
 
@@ -16,12 +18,13 @@ class AiCharacterResponseDto {
       _$AiCharacterResponseDtoFromJson(json);
 
   final String? name;
-  final int characterNumber;
+  @JsonKey(fromJson: characterTypeFromJson)
+  final CharacterType characterType;
   final List<String> personalityTags;
 
   AiCharacter toAiCharacter() => AiCharacter(
     name: name,
-    characterNumber: characterNumber,
+    characterType: characterType,
     personalityTags: personalityTags,
   );
 }

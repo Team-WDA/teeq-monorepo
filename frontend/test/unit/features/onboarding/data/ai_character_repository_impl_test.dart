@@ -8,6 +8,7 @@ import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/ai_character_repository.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_selections.dart';
@@ -17,7 +18,7 @@ import '../../../../support/scripted_http_client_adapter.dart';
 
 const _characterJson = {
   'name': null,
-  'characterNumber': 3,
+  'characterType': 'CHARACTER_3',
   'personalityTags': ['다정한', '차분한', '든든한'],
 };
 
@@ -104,7 +105,7 @@ void main() {
       character,
       const AiCharacter(
         name: null,
-        characterNumber: 3,
+        characterType: CharacterType.character3,
         personalityTags: ['다정한', '차분한', '든든한'],
       ),
     );

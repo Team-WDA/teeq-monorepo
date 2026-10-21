@@ -8,7 +8,7 @@ abstract final class AuthInputValidator {
   static final RegExp _passwordPattern = RegExp(
     r'^(?=.*[A-Za-z])(?=.*\d)[\x21-\x7E]{8,64}$',
   );
-  static final RegExp _nicknamePattern = RegExp(r'^[가-힣A-Za-z0-9]{2,10}$');
+  static final RegExp _nicknamePattern = RegExp(r'^[가-힣]{2,10}$');
 
   static bool isEmailFormatValid(String value) =>
       value.length <= _emailMaxLength && _emailPattern.hasMatch(value);

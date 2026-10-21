@@ -53,6 +53,11 @@ void main() {
       expect(AuthInputValidator.isNicknameValid('가나다라마바사아자차카'), isFalse);
     });
 
+    test('영문 또는 숫자가 있으면 무효하다', () {
+      expect(AuthInputValidator.isNicknameValid('티큐A'), isFalse);
+      expect(AuthInputValidator.isNicknameValid('티큐12'), isFalse);
+    });
+
     test('특수문자가 있으면 무효하다', () {
       expect(AuthInputValidator.isNicknameValid('티큐!'), isFalse);
     });

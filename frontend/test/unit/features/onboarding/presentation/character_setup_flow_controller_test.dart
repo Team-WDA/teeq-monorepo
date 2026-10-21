@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_selections.dart';
@@ -10,7 +11,7 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_state
 
 const _character = AiCharacter(
   name: null,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정한', '차분한', '든든한'],
 );
 

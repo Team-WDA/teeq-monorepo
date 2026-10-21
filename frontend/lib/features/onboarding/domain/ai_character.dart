@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 part 'ai_character.freezed.dart';
 
@@ -7,7 +8,7 @@ part 'ai_character.freezed.dart';
 abstract class AiCharacter with _$AiCharacter {
   const factory AiCharacter({
     String? name,
-    required int characterNumber,
+    required CharacterType characterType,
     required List<String> personalityTags,
   }) = _AiCharacter;
 }

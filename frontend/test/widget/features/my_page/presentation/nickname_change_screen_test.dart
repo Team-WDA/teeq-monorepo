@@ -39,7 +39,8 @@ void main() {
     expect(find.byType(NicknameChangeScreen), findsOneWidget);
     expect(find.text('닉네임 변경'), findsOneWidget);
     expect(find.text('0/10'), findsOneWidget);
-    expect(find.text('· 한글·영문·숫자 2~10자로 입력해줘.'), findsOneWidget);
+    expect(find.text('· 한글 2~10자로 입력해줘.'), findsOneWidget);
+    expect(find.text('· 영문·숫자·특수문자·공백은 사용할 수 없어.'), findsOneWidget);
     expect(_isSaveEnabled(tester), isFalse);
   });
 
@@ -68,14 +69,14 @@ void main() {
     expect(_isSaveEnabled(tester), isFalse);
 
     await _enterNickname(tester, '가나 다');
-    expect(find.text('한글, 영문, 숫자만 입력할 수 있어. 특수문자와 공백은 빼줘.'), findsOneWidget);
+    expect(find.text('한글만 입력할 수 있어. 영문, 숫자, 특수문자, 공백은 빼줘.'), findsOneWidget);
     expect(_isSaveEnabled(tester), isFalse);
   });
 
   testWidgets('does not flag a jamo that the IME is still composing', (
     tester,
   ) async {
-    const characterError = '한글, 영문, 숫자만 입력할 수 있어. 특수문자와 공백은 빼줘.';
+    const characterError = '한글만 입력할 수 있어. 영문, 숫자, 특수문자, 공백은 빼줘.';
     await _openNicknameChange(tester, MyPageHarness());
     await _enterNickname(tester, '가나');
 
@@ -130,7 +131,7 @@ void main() {
     expect(harness.errorHandler.handledErrors, isEmpty);
 
     // 다시 입력하면 오류 문구가 사라진다.
-    await _enterNickname(tester, '새닉네임2');
+    await _enterNickname(tester, '새닉네임둘');
     expect(find.text('이미 사용 중인 닉네임이에요.'), findsNothing);
   });
 
