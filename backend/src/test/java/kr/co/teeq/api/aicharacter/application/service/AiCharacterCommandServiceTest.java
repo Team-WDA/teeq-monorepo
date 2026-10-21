@@ -1,9 +1,9 @@
 package kr.co.teeq.api.aicharacter.application.service;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
@@ -35,7 +35,7 @@ class AiCharacterCommandServiceTest {
 
     private static final UUID MEMBER_ID = UUID.randomUUID();
     private static final List<OnboardingAnswerGroupRequest> GROUPS = List.of();
-    private static final GeneratedAiCharacter GENERATED = new GeneratedAiCharacter(7, List.of("a", "b", "c"));
+    private static final GeneratedAiCharacter GENERATED = new GeneratedAiCharacter("persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"));
 
     @Mock
     private Member member;
@@ -60,17 +60,17 @@ class AiCharacterCommandServiceTest {
 
         assertThat(result.created()).isTrue();
         assertThat(result.response().name()).isNull();
-        assertThat(result.response().characterNumber()).isEqualTo(7);
+        assertThat(result.response().characterType()).isEqualTo(CharacterType.CHARACTER_3);
         assertThat(result.response().personalityTags()).containsExactly("a", "b", "c");
         // 캐릭터를 먼저 flush한 뒤 제출을 기록한다
         InOrder inOrder = inOrder(aiCharacterRepository, onboardingAnswerService);
         inOrder.verify(aiCharacterRepository).saveAndFlush(any(AiCharacter.class));
-        inOrder.verify(onboardingAnswerService).recordSubmission(member, 7, List.of("a", "b", "c"), GROUPS);
+        inOrder.verify(onboardingAnswerService).recordSubmission(member, "persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"), GROUPS);
     }
 
     @Test
     void 저장은_이름_있는_기존_캐릭터면_이름을_유지하고_생성되지_않음을_돌려준다() {
-        AiCharacter existing = AiCharacter.of(member, 1, List.of("x", "y", "z"));
+        AiCharacter existing = AiCharacter.of(member, CharacterType.CHARACTER_1, List.of("x", "y", "z"));
         existing.rename("티큐");
         given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(existing));
@@ -80,7 +80,7 @@ class AiCharacterCommandServiceTest {
         assertThat(result.created()).isFalse();
         assertThat(result.response().name()).isEqualTo("티큐");
         assertThat(existing.getName()).isEqualTo("티큐");
-        assertThat(existing.getCharacterNumber()).isEqualTo(7);
+        assertThat(existing.getCharacterType()).isEqualTo(CharacterType.CHARACTER_3);
         assertThat(existing.getPersonalityTags()).containsExactly("a", "b", "c");
         verify(aiCharacterRepository).saveAndFlush(existing);
     }
@@ -92,7 +92,7 @@ class AiCharacterCommandServiceTest {
 
         commandService.save(member, GENERATED, GROUPS);
 
-        verify(onboardingAnswerService).recordSubmission(member, 7, List.of("a", "b", "c"), GROUPS);
+        verify(onboardingAnswerService).recordSubmission(member, "persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"), GROUPS);
     }
 
     @Test
@@ -106,7 +106,7 @@ class AiCharacterCommandServiceTest {
         assertThatThrownBy(() -> commandService.save(member, GENERATED, GROUPS))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
-        verify(onboardingAnswerService, never()).recordSubmission(any(), anyInt(), anyList(), anyList());
+        verify(onboardingAnswerService, never()).recordSubmission(any(), any(), any(), anyList(), anyList());
     }
 
     @Test
@@ -122,14 +122,14 @@ class AiCharacterCommandServiceTest {
 
     @Test
     void 이름_변경은_기존_캐릭터의_이름을_바꾼다() {
-        AiCharacter existing = AiCharacter.of(member, 7, List.of("a", "b", "c"));
+        AiCharacter existing = AiCharacter.of(member, CharacterType.CHARACTER_3, List.of("a", "b", "c"));
         given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(existing));
 
         AiCharacterResponse response = commandService.rename(member, "티큐");
 
         assertThat(existing.getName()).isEqualTo("티큐");
-        assertThat(response).isEqualTo(new AiCharacterResponse("티큐", 7, List.of("a", "b", "c")));
+        assertThat(response).isEqualTo(new AiCharacterResponse("티큐", CharacterType.CHARACTER_3, List.of("a", "b", "c")));
     }
 
     @Test

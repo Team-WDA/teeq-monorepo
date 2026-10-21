@@ -119,7 +119,8 @@ public class OnboardingSubmissionQueryService {
         boolean active = answers.stream().anyMatch(answer -> !answer.isDeleted());
         return new OnboardingSubmissionResponse(submission.getId(), submission.getMember().getId(), submissionOrder,
             submission.getCreatedAt(), active,
-            new SubmissionCharacterResponse(submission.getCharacterNumber(), submission.getPersonalityTags()),
+            new SubmissionCharacterResponse(submission.getCharacterType(), submission.getPersonaId(),
+                submission.getPersonalityTags()),
             OnboardingAnswerGroups.from(answers));
     }
 

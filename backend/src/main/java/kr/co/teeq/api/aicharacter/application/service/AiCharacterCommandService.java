@@ -34,10 +34,10 @@ public class AiCharacterCommandService {
         AiCharacter existing = aiCharacterRepository.findByMemberId(member.getId()).orElse(null);
         boolean created = existing == null;
         AiCharacter aiCharacter = created
-            ? AiCharacter.of(member, generated.characterNumber(), generated.personalityTags())
+            ? AiCharacter.of(member, generated.characterType(), generated.personalityTags())
             : existing;
         if (!created) {
-            aiCharacter.regenerate(generated.characterNumber(), generated.personalityTags());
+            aiCharacter.regenerate(generated.characterType(), generated.personalityTags());
         }
         try {
             aiCharacterRepository.saveAndFlush(aiCharacter);
@@ -49,7 +49,7 @@ public class AiCharacterCommandService {
             throw exception;
         }
         onboardingAnswerService.recordSubmission(
-            member, generated.characterNumber(), generated.personalityTags(), groups);
+            member, generated.personaId(), generated.characterType(), generated.personalityTags(), groups);
         return new AiCharacterGenerationResult(AiCharacterResponse.from(aiCharacter), created);
     }
 
