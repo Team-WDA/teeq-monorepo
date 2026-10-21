@@ -1,14 +1,61 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-21T11:15:14Z",
-    "currentVersion": "0.21.0",
+    "lastUpdated": "2026-10-21T17:34:54Z",
+    "currentVersion": "0.22.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 24
+    "totalReleases": 25
   },
   "releases": [
+    {
+      "version": "0.22.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-21",
+      "pr_number": null,
+      "raw_summary": "## [0.22.0]\n\n### ✨ 기능\n- 미디어_저장소_S3_연동_프로필_사진_우선_적용 — 미디어 S3 저장소 어댑터와 설정 추가\n\n### 🐛 수정\n- 미디어_저장소_S3_연동_프로필_사진_우선_적용 — S3 호출에 시도별·전체 타임아웃 설정\n\n### 📝 문서\n- S3 저장소 롤백 시 파일 이전 필요 주석 정정\n- 미디어 S3 설정 키 안내 주석 추가\n\n### ✅ 테스트\n- S3 미디어 저장소 어댑터와 설정 테스트 추가\n\n### 🔧 변경사항\n- 배포 워크플로우 VOLUME_HOST_PATH를 절대 경로로 변경\n- 배포 워크플로우 VOLUME_HOST_PATH를 Projects/teeq/server로 변경\n- 배포 워크플로우 VOLUME_HOST_PATH를 상대 경로로 변경\n- 배포 워크플로우 PROJECT_NAME을 teeq-server로 변경",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "미디어_저장소_S3_연동_프로필_사진_우선_적용 — 미디어 S3 저장소 어댑터와 설정 추가"
+          ]
+        },
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "미디어_저장소_S3_연동_프로필_사진_우선_적용 — S3 호출에 시도별·전체 타임아웃 설정"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "S3 저장소 롤백 시 파일 이전 필요 주석 정정",
+            "미디어 S3 설정 키 안내 주석 추가"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "S3 미디어 저장소 어댑터와 설정 테스트 추가"
+          ]
+        },
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "배포 워크플로우 VOLUME_HOST_PATH를 절대 경로로 변경",
+            "배포 워크플로우 VOLUME_HOST_PATH를 Projects/teeq/server로 변경",
+            "배포 워크플로우 VOLUME_HOST_PATH를 상대 경로로 변경",
+            "배포 워크플로우 PROJECT_NAME을 teeq-server로 변경"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.21.0",
       "project_types": [
