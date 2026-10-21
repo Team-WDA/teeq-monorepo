@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -68,7 +69,7 @@ class AdminOnboardingSubmissionControllerTest {
 
     private OnboardingSubmissionResponse submission(boolean active) {
         return new OnboardingSubmissionResponse(SUBMISSION_ID, MEMBER_ID, 2, Instant.parse("2026-10-17T03:00:00Z"),
-            active, new SubmissionCharacterResponse(3, List.of("다정함", "차분함", "유머러스")),
+            active, new SubmissionCharacterResponse(CharacterType.CHARACTER_3, "persona-1", List.of("다정함", "차분함", "유머러스")),
             List.of(new OnboardingAnswerGroupResponse(OnboardingQuestion.RELATIONSHIP,
                 List.of(OnboardingOption.RELATIONSHIP_CLOSE_FRIEND))));
     }

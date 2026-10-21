@@ -56,14 +56,15 @@ public class AiServerGreetingGenerationAdapter implements GreetingGenerationPort
         return message;
     }
 
+    // lastGreetedAt이 null이어도 키를 보내야 하므로 Map.of 대신 LinkedHashMap을 쓴다.
+    // 시각은 Jackson 시간대 설정의 영향을 받지 않도록 Instant#toString()의 UTC Z 문자열로 직접 넣는다
     private Map<String, Object> toRequestBody(GreetingRequest request) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("user_id", request.memberId().toString());
+        body.put("memberId", request.memberId().toString());
+        body.put("personaId", request.personaId());
         body.put("nickname", request.nickname());
-        body.put("character_name", request.characterName());
-        body.put("character_number", request.characterNumber());
-        body.put("personality_tags", request.personalityTags());
-        body.put("speech_style", request.speechStyle());
+        body.put("characterName", request.characterName());
+        body.put("lastGreetedAt", request.lastGreetedAt() == null ? null : request.lastGreetedAt().toString());
         return body;
     }
 

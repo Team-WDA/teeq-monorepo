@@ -1,5 +1,6 @@
 package kr.co.teeq.api.onboarding.application.service;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -73,7 +74,7 @@ class OnboardingSubmissionQueryServiceTest {
     }
 
     private static OnboardingSubmission submission(Member member, int number, Instant createdAt) {
-        OnboardingSubmission submission = OnboardingSubmission.of(member, number, List.of("a", "b", "c"));
+        OnboardingSubmission submission = OnboardingSubmission.of(member, "persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"));
         ReflectionTestUtils.setField(submission, BaseEntity.class, "id", new UUID(0L, number), UUID.class);
         ReflectionTestUtils.setField(submission, BaseEntity.class, "createdAt", createdAt, Instant.class);
         return submission;

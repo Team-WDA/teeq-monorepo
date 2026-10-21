@@ -1,10 +1,14 @@
 package kr.co.teeq.api.call.application.service;
 
 import java.util.UUID;
+import kr.co.teeq.api.aicharacter.application.service.AiCharacterService;
 import kr.co.teeq.api.call.application.dto.response.CallStartResponse;
+import kr.co.teeq.api.call.core.constant.CallLimitDecision;
 import kr.co.teeq.api.call.core.port.AiCallSession;
 import kr.co.teeq.api.call.core.port.AiCallSessionPort;
+import kr.co.teeq.api.call.core.port.AiCallSessionRequest;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.onboarding.application.service.OnboardingPersonaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,15 +23,21 @@ public class CallService {
 
     private final CallLimitService callLimitService;
     private final CallHistoryService callHistoryService;
+    private final OnboardingPersonaService onboardingPersonaService;
+    private final AiCharacterService aiCharacterService;
     private final AiCallSessionPort aiCallSessionPort;
 
     public CallStartResponse start(Member member) {
-        long allowedSeconds = callLimitService.checkStartable(member);
-        UUID callHistoryId = callHistoryService.startPending(member);
+        CallLimitDecision decision = callLimitService.checkStartable(member);
+        String personaId = onboardingPersonaService.getCurrentPersonaId(member);
+        String characterName = aiCharacterService.get(member).name();
+        UUID callHistoryId = callHistoryService.startPending(member, personaId, decision.limitKind());
         try {
-            AiCallSession session = aiCallSessionPort.createSession(member.getId(), allowedSeconds);
-            callHistoryService.activate(callHistoryId, session.callSessionId());
-            return new CallStartResponse(session.callSessionId(), allowedSeconds, session.connection());
+            AiCallSession session = aiCallSessionPort.createSession(new AiCallSessionRequest(
+                member.getId(), personaId, member.getNickname(), characterName,
+                decision.allowedSeconds(), decision.limitKind()));
+            callHistoryService.activate(callHistoryId, session);
+            return new CallStartResponse(session.callSessionId(), decision.allowedSeconds(), session.connection());
         } catch (RuntimeException exception) {
             failQuietly(callHistoryId, exception);
             throw exception;

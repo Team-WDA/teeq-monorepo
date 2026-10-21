@@ -20,6 +20,7 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
@@ -52,7 +53,7 @@ final _memberWithCharacter = _memberWithoutCharacter.copyWith(
 
 const _namedCharacter = AiCharacter(
   name: '티티',
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 

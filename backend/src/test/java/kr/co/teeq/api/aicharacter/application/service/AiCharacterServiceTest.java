@@ -1,5 +1,6 @@
 package kr.co.teeq.api.aicharacter.application.service;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,7 +42,7 @@ class AiCharacterServiceTest {
         new OnboardingAnswerGroupRequest(OnboardingQuestion.RELATIONSHIP,
             List.of(OnboardingOption.RELATIONSHIP_CLOSE_FRIEND)));
     private static final GenerateAiCharacterRequest REQUEST = new GenerateAiCharacterRequest(GROUPS);
-    private static final GeneratedAiCharacter GENERATED = new GeneratedAiCharacter(7, List.of("a", "b", "c"));
+    private static final GeneratedAiCharacter GENERATED = new GeneratedAiCharacter("persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"));
 
     @Mock
     private Member member;
@@ -77,7 +78,7 @@ class AiCharacterServiceTest {
     void 생성은_이름_없이_답변만_포트에_전달한다() {
         given(member.getId()).willReturn(MEMBER_ID);
         AiCharacterGenerationResult saved = new AiCharacterGenerationResult(
-            new AiCharacterResponse(null, 7, List.of("a", "b", "c")), true);
+            new AiCharacterResponse(null, CharacterType.CHARACTER_3, List.of("a", "b", "c")), true);
         given(aiCharacterGenerationPort.generate(any(), any())).willReturn(GENERATED);
         given(aiCharacterCommandService.save(member, GENERATED, GROUPS)).willReturn(saved);
 
@@ -107,7 +108,7 @@ class AiCharacterServiceTest {
     void 조회에서_이름이_없는_캐릭터면_AI_CHARACTER_NOT_FOUND를_던진다() {
         given(member.getId()).willReturn(MEMBER_ID);
         given(aiCharacterRepository.findByMemberId(MEMBER_ID))
-            .willReturn(Optional.of(AiCharacter.of(member, 7, List.of("a", "b", "c"))));
+            .willReturn(Optional.of(AiCharacter.of(member, CharacterType.CHARACTER_3, List.of("a", "b", "c"))));
 
         assertThatThrownBy(() -> aiCharacterService.get(member))
             .isInstanceOfSatisfying(CustomException.class, exception ->
@@ -127,17 +128,17 @@ class AiCharacterServiceTest {
     @Test
     void 조회에서_이름이_있는_캐릭터면_응답을_돌려준다() {
         given(member.getId()).willReturn(MEMBER_ID);
-        AiCharacter aiCharacter = AiCharacter.of(member, 7, List.of("a", "b", "c"));
+        AiCharacter aiCharacter = AiCharacter.of(member, CharacterType.CHARACTER_3, List.of("a", "b", "c"));
         aiCharacter.rename("티큐");
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(aiCharacter));
 
         assertThat(aiCharacterService.get(member))
-            .isEqualTo(new AiCharacterResponse("티큐", 7, List.of("a", "b", "c")));
+            .isEqualTo(new AiCharacterResponse("티큐", CharacterType.CHARACTER_3, List.of("a", "b", "c")));
     }
 
     @Test
     void 이름_변경은_커맨드_서비스에_위임한다() {
-        AiCharacterResponse renamed = new AiCharacterResponse("티큐", 7, List.of("a", "b", "c"));
+        AiCharacterResponse renamed = new AiCharacterResponse("티큐", CharacterType.CHARACTER_3, List.of("a", "b", "c"));
         given(aiCharacterCommandService.rename(member, "티큐")).willReturn(renamed);
 
         assertThat(aiCharacterService.rename(member, new RenameAiCharacterRequest("티큐"))).isSameAs(renamed);

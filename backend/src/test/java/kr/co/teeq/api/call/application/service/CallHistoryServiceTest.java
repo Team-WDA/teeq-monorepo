@@ -11,13 +11,17 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.request.CallUsageReportRequest;
 import kr.co.teeq.api.call.application.dto.response.CallHistoryResponse;
 import kr.co.teeq.api.call.core.constant.CallStatus;
+import kr.co.teeq.api.call.core.constant.EndReason;
+import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.call.core.entity.CallHistory;
+import kr.co.teeq.api.call.core.port.AiCallSession;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
@@ -54,6 +58,10 @@ class CallHistoryServiceTest {
         return new CallHistoryService(callHistoryRepository, settingConfigService, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
+    private AiCallSession session() {
+        return new AiCallSession("call-session-1", "v1", "model-1", Map.of());
+    }
+
     private void stubMaxSecondsPerSession() {
         given(settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_SESSION)).willReturn(MAX_SECONDS_PER_SESSION);
     }
@@ -67,11 +75,11 @@ class CallHistoryServiceTest {
     @Test
     void startPending_expiredCandidate_expiresAndFlushesBeforeInsert() {
         stubMaxSecondsPerSession();
-        CallHistory expiredCandidate = CallHistory.pending(member, EXPIRY_CUTOFF);
+        CallHistory expiredCandidate = CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, EXPIRY_CUTOFF);
         stubExpiryCandidates(List.of(expiredCandidate));
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(member);
+        createService().startPending(member, "persona-1", LimitKind.PER_DAY);
 
         assertThat(expiredCandidate.getStatus()).isEqualTo(CallStatus.EXPIRED);
         // UPDATE가 INSERT보다 먼저 나가야 partial unique index에 걸리지 않는다
@@ -86,7 +94,7 @@ class CallHistoryServiceTest {
         stubExpiryCandidates(List.of());
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(member);
+        createService().startPending(member, "persona-1", LimitKind.PER_DAY);
 
         // startedAt + 1회 한도 == 지금이면 startedAt == 지금 - 한도 이므로 cutoff 이하(포함)에 걸린다
         verify(callHistoryRepository).findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(
@@ -99,12 +107,14 @@ class CallHistoryServiceTest {
         stubExpiryCandidates(List.of());
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class))).willAnswer(call -> call.getArgument(0));
 
-        createService().startPending(member);
+        createService().startPending(member, "persona-1", LimitKind.PER_DAY);
 
         verify(callHistoryRepository).saveAndFlush(org.mockito.ArgumentMatchers.argThat(saved ->
             saved.getMember() == member
                 && saved.getStartedAt().equals(NOW)
-                && saved.getStatus() == CallStatus.PENDING));
+                && saved.getStatus() == CallStatus.PENDING
+                && saved.getPersonaId().equals("persona-1")
+                && saved.getLimitKind() == LimitKind.PER_DAY));
     }
 
     @Test
@@ -114,21 +124,23 @@ class CallHistoryServiceTest {
         given(callHistoryRepository.saveAndFlush(any(CallHistory.class)))
             .willThrow(new DataIntegrityViolationException("unique"));
 
-        assertThatThrownBy(() -> createService().startPending(member))
+        assertThatThrownBy(() -> createService().startPending(member, "persona-1", LimitKind.PER_DAY))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_ALREADY_IN_PROGRESS));
     }
 
     @Test
-    void activate_pendingRecord_becomesInProgressWithSessionId() {
+    void activate_pendingRecord_becomesInProgressWithSessionAndExecutionInfo() {
         UUID callHistoryId = UUID.randomUUID();
-        CallHistory callHistory = CallHistory.pending(member, NOW);
+        CallHistory callHistory = CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, NOW);
         given(callHistoryRepository.findByIdAndDeletedFalse(callHistoryId)).willReturn(Optional.of(callHistory));
 
-        createService().activate(callHistoryId, "call-session-1");
+        createService().activate(callHistoryId, session());
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.IN_PROGRESS);
         assertThat(callHistory.getCallSessionId()).isEqualTo("call-session-1");
+        assertThat(callHistory.getPromptVersion()).isEqualTo("v1");
+        assertThat(callHistory.getLlmModel()).isEqualTo("model-1");
     }
 
     @Test
@@ -136,7 +148,7 @@ class CallHistoryServiceTest {
         UUID callHistoryId = UUID.randomUUID();
         given(callHistoryRepository.findByIdAndDeletedFalse(callHistoryId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> createService().activate(callHistoryId, "call-session-1"))
+        assertThatThrownBy(() -> createService().activate(callHistoryId, session()))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -144,7 +156,7 @@ class CallHistoryServiceTest {
     @Test
     void fail_pendingRecord_becomesFailed() {
         UUID callHistoryId = UUID.randomUUID();
-        CallHistory callHistory = CallHistory.pending(member, NOW);
+        CallHistory callHistory = CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, NOW);
         given(callHistoryRepository.findByIdAndDeletedFalse(callHistoryId)).willReturn(Optional.of(callHistory));
 
         createService().fail(callHistoryId);
@@ -165,8 +177,8 @@ class CallHistoryServiceTest {
     private static final Instant REPORTED_ENDED_AT = Instant.parse("2026-10-16T03:05:00Z");
 
     private CallHistory inProgressRecord() {
-        CallHistory callHistory = CallHistory.pending(member, NOW.minusSeconds(300));
-        callHistory.activate("call-session-1");
+        CallHistory callHistory = CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, NOW.minusSeconds(300));
+        callHistory.activate("call-session-1", "v1", "model-1");
         return callHistory;
     }
 
@@ -182,11 +194,13 @@ class CallHistoryServiceTest {
         stubLockedRecord(callHistory);
 
         CallHistoryResponse response = createService()
-            .reportUsage("call-session-1", new CallUsageReportRequest(300, REPORTED_ENDED_AT));
+            .reportUsage("call-session-1",
+                new CallUsageReportRequest(300, REPORTED_ENDED_AT, EndReason.LIMIT_REACHED));
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
         assertThat(callHistory.getDurationSeconds()).isEqualTo(300);
         assertThat(callHistory.getEndedAt()).isEqualTo(REPORTED_ENDED_AT);
+        assertThat(callHistory.getEndReason()).isEqualTo(EndReason.LIMIT_REACHED);
         assertThat(response.status()).isEqualTo(CallStatus.ENDED);
         assertThat(response.durationSeconds()).isEqualTo(300);
     }
@@ -194,14 +208,15 @@ class CallHistoryServiceTest {
     @Test
     void reportUsage_alreadyEndedRecord_keepsFirstReportedValues() {
         CallHistory callHistory = inProgressRecord();
-        callHistory.end(300, REPORTED_ENDED_AT);
+        callHistory.end(300, REPORTED_ENDED_AT, EndReason.USER_HANGUP);
         stubLockedRecord(callHistory);
 
         CallHistoryResponse response = createService()
-            .reportUsage("call-session-1", new CallUsageReportRequest(900, REPORTED_ENDED_AT.plusSeconds(60)));
+            .reportUsage("call-session-1", new CallUsageReportRequest(900, REPORTED_ENDED_AT.plusSeconds(60), EndReason.AGENT_ERROR));
 
         assertThat(callHistory.getDurationSeconds()).isEqualTo(300);
         assertThat(callHistory.getEndedAt()).isEqualTo(REPORTED_ENDED_AT);
+        assertThat(callHistory.getEndReason()).isEqualTo(EndReason.USER_HANGUP);
         assertThat(response.durationSeconds()).isEqualTo(300);
         assertThat(response.status()).isEqualTo(CallStatus.ENDED);
     }
@@ -214,7 +229,7 @@ class CallHistoryServiceTest {
         stubLockedRecord(callHistory);
 
         CallHistoryResponse response = createService()
-            .reportUsage("call-session-1", new CallUsageReportRequest(450, REPORTED_ENDED_AT));
+            .reportUsage("call-session-1", new CallUsageReportRequest(450, REPORTED_ENDED_AT, EndReason.USER_DISCONNECTED));
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
         assertThat(callHistory.getDurationSeconds()).isEqualTo(450);
@@ -228,7 +243,7 @@ class CallHistoryServiceTest {
         stubLockedRecord(callHistory);
 
         createService().reportUsage("call-session-1",
-            new CallUsageReportRequest((int) MAX_SECONDS_PER_SESSION + 500, REPORTED_ENDED_AT));
+            new CallUsageReportRequest((int) MAX_SECONDS_PER_SESSION + 500, REPORTED_ENDED_AT, EndReason.USER_HANGUP));
 
         assertThat(callHistory.getDurationSeconds()).isEqualTo((int) MAX_SECONDS_PER_SESSION);
     }
@@ -239,7 +254,7 @@ class CallHistoryServiceTest {
             .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> createService()
-            .reportUsage("unknown", new CallUsageReportRequest(300, REPORTED_ENDED_AT)))
+            .reportUsage("unknown", new CallUsageReportRequest(300, REPORTED_ENDED_AT, EndReason.USER_HANGUP)))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SESSION_NOT_FOUND));
     }

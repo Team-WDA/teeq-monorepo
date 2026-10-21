@@ -51,6 +51,7 @@ import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 import 'package:teeq/features/my_page/presentation/profile_image_sheet.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
@@ -119,13 +120,13 @@ const _member = Member(
 
 const _unnamedCharacter = AiCharacter(
   name: null,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 
 AiCharacter _namedCharacter(String name) => AiCharacter(
   name: name,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: const ['다정함', '차분함', '유쾌함'],
 );
 

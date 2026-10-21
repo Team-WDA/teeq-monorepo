@@ -10,6 +10,7 @@ import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
@@ -29,7 +30,7 @@ class _RecordingErrorHandler extends Fake implements ErrorHandler {
 
 const _generated = AiCharacter(
   name: null,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: ['다정함', '차분함', '유쾌함'],
 );
 const _stageTwoMessage = '말투와 분위기를 맞추고 있어.';

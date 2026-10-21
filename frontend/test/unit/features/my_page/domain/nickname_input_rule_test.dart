@@ -25,14 +25,25 @@ void main() {
 
     test('특수문자가 있으면 invalidCharacter', () {
       expect(
-        NicknameInputRule.issueOf('소연A1!'),
+        NicknameInputRule.issueOf('소연!'),
+        NicknameInputIssue.invalidCharacter,
+      );
+    });
+
+    test('영문·숫자가 있으면 invalidCharacter', () {
+      expect(
+        NicknameInputRule.issueOf('소연A'),
+        NicknameInputIssue.invalidCharacter,
+      );
+      expect(
+        NicknameInputRule.issueOf('소연12'),
         NicknameInputIssue.invalidCharacter,
       );
     });
 
     test('공백은 허용되지 않는 문자다', () {
       expect(
-        NicknameInputRule.issueOf('소연 A'),
+        NicknameInputRule.issueOf('소연 이'),
         NicknameInputIssue.invalidCharacter,
       );
       expect(
@@ -52,8 +63,8 @@ void main() {
       );
     });
 
-    test('한글·영문·숫자 혼합은 유효하다', () {
-      expect(NicknameInputRule.issueOf('소연Ab12'), isNull);
+    test('한글 2~10자는 유효하다', () {
+      expect(NicknameInputRule.issueOf('소연이'), isNull);
     });
   });
 
@@ -68,11 +79,11 @@ void main() {
     });
 
     test('현재 닉네임과 같으면 제출할 수 없다', () {
-      expect(NicknameInputRule.isSubmittable('소연A', '소연A'), isFalse);
+      expect(NicknameInputRule.isSubmittable('소연', '소연'), isFalse);
     });
 
-    test('대소문자만 다르면 제출할 수 있다', () {
-      expect(NicknameInputRule.isSubmittable('소연a', '소연A'), isTrue);
+    test('영문이 섞이면 제출할 수 없다', () {
+      expect(NicknameInputRule.isSubmittable('소연a', '소연'), isFalse);
     });
 
     test('유효하고 다른 닉네임은 제출할 수 있다', () {

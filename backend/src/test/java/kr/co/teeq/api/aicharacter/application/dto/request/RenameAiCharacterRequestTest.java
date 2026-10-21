@@ -13,14 +13,14 @@ class RenameAiCharacterRequestTest {
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     @ParameterizedTest
-    @ValueSource(strings = {"가나", "가나다라마바사아자1", "Ab", "티큐", "Mina2"})
-    void 한글_영문_숫자_2자에서_10자_이름은_통과한다(String name) {
+    @ValueSource(strings = {"가나", "가나다라마바사아자차", "티큐"})
+    void 한글_2자에서_10자_이름은_통과한다(String name) {
         assertThat(validator.validate(new RenameAiCharacterRequest(name))).isEmpty();
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {" ", "가", "가나다라마바사아자12", "가 나", "가나!", "가_나"})
+    @ValueSource(strings = {" ", "가", "가나다라마바사아자차카", "가 나", "가나!", "가_나", "Ab", "Mina2", "티큐1", "ㅌㅋ"})
     void 비었거나_길이나_문자_규칙을_어기면_위반이다(String name) {
         assertThat(validator.validate(new RenameAiCharacterRequest(name))).isNotEmpty();
     }

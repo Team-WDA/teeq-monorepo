@@ -1,5 +1,6 @@
 package kr.co.teeq.api.onboarding.application.service;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,7 +45,8 @@ class OnboardingAnswerServiceTest {
     private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
 
     private static final Instant NOW = Instant.parse("2026-10-19T00:00:00Z");
-    private static final int CHARACTER_NUMBER = 3;
+    private static final String PERSONA_ID = "persona-1";
+    private static final CharacterType CHARACTER_TYPE = CharacterType.CHARACTER_3;
     private static final List<String> PERSONALITY_TAGS = List.of("a", "b", "c");
 
     @Mock
@@ -69,7 +71,7 @@ class OnboardingAnswerServiceTest {
     }
 
     private OnboardingSubmission dummySubmission() {
-        return OnboardingSubmission.of(member, 1, List.of("a", "b", "c"));
+        return OnboardingSubmission.of(member, PERSONA_ID, CharacterType.CHARACTER_1, List.of("a", "b", "c"));
     }
 
     private static OnboardingAnswerGroupRequest group(OnboardingQuestion question, OnboardingOption... options) {
@@ -89,7 +91,7 @@ class OnboardingAnswerServiceTest {
 
     private void assertFails(List<OnboardingAnswerGroupRequest> groups, ErrorCode expected) {
         assertThatThrownBy(() -> onboardingAnswerService.recordSubmission(
-            member, CHARACTER_NUMBER, PERSONALITY_TAGS, groups))
+            member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, groups))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(expected));
         verifyNoInteractions(onboardingAnswerRepository, onboardingSubmissionRepository);
@@ -103,13 +105,14 @@ class OnboardingAnswerServiceTest {
         groups.set(6, group(OnboardingQuestion.AVOID_BEHAVIOR,
             OnboardingOption.AVOID_BEHAVIOR_RAPID_QUESTIONS, OnboardingOption.AVOID_BEHAVIOR_INTERRUPTING));
 
-        onboardingAnswerService.recordSubmission(member, CHARACTER_NUMBER, PERSONALITY_TAGS, groups);
+        onboardingAnswerService.recordSubmission(member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, groups);
 
         ArgumentCaptor<OnboardingSubmission> submissionCaptor = ArgumentCaptor.forClass(OnboardingSubmission.class);
         verify(onboardingSubmissionRepository).save(submissionCaptor.capture());
         OnboardingSubmission submission = submissionCaptor.getValue();
         assertThat(submission.getMember()).isSameAs(member);
-        assertThat(submission.getCharacterNumber()).isEqualTo(CHARACTER_NUMBER);
+        assertThat(submission.getCharacterType()).isEqualTo(CHARACTER_TYPE);
+        assertThat(submission.getPersonaId()).isEqualTo(PERSONA_ID);
         assertThat(submission.getPersonalityTags()).containsExactlyElementsOf(PERSONALITY_TAGS);
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<OnboardingAnswer>> answerCaptor = ArgumentCaptor.forClass(List.class);
@@ -135,7 +138,7 @@ class OnboardingAnswerServiceTest {
             previousAnswer(OnboardingQuestion.PERSONALITY, OnboardingOption.PERSONALITY_CALM_WARM));
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(previous);
 
-        onboardingAnswerService.recordSubmission(member, CHARACTER_NUMBER, PERSONALITY_TAGS, validGroups());
+        onboardingAnswerService.recordSubmission(member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, validGroups());
 
         assertThat(previous).allSatisfy(answer -> {
             assertThat(answer.isDeleted()).isTrue();
@@ -155,7 +158,7 @@ class OnboardingAnswerServiceTest {
         given(onboardingAnswerRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(List.of(
             previousAnswer(OnboardingQuestion.RELATIONSHIP, OnboardingOption.RELATIONSHIP_CLOSE_FRIEND)));
 
-        onboardingAnswerService.recordSubmission(member, CHARACTER_NUMBER, PERSONALITY_TAGS, validGroups());
+        onboardingAnswerService.recordSubmission(member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, validGroups());
 
         verify(onboardingSubmissionRepository).save(any(OnboardingSubmission.class));
         verify(onboardingAnswerRepository, times(2)).saveAllAndFlush(anyList());
@@ -260,7 +263,7 @@ class OnboardingAnswerServiceTest {
             .willThrow(new DataIntegrityViolationException("unique"));
 
         assertThatThrownBy(() -> onboardingAnswerService.recordSubmission(
-            member, CHARACTER_NUMBER, PERSONALITY_TAGS, validGroups()))
+            member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, validGroups()))
             .isInstanceOfSatisfying(CustomException.class, exception -> {
                 assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT);
                 assertThat(exception.getCause()).isInstanceOf(DataIntegrityViolationException.class);
@@ -278,7 +281,7 @@ class OnboardingAnswerServiceTest {
             .willThrow(new DataIntegrityViolationException("unique"));
 
         assertThatThrownBy(() -> onboardingAnswerService.recordSubmission(
-            member, CHARACTER_NUMBER, PERSONALITY_TAGS, validGroups()))
+            member, PERSONA_ID, CHARACTER_TYPE, PERSONALITY_TAGS, validGroups()))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
     }

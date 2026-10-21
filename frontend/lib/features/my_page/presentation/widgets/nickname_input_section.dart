@@ -26,14 +26,14 @@ class NicknameInputSection extends StatelessWidget {
   final String? duplicateErrorMessage;
 
   static const List<String> _guideLines = [
-    '· 한글·영문·숫자 2~10자로 입력해줘.',
-    '· 특수문자·공백은 사용할 수 없어.',
+    '· 한글 2~10자로 입력해줘.',
+    '· 영문·숫자·특수문자·공백은 사용할 수 없어.',
     '· 닉네임은 언제든지 바꿀 수 있어.',
   ];
 
   String? get _errorMessage => switch (issue) {
     NicknameInputIssue.invalidCharacter =>
-      '한글, 영문, 숫자만 입력할 수 있어. 특수문자와 공백은 빼줘.',
+      '한글만 입력할 수 있어. 영문, 숫자, 특수문자, 공백은 빼줘.',
     NicknameInputIssue.tooShort => '2자 이상으로 입력해줘',
     NicknameInputIssue.tooLong => '10자 이하로 입력해줘',
     null => duplicateErrorMessage,

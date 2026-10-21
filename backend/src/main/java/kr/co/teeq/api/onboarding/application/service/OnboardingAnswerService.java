@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -36,8 +37,8 @@ public class OnboardingAnswerService {
      * 온보딩 제출 1회를 기록한다. 이전 활성 답변은 soft delete로 남기고, 새 제출과 새 답변 행을 만든다.
      */
     @Transactional
-    public void recordSubmission(Member member, int characterNumber, List<String> personalityTags,
-        List<OnboardingAnswerGroupRequest> groups) {
+    public void recordSubmission(Member member, String personaId, CharacterType characterType,
+        List<String> personalityTags, List<OnboardingAnswerGroupRequest> groups) {
         List<ValidatedAnswer> validatedAnswers = validate(groups);
         List<OnboardingAnswer> previousAnswers =
             onboardingAnswerRepository.findByMemberIdAndDeletedFalse(member.getId());
@@ -46,7 +47,7 @@ public class OnboardingAnswerService {
             // 새 답변 insert가 partial unique index와 겹치지 않도록 soft delete를 먼저 DB에 반영한다
             onboardingAnswerRepository.saveAllAndFlush(previousAnswers);
         }
-        OnboardingSubmission submission = OnboardingSubmission.of(member, characterNumber, personalityTags);
+        OnboardingSubmission submission = OnboardingSubmission.of(member, personaId, characterType, personalityTags);
         try {
             onboardingSubmissionRepository.save(submission);
             onboardingAnswerRepository.saveAllAndFlush(validatedAnswers.stream()

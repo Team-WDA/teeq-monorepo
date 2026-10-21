@@ -8,12 +8,14 @@ import java.util.UUID;
 import kr.co.teeq.api.aicharacter.core.constant.AiCharacterValidation;
 import kr.co.teeq.api.aicharacter.core.port.AiCharacterGenerationPort;
 import kr.co.teeq.api.aicharacter.core.port.GeneratedAiCharacter;
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.common.infrastructure.properties.AiServerProperties;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingQuestion;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -24,14 +26,21 @@ import org.springframework.web.client.RestClientException;
 @Component
 public class AiServerCharacterGenerationAdapter implements AiCharacterGenerationPort {
 
-    private static final String CHARACTER_NUMBER_FIELD = "character_number";
-    private static final String PERSONALITY_TAGS_FIELD = "personality_tags";
+    private static final String PERSONA_ID_FIELD = "personaId";
+    private static final String CHARACTER_TYPE_FIELD = "characterType";
+    private static final String PERSONALITY_TAGS_FIELD = "personalityTags";
+
+    // onboarding_submission.persona_id 컬럼 길이와 같다
+    private static final int PERSONA_ID_MAX_LENGTH = 64;
 
     private final RestClient restClient;
     private final AiServerProperties properties;
 
-    public AiServerCharacterGenerationAdapter(RestClient aiServerRestClient, AiServerProperties properties) {
-        this.restClient = aiServerRestClient;
+    public AiServerCharacterGenerationAdapter(
+        @Qualifier("characterRestClient") RestClient characterRestClient,
+        AiServerProperties properties
+    ) {
+        this.restClient = characterRestClient;
         this.properties = properties;
     }
 
@@ -58,10 +67,10 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
         Map<OnboardingQuestion, List<OnboardingOption>> answers) {
         List<Map<String, Object>> answerBodies = new ArrayList<>();
         answers.forEach((question, options) -> answerBodies.add(Map.of(
-            "question_code", question.name(),
-            "option_codes", options.stream().map(OnboardingOption::name).toList())));
+            "questionCode", question.name(),
+            "optionCodes", options.stream().map(OnboardingOption::name).toList())));
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("user_id", memberId.toString());
+        body.put("memberId", memberId.toString());
         body.put("answers", answerBodies);
         return body;
     }
@@ -71,9 +80,11 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
         if (responseBody == null) {
             throw invalidResponse("응답 본문이 비어 있습니다");
         }
-        if (!(responseBody.get(CHARACTER_NUMBER_FIELD) instanceof Integer characterNumber) || characterNumber < 0) {
-            throw invalidResponse(CHARACTER_NUMBER_FIELD + "가 없거나 0 이상의 정수가 아닙니다");
+        if (!(responseBody.get(PERSONA_ID_FIELD) instanceof String personaId) || personaId.isBlank()
+            || personaId.length() > PERSONA_ID_MAX_LENGTH || personaId.chars().anyMatch(Character::isISOControl)) {
+            throw invalidResponse(PERSONA_ID_FIELD + "가 없거나 비었거나 너무 길거나 제어 문자가 있습니다");
         }
+        CharacterType characterType = parseCharacterType(responseBody.get(CHARACTER_TYPE_FIELD));
         if (!(responseBody.get(PERSONALITY_TAGS_FIELD) instanceof List<?> rawTags)
             || rawTags.size() != AiCharacterValidation.PERSONALITY_TAG_COUNT) {
             throw invalidResponse(PERSONALITY_TAGS_FIELD + "가 없거나 " + AiCharacterValidation.PERSONALITY_TAG_COUNT
@@ -89,7 +100,18 @@ public class AiServerCharacterGenerationAdapter implements AiCharacterGeneration
             }
             tags.add(tag);
         }
-        return new GeneratedAiCharacter(characterNumber, List.copyOf(tags));
+        return new GeneratedAiCharacter(personaId, characterType, List.copyOf(tags));
+    }
+
+    private CharacterType parseCharacterType(Object rawCharacterType) {
+        if (rawCharacterType instanceof String name) {
+            for (CharacterType characterType : CharacterType.values()) {
+                if (characterType.name().equals(name)) {
+                    return characterType;
+                }
+            }
+        }
+        throw invalidResponse(CHARACTER_TYPE_FIELD + "가 없거나 정해진 캐릭터 유형이 아닙니다");
     }
 
     private CustomException invalidResponse(String reason) {

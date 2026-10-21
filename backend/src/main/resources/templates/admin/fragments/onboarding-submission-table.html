@@ -28,7 +28,7 @@
             <span th:unless="${submission.active}" class="badge badge-ghost badge-sm">비활성</span>
           </td>
           <td class="onboarding-submission-character-cell">
-            <div th:text="|캐릭터 ${submission.character.characterNumber}|">캐릭터 1</div>
+            <div th:text="|${submission.character.characterType} / ${submission.character.personaId}|">CHARACTER_1 / persona</div>
             <div class="muted" th:text="${#strings.listJoin(submission.character.personalityTags, ', ')}">성향 태그</div>
           </td>
           <td class="onboarding-submission-answer-cell">

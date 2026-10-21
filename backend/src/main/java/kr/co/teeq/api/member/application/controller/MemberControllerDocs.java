@@ -25,7 +25,7 @@ public interface MemberControllerDocs {
 
     @Operation(summary = "닉네임 사용 가능 여부 확인",
         description = """
-            닉네임이 규칙(한글·영문·숫자 2~10자)에 맞고 활성 회원 중 아무도 쓰지 않는지 확인한다. 대소문자는 구분하지 않는다.
+            닉네임이 규칙(한글 2~10자)에 맞고 활성 회원 중 아무도 쓰지 않는지 확인한다. 대소문자는 구분하지 않는다.
             규칙에 어긋나면 `available=false`가 아니라 400 `INVALID_REQUEST`로 응답한다.
             확인과 가입 사이에 다른 사람이 선점할 수 있으므로 가입·변경 시 409 `DUPLICATE_NICKNAME`도 처리해야 한다.""")
     @SecurityRequirements
@@ -36,7 +36,7 @@ public interface MemberControllerDocs {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
-        @Parameter(description = "확인할 닉네임. 한글, 영문, 숫자만 사용해 2~10자", example = "티큐")
+        @Parameter(description = "확인할 닉네임. 한글만 사용해 2~10자", example = "티큐")
         @Pattern(regexp = MemberValidation.NICKNAME_REGEX, message = MemberValidation.NICKNAME_MESSAGE)
         String nickname);
 

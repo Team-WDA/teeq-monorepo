@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import kr.co.teeq.api.call.core.constant.CallStatus;
+import kr.co.teeq.api.call.core.constant.EndReason;
+import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -24,19 +26,19 @@ class CallHistoryTest {
     private Member member;
 
     private CallHistory pending() {
-        return CallHistory.pending(member, STARTED_AT);
+        return CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, STARTED_AT);
     }
 
     private CallHistory inProgress() {
         CallHistory callHistory = pending();
-        callHistory.activate("session-1");
+        callHistory.activate("session-1", "v1", "model-1");
         return callHistory;
     }
 
     @Test
     @DisplayName("pending은 PENDING 상태, 0초, 세션 ID 없음으로 만든다")
     void pendingInitialState() {
-        CallHistory callHistory = CallHistory.pending(member, STARTED_AT);
+        CallHistory callHistory = CallHistory.pending(member, "persona-1", LimitKind.PER_DAY, STARTED_AT);
 
         assertThat(callHistory.getMember()).isSameAs(member);
         assertThat(callHistory.getStartedAt()).isEqualTo(STARTED_AT);
@@ -44,17 +46,23 @@ class CallHistoryTest {
         assertThat(callHistory.getDurationSeconds()).isZero();
         assertThat(callHistory.getCallSessionId()).isNull();
         assertThat(callHistory.getEndedAt()).isNull();
+        assertThat(callHistory.getPersonaId()).isEqualTo("persona-1");
+        assertThat(callHistory.getLimitKind()).isEqualTo(LimitKind.PER_DAY);
+        assertThat(callHistory.getPromptVersion()).isNull();
+        assertThat(callHistory.getLlmModel()).isNull();
     }
 
     @Test
-    @DisplayName("activate는 IN_PROGRESS로 바꾸고 세션 ID를 저장한다")
+    @DisplayName("activate는 IN_PROGRESS로 바꾸고 세션 ID, 프롬프트 버전, 모델을 저장한다")
     void activate() {
         CallHistory callHistory = pending();
 
-        callHistory.activate("session-1");
+        callHistory.activate("session-1", "v1", "model-1");
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.IN_PROGRESS);
         assertThat(callHistory.getCallSessionId()).isEqualTo("session-1");
+        assertThat(callHistory.getPromptVersion()).isEqualTo("v1");
+        assertThat(callHistory.getLlmModel()).isEqualTo("model-1");
     }
 
     @Test
@@ -72,9 +80,10 @@ class CallHistoryTest {
     void endFromInProgress() {
         CallHistory callHistory = inProgress();
 
-        callHistory.end(300, ENDED_AT);
+        callHistory.end(300, ENDED_AT, EndReason.LIMIT_REACHED);
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
+        assertThat(callHistory.getEndReason()).isEqualTo(EndReason.LIMIT_REACHED);
         assertThat(callHistory.getDurationSeconds()).isEqualTo(300);
         assertThat(callHistory.getEndedAt()).isEqualTo(ENDED_AT);
     }
@@ -85,7 +94,7 @@ class CallHistoryTest {
         CallHistory callHistory = inProgress();
         callHistory.expire();
 
-        callHistory.end(120, ENDED_AT);
+        callHistory.end(120, ENDED_AT, EndReason.USER_HANGUP);
 
         assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
         assertThat(callHistory.getDurationSeconds()).isEqualTo(120);
@@ -117,11 +126,11 @@ class CallHistoryTest {
     @DisplayName("ENDED에 end, expire, activate, fail을 호출하면 STATE_CONFLICT")
     void endedRejectsTransitions() {
         CallHistory callHistory = inProgress();
-        callHistory.end(300, ENDED_AT);
+        callHistory.end(300, ENDED_AT, EndReason.USER_HANGUP);
 
-        assertStateConflict(() -> callHistory.end(10, ENDED_AT));
+        assertStateConflict(() -> callHistory.end(10, ENDED_AT, EndReason.USER_HANGUP));
         assertStateConflict(callHistory::expire);
-        assertStateConflict(() -> callHistory.activate("session-2"));
+        assertStateConflict(() -> callHistory.activate("session-2", "v1", "model-1"));
         assertStateConflict(callHistory::fail);
         assertThat(callHistory.getDurationSeconds()).isEqualTo(300);
     }
@@ -130,7 +139,7 @@ class CallHistoryTest {
     @DisplayName("IN_PROGRESS는 fail할 수 없고 PENDING은 end할 수 없다")
     void invalidTransitions() {
         assertStateConflict(() -> inProgress().fail());
-        assertStateConflict(() -> pending().end(10, ENDED_AT));
+        assertStateConflict(() -> pending().end(10, ENDED_AT, EndReason.USER_HANGUP));
     }
 
     private void assertStateConflict(Runnable action) {

@@ -9,7 +9,7 @@ import kr.co.teeq.api.member.core.constant.MemberValidation;
 public record SignupCompletionRequest(
     @NotBlank(message = "닉네임을 입력해 주세요.")
     @Pattern(regexp = MemberValidation.NICKNAME_REGEX, message = MemberValidation.NICKNAME_MESSAGE)
-    @Schema(description = "닉네임. 한글, 영문, 숫자만 사용해 2~10자. 대소문자 구분 없이 중복 불가", example = "티큐")
+    @Schema(description = "닉네임. 한글만 사용해 2~10자. 대소문자 구분 없이 중복 불가", example = "티큐")
     String nickname,
 
     @AssertTrue(message = "서비스 이용약관에 동의해 주세요.")

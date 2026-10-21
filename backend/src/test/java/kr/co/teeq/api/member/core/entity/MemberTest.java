@@ -2,6 +2,7 @@ package kr.co.teeq.api.member.core.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.constant.Role;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,18 @@ class MemberTest {
             .build();
 
         assertThat(member.isSignupCompleted()).isTrue();
+    }
+
+    @Test
+    void markGreeted_recordsLastGreetedAt() {
+        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
+        Instant greetedAt = Instant.parse("2026-10-21T01:00:00Z");
+
+        assertThat(member.getLastGreetedAt()).isNull();
+
+        member.markGreeted(greetedAt);
+
+        assertThat(member.getLastGreetedAt()).isEqualTo(greetedAt);
     }
 
 }

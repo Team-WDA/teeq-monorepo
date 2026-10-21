@@ -21,8 +21,8 @@ public interface AiCharacterControllerDocs {
     @Operation(summary = "AI 캐릭터 생성·재생성",
         description = """
             온보딩 답변 7개만 제출한다. 이름은 받지 않으며 `PATCH /api/ai-characters/me/name`으로 따로 확정한다.
-            AI 서버가 캐릭터 번호와 성향 태그 3개를 정해 저장한다.
-            캐릭터가 없으면 새로 만들어 201, 이미 있으면 같은 캐릭터의 번호와 성향 태그를 덮어써 200으로 응답한다.
+            AI 서버가 캐릭터 유형과 성향 태그 3개를 정해 저장한다.
+            캐릭터가 없으면 새로 만들어 201, 이미 있으면 같은 캐릭터의 유형과 성향 태그를 덮어써 200으로 응답한다.
             이미 이름이 있으면 이름은 그대로 유지하고, 최초 생성 응답의 `name`은 null이다.
             재생성하면 기존 온보딩 답변도 새 답변으로 교체된다. 통화 기록과 피드백은 그대로 둔다.
             AI 서버 호출에 실패하면 저장하지 않으므로 기존 캐릭터와 답변이 그대로 남는다.""")
@@ -55,7 +55,7 @@ public interface AiCharacterControllerDocs {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "이름 확정 성공. 이름이 반영된 캐릭터를 반환"),
         @ApiResponse(responseCode = "400",
-            description = "`INVALID_REQUEST`: 이름이 비었거나 규칙 위반(한글·영문·숫자 2~10자, `errorMessage`에 사유). "
+            description = "`INVALID_REQUEST`: 이름이 비었거나 규칙 위반(한글 2~10자, `errorMessage`에 사유). "
                 + "`MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",

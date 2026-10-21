@@ -23,7 +23,7 @@ class SignUpRequestValidationTest {
 
     @Test
     void validRequest_hasNoViolations() {
-        assertThat(validate("soyeon@teeq.com", "abcd1234!", "소연12", true, true)).isEmpty();
+        assertThat(validate("soyeon@teeq.com", "abcd1234!", "소연", true, true)).isEmpty();
     }
 
     @ParameterizedTest
@@ -42,7 +42,7 @@ class SignUpRequestValidationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"a", "열한글자를넘는닉네임입니다하", "a b", "소연!", "소연😀"})
+    @ValueSource(strings = {"a", "소", "열한글자를넘는닉네임입니다하", "abc", "티큐1", "ㅌㅋ", "소 연", "소연!", "소연😀"})
     void invalidNickname_isRejected(String nickname) {
         assertThat(validate("soyeon@teeq.com", "abcd1234", nickname, true, true))
             .extracting(violation -> violation.getPropertyPath().toString())

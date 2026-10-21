@@ -12,6 +12,7 @@ import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
@@ -28,7 +29,7 @@ const _member = Member(
 
 AiCharacter _character(String name) => AiCharacter(
   name: name,
-  characterNumber: 3,
+  characterType: CharacterType.character3,
   personalityTags: const ['다정함', '차분함', '유쾌함'],
 );
 
@@ -158,21 +159,23 @@ void main() {
     expect(find.text('반가워!\n난 Mina야.'), findsOneWidget);
   });
 
-  testWidgets('builds without throwing when flow state is reset while mounted',
-      (tester) async {
-    final container = await _pumpScreen(
-      tester,
-      mode: CharacterSetupMode.firstTime,
-      name: '티티',
-    );
+  testWidgets(
+    'builds without throwing when flow state is reset while mounted',
+    (tester) async {
+      final container = await _pumpScreen(
+        tester,
+        mode: CharacterSetupMode.firstTime,
+        name: '티티',
+      );
 
-    container.read(characterSetupFlowControllerProvider.notifier).reset();
-    tester.element(find.byType(CharacterResultScreen)).markNeedsBuild();
-    await tester.pump();
+      container.read(characterSetupFlowControllerProvider.notifier).reset();
+      tester.element(find.byType(CharacterResultScreen)).markNeedsBuild();
+      await tester.pump();
 
-    expect(tester.takeException(), isNull);
-    expect(find.text('대화 시작하기'), findsNothing);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.text('대화 시작하기'), findsNothing);
+    },
+  );
 
   testWidgets('edit mode return home invalidates home summary', (tester) async {
     final repository = FakeHomeRepository(

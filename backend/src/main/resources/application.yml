@@ -45,9 +45,9 @@ server:
       cookie:
         same-site: lax # 관리자 세션 쿠키. HttpOnly는 Tomcat 기본값
 
-# AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value,timeout-millis}
+# AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value}
 # 값은 application-{dev,prod}.yml에 둔다
-# 인사말 호출 타임아웃(3초)은 코드 상수(GreetingRestClientConfig)이며 설정 키가 아니다
+# 호출별 타임아웃은 코드 상수이며 설정 키가 아니다: 캐릭터 3초(CharacterRestClientConfig), 통화 5초(CallRestClientConfig), 인사말 3초(GreetingRestClientConfig)
 
 # 관리자 계정 설정 키: admin.accounts[].{username,password,name}
 # 값은 application-{dev,prod}.yml에 둔다

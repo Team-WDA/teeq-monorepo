@@ -1,5 +1,6 @@
 package kr.co.teeq.api.home.application.service;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -17,6 +18,7 @@ import kr.co.teeq.api.feedback.application.dto.response.PendingFeedbackResponse;
 import kr.co.teeq.api.feedback.application.service.CallFeedbackService;
 import kr.co.teeq.api.home.application.dto.response.HomeResponse;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.onboarding.application.service.OnboardingPersonaService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,7 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class HomeServiceTest {
 
     private static final AiCharacterResponse CHARACTER =
-        new AiCharacterResponse("티큐", 3, List.of("다정한", "차분한", "든든한"));
+        new AiCharacterResponse("티큐", CharacterType.CHARACTER_3, List.of("다정한", "차분한", "든든한"));
+    private static final String PERSONA_ID = "persona-1";
     private static final CallLimitStatusResponse CALL_LIMIT = new CallLimitStatusResponse(300, 1500, 1200, true);
 
     @Mock
@@ -43,7 +46,10 @@ class HomeServiceTest {
     private CallFeedbackService callFeedbackService;
 
     @Mock
-    private DailyGreetingService dailyGreetingService;
+    private OnboardingPersonaService onboardingPersonaService;
+
+    @Mock
+    private GreetingService greetingService;
 
     @InjectMocks
     private HomeService homeService;
@@ -52,7 +58,8 @@ class HomeServiceTest {
     void 협력자_결과를_그대로_조립한다() {
         PendingFeedbackResponse pendingFeedback = new PendingFeedbackResponse("call-session-1", 3);
         given(aiCharacterService.get(member)).willReturn(CHARACTER);
-        given(dailyGreetingService.getOrCreate(member, CHARACTER)).willReturn("소연아,\n오늘 어땠어?");
+        given(onboardingPersonaService.getCurrentPersonaId(member)).willReturn(PERSONA_ID);
+        given(greetingService.greet(member, CHARACTER, PERSONA_ID)).willReturn("소연아,\n오늘 어땠어?");
         given(callLimitService.getTodayStatus(member)).willReturn(CALL_LIMIT);
         given(callFeedbackService.findPendingFeedback(member)).willReturn(Optional.of(pendingFeedback));
 
@@ -65,7 +72,8 @@ class HomeServiceTest {
     @Test
     void 대기_피드백이_없으면_pendingFeedback은_null이다() {
         given(aiCharacterService.get(member)).willReturn(CHARACTER);
-        given(dailyGreetingService.getOrCreate(member, CHARACTER)).willReturn("안녕");
+        given(onboardingPersonaService.getCurrentPersonaId(member)).willReturn(PERSONA_ID);
+        given(greetingService.greet(member, CHARACTER, PERSONA_ID)).willReturn("안녕");
         given(callLimitService.getTodayStatus(member)).willReturn(CALL_LIMIT);
         given(callFeedbackService.findPendingFeedback(member)).willReturn(Optional.empty());
 
@@ -79,7 +87,19 @@ class HomeServiceTest {
         assertThatThrownBy(() -> homeService.getHome(member))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_CHARACTER_NOT_FOUND));
-        verifyNoInteractions(dailyGreetingService, callLimitService, callFeedbackService);
+        verifyNoInteractions(onboardingPersonaService, greetingService, callLimitService, callFeedbackService);
+    }
+
+    @Test
+    void 온보딩_제출이_없으면_AI_CHARACTER_NOT_FOUND가_전파되고_인사말을_만들지_않는다() {
+        given(aiCharacterService.get(member)).willReturn(CHARACTER);
+        given(onboardingPersonaService.getCurrentPersonaId(member))
+            .willThrow(new CustomException(ErrorCode.AI_CHARACTER_NOT_FOUND));
+
+        assertThatThrownBy(() -> homeService.getHome(member))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.AI_CHARACTER_NOT_FOUND));
+        verifyNoInteractions(greetingService, callLimitService, callFeedbackService);
     }
 
 }

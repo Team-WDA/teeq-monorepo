@@ -10,7 +10,7 @@ abstract final class NicknameInputRule {
   static const int minLength = 2;
   static const int maxLength = 10;
 
-  static final RegExp _disallowedCharacterPattern = RegExp(r'[^가-힣A-Za-z0-9]');
+  static final RegExp _disallowedCharacterPattern = RegExp(r'[^가-힣]');
 
   /// 빈 문자열이거나 위반이 없으면 null.
   static NicknameInputIssue? issueOf(String input) {

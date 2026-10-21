@@ -14,7 +14,9 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
+import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.call.core.port.AiCallSession;
+import kr.co.teeq.api.call.core.port.AiCallSessionRequest;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.common.infrastructure.properties.AiServerProperties;
@@ -31,6 +33,8 @@ class AiServerCallSessionAdapterTest {
     private static final String HEADER_NAME = "X-Teeq-Server-Key";
     private static final String HEADER_VALUE = "dummy-server-key";
 
+    private final UUID memberId = UUID.randomUUID();
+
     private MockRestServiceServer server;
     private AiServerCallSessionAdapter adapter;
 
@@ -38,37 +42,71 @@ class AiServerCallSessionAdapterTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder().baseUrl(BASE_URL);
         server = MockRestServiceServer.bindTo(builder).build();
-        AiServerProperties properties = new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE, 5000);
+        AiServerProperties properties = new AiServerProperties(BASE_URL, HEADER_NAME, HEADER_VALUE);
         adapter = new AiServerCallSessionAdapter(builder.build(), properties);
     }
 
+    private AiCallSessionRequest request() {
+        return new AiCallSessionRequest(memberId, "persona-1", "하늘", "다온", 600L, LimitKind.PER_DAY);
+    }
+
     @Test
-    void 정상_응답이면_세션_식별자와_나머지_필드를_돌려준다() {
-        UUID memberId = UUID.randomUUID();
+    void 정상_응답이면_세션_식별자와_실행_정보와_나머지_필드를_돌려준다() {
         server.expect(requestTo(BASE_URL + "/calls"))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header(HEADER_NAME, HEADER_VALUE))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.user_id").value(memberId.toString()))
-                .andExpect(jsonPath("$.max_duration_seconds").value(600))
+                .andExpect(jsonPath("$.memberId").value(memberId.toString()))
+                .andExpect(jsonPath("$.personaId").value("persona-1"))
+                .andExpect(jsonPath("$.nickname").value("하늘"))
+                .andExpect(jsonPath("$.characterName").value("다온"))
+                .andExpect(jsonPath("$.maxDurationSeconds").value(600))
+                .andExpect(jsonPath("$.limitKind").value("PER_DAY"))
                 .andRespond(withSuccess(
-                        "{\"call_session_id\":\"s-1\",\"livekit_url\":\"u\",\"livekit_token\":\"t\"}",
+                        "{\"callSessionId\":\"s-1\",\"personaId\":\"persona-1\",\"promptVersion\":\"v1\","
+                                + "\"llmModel\":\"m-1\",\"livekitUrl\":\"u\",\"livekitToken\":\"t\"}",
                         MediaType.APPLICATION_JSON));
 
-        AiCallSession session = adapter.createSession(memberId, 600L);
+        AiCallSession session = adapter.createSession(request());
 
         assertThat(session.callSessionId()).isEqualTo("s-1");
-        assertThat(session.connection()).isEqualTo(Map.of("livekit_url", "u", "livekit_token", "t"));
+        assertThat(session.promptVersion()).isEqualTo("v1");
+        assertThat(session.llmModel()).isEqualTo("m-1");
+        assertThat(session.connection()).isEqualTo(Map.of("livekitUrl", "u", "livekitToken", "t"));
         server.verify();
+    }
+
+    @Test
+    void 응답_personaId가_요청과_달라도_통화는_진행한다() {
+        server.expect(requestTo(BASE_URL + "/calls"))
+                .andRespond(withSuccess("{\"callSessionId\":\"s-1\",\"personaId\":\"persona-other\"}",
+                        MediaType.APPLICATION_JSON));
+
+        AiCallSession session = adapter.createSession(request());
+
+        assertThat(session.callSessionId()).isEqualTo("s-1");
+        assertThat(session.connection()).isEmpty();
+    }
+
+    @Test
+    void 프롬프트_버전과_모델이_누락되거나_공백이면_null로_둔다() {
+        server.expect(requestTo(BASE_URL + "/calls"))
+                .andRespond(withSuccess("{\"callSessionId\":\"s-1\",\"promptVersion\":\" \"}",
+                        MediaType.APPLICATION_JSON));
+
+        AiCallSession session = adapter.createSession(request());
+
+        assertThat(session.promptVersion()).isNull();
+        assertThat(session.llmModel()).isNull();
     }
 
     @Test
     void 나머지_필드에_null_값이_있어도_예외_없이_그대로_담는다() {
         server.expect(requestTo(BASE_URL + "/calls"))
-                .andRespond(withSuccess("{\"call_session_id\":\"s-1\",\"region\":null}",
+                .andRespond(withSuccess("{\"callSessionId\":\"s-1\",\"region\":null}",
                         MediaType.APPLICATION_JSON));
 
-        AiCallSession session = adapter.createSession(UUID.randomUUID(), 600L);
+        AiCallSession session = adapter.createSession(request());
 
         assertThat(session.callSessionId()).isEqualTo("s-1");
         assertThat(session.connection()).containsOnlyKeys("region");
@@ -92,7 +130,7 @@ class AiServerCallSessionAdapterTest {
     @Test
     void 세션_식별자가_없으면_AI_SERVER_UNAVAILABLE() {
         server.expect(requestTo(BASE_URL + "/calls"))
-                .andRespond(withSuccess("{\"livekit_url\":\"u\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"livekitUrl\":\"u\"}", MediaType.APPLICATION_JSON));
 
         assertUnavailable();
     }
@@ -100,7 +138,7 @@ class AiServerCallSessionAdapterTest {
     @Test
     void 세션_식별자가_빈_문자열이면_AI_SERVER_UNAVAILABLE() {
         server.expect(requestTo(BASE_URL + "/calls"))
-                .andRespond(withSuccess("{\"call_session_id\":\"\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"callSessionId\":\"\"}", MediaType.APPLICATION_JSON));
 
         assertUnavailable();
     }
@@ -113,7 +151,7 @@ class AiServerCallSessionAdapterTest {
     }
 
     private void assertUnavailable() {
-        assertThatThrownBy(() -> adapter.createSession(UUID.randomUUID(), 600L))
+        assertThatThrownBy(() -> adapter.createSession(request()))
                 .isInstanceOf(CustomException.class)
                 .extracting(exception -> ((CustomException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.AI_SERVER_UNAVAILABLE);

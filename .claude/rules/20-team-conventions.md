@@ -12,6 +12,7 @@
 - BE: 들여쓰기 4칸, 줄 길이 120. 생성자 주입(`@RequiredArgsConstructor`)만 쓰고 필드 주입은 쓰지 않는다. `@Data` 금지. `@Transactional`은 메서드 단위로 붙이고 조회는 `readOnly = true`.
 - 엔티티: `BaseEntity` 상속(UUID v7 PK, `createdAt`/`updatedAt`, soft delete `deleted`/`deletedAt`), `@Table` 명시, enum은 `EnumType.STRING`, 다른 엔티티를 가리키는 id를 UUID 컬럼으로 저장하지 않고 `@ManyToOne(LAZY)` 연관으로 선언한다(도메인 간 참조 포함). `@OneToMany`와 cascade는 금지하고 하위 목록은 리포지토리로 조회한다. 상태 변경은 도메인 메서드로 하며 허용 전이는 상태 enum의 `canTransitionTo`에 둔다(위반 시 `STATE_CONFLICT`).
 - soft delete 조회 필터(`deleted = false`)는 리포지토리 메서드에서 명시한다(`@SQLRestriction` 금지). UNIQUE는 활성 행에만 걸리게 partial unique index로 만든다.
+- API 계약(BE↔AI↔FE, teeq-ai #39): 필드와 query parameter는 camelCase, path variable은 kebab-case, enum 값은 `UPPER_SNAKE_CASE` 문자열, 시각은 `Z`가 붙은 ISO-8601 UTC 문자열, ID는 UUID 문자열이다.
 - 시간: `Clock` 주입 + `Instant`(저장은 `timestamptz`, API는 ISO-8601 UTC). `Instant.now()`, `LocalDateTime.now()` 직접 호출 금지. 한국 시간 규칙은 `ZoneId`(`Asia/Seoul`) 빈을 쓴다.
 - 에러: 중앙 `ErrorCode` enum + `CustomException`, 응답은 `{ "errorCode", "errorMessage" }` 두 필드. 도메인별 예외 클래스를 만들지 않는다. 예외를 삼키지 않고 내부 정보(스택, SQL)를 노출하지 않는다.
 - 로그: `@Slf4j`. 예상된 4xx는 WARN(스택 없음), 5xx는 ERROR와 스택. `System.out`·`printStackTrace`·시크릿 값 로깅 금지.

@@ -13,6 +13,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.CallLimitStatusResponse;
+import kr.co.teeq.api.call.core.constant.CallLimitDecision;
+import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -167,9 +169,9 @@ class CallLimitServiceTest {
         stubUsedSeconds(1500);
         stubMonth(900000, 0);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(member);
+        CallLimitDecision decision = createService(NOON_KST).checkStartable(member);
 
-        assertThat(allowedSeconds).isEqualTo(300);
+        assertThat(decision).isEqualTo(new CallLimitDecision(300, LimitKind.PER_DAY));
     }
 
     @Test
@@ -199,9 +201,9 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 899700);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(member);
+        CallLimitDecision decision = createService(NOON_KST).checkStartable(member);
 
-        assertThat(allowedSeconds).isEqualTo(300);
+        assertThat(decision).isEqualTo(new CallLimitDecision(300, LimitKind.WHOLE_SERVICE));
     }
 
     @Test
@@ -210,9 +212,9 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 899940);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(member);
+        CallLimitDecision decision = createService(NOON_KST).checkStartable(member);
 
-        assertThat(allowedSeconds).isEqualTo(60);
+        assertThat(decision).isEqualTo(new CallLimitDecision(60, LimitKind.WHOLE_SERVICE));
     }
 
     @Test
@@ -256,9 +258,9 @@ class CallLimitServiceTest {
         stubUsedSeconds(0);
         stubMonth(900000, 0);
 
-        long allowedSeconds = createService(NOON_KST).checkStartable(member);
+        CallLimitDecision decision = createService(NOON_KST).checkStartable(member);
 
-        assertThat(allowedSeconds).isEqualTo(30);
+        assertThat(decision).isEqualTo(new CallLimitDecision(30, LimitKind.PER_CALL));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package kr.co.teeq.api.onboarding.core.entity;
 
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -18,16 +19,17 @@ class OnboardingSubmissionTest {
 
     @Test
     void of_withThreeTags_exposesCharacterAndTags() {
-        OnboardingSubmission submission = OnboardingSubmission.of(member, 7, List.of("a", "b", "c"));
+        OnboardingSubmission submission = OnboardingSubmission.of(member, "persona-1", CharacterType.CHARACTER_3, List.of("a", "b", "c"));
 
         assertThat(submission.getMember()).isSameAs(member);
-        assertThat(submission.getCharacterNumber()).isEqualTo(7);
+        assertThat(submission.getCharacterType()).isEqualTo(CharacterType.CHARACTER_3);
+        assertThat(submission.getPersonaId()).isEqualTo("persona-1");
         assertThat(submission.getPersonalityTags()).isEqualTo(List.of("a", "b", "c"));
     }
 
     @Test
     void of_withWrongTagCount_throwsIllegalArgumentException() {
-        assertThatThrownBy(() -> OnboardingSubmission.of(member, 7, List.of("a", "b")))
+        assertThatThrownBy(() -> OnboardingSubmission.of(member, "persona-1", CharacterType.CHARACTER_3, List.of("a", "b")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
