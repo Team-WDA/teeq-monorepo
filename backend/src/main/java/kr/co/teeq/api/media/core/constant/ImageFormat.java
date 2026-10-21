@@ -40,6 +40,12 @@ public enum ImageFormat {
             .findFirst();
     }
 
+    public static Optional<ImageFormat> fromExtension(String extension) {
+        return Arrays.stream(values())
+            .filter(format -> format.extension.equalsIgnoreCase(extension))
+            .findFirst();
+    }
+
     private boolean matches(byte[] content) {
         return switch (this) {
             case JPEG -> startsWith(content, 0, JPEG_SIGNATURE);
