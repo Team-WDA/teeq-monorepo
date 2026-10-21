@@ -49,5 +49,9 @@ server:
 # 값은 application-{dev,prod}.yml에 둔다
 # 호출별 타임아웃은 코드 상수이며 설정 키가 아니다: 캐릭터 3초(CharacterRestClientConfig), 통화 5초(CallRestClientConfig), 인사말 3초(GreetingRestClientConfig)
 
+# 미디어 S3 저장소 설정 키: media.s3.{bucket,region,key-prefix}
+# 값은 application-{dev,prod}.yml에 둔다. 한 버킷을 환경이 함께 쓰므로 key-prefix(dev/, prod/)로 구분한다
+# 자격 증명은 설정에 두지 않고 SDK 기본 자격 증명 체인(EC2 role)을 쓴다
+
 # 관리자 계정 설정 키: admin.accounts[].{username,password,name}
 # 값은 application-{dev,prod}.yml에 둔다
