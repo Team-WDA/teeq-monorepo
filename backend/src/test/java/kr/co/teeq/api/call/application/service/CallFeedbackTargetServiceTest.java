@@ -15,6 +15,7 @@ import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.FeedbackTargetCall;
 import kr.co.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.co.teeq.api.call.core.constant.CallStatus;
+import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -59,7 +60,7 @@ class CallFeedbackTargetServiceTest {
     }
 
     private CallHistory callHistoryOf(Member owner, CallStatus status) {
-        CallHistory callHistory = CallHistory.pending(owner, STARTED_AT);
+        CallHistory callHistory = CallHistory.pending(owner, "persona-1", LimitKind.PER_DAY, STARTED_AT);
         ReflectionTestUtils.setField(callHistory, "id", callHistoryId);
         ReflectionTestUtils.setField(callHistory, "callSessionId", CALL_SESSION_ID);
         ReflectionTestUtils.setField(callHistory, "status", status);

@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import kr.co.teeq.api.call.application.dto.response.CallLimitStatusResponse;
+import kr.co.teeq.api.call.core.constant.CallLimitDecision;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -48,10 +49,10 @@ public class CallLimitService {
             remainingSeconds >= minStartSeconds);
     }
 
-    // 통화를 시작할 수 있으면 이번 통화의 허용 시간(초)을 돌려준다.
+    // 통화를 시작할 수 있으면 이번 통화의 허용 시간(초)과 그 값을 정한 한도의 종류를 돌려준다.
     // 개인 일 한도가 부족하면 CALL_LIMIT_INSUFFICIENT, 서비스 월 한도가 부족하면 CALL_SERVICE_LIMIT_EXCEEDED로 거부한다
     @Transactional(readOnly = true)
-    public long checkStartable(Member member) {
+    public CallLimitDecision checkStartable(Member member) {
         CallLimitStatusResponse status = getTodayStatus(member);
         if (!status.canStart()) {
             throw new CustomException(ErrorCode.CALL_LIMIT_INSUFFICIENT);
@@ -62,7 +63,9 @@ public class CallLimitService {
         if (monthRemainingSeconds < minStartSeconds) {
             throw new CustomException(ErrorCode.CALL_SERVICE_LIMIT_EXCEEDED);
         }
-        return Math.min(status.allowedSeconds(), monthRemainingSeconds);
+        long perCallSeconds = settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_SESSION);
+        // allowedSeconds는 이미 1회 한도로 잘려 있어 PER_CALL과 PER_DAY를 구분할 수 없으므로 일 잔여 시간을 그대로 쓴다
+        return CallLimitDecision.of(perCallSeconds, status.remainingSeconds(), monthRemainingSeconds);
     }
 
     // 서비스 월 한도는 전체 회원 합산이며, 달은 KST 달력 월이고 통화 시작 시각이 속한 달에 집계한다
