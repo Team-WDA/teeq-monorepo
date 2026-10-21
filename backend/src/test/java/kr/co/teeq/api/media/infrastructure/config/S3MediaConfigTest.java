@@ -2,12 +2,14 @@ package kr.co.teeq.api.media.infrastructure.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import kr.co.teeq.api.media.core.port.MediaStoragePort;
 import kr.co.teeq.api.media.infrastructure.adapter.S3MediaStorage;
 import kr.co.teeq.api.media.infrastructure.adapter.VolumeMediaStorage;
 import kr.co.teeq.api.media.infrastructure.properties.S3MediaProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.services.s3.S3Client;
 
 class S3MediaConfigTest {
@@ -36,6 +38,16 @@ class S3MediaConfigTest {
             assertThat(properties.keyPrefix()).isEqualTo("dev/");
             assertThat(context.getBean(S3Client.class).serviceClientConfiguration().region().id())
                 .isEqualTo("ap-northeast-2");
+        });
+    }
+
+    @Test
+    void S3Client에는_호출_전체와_시도별_타임아웃이_설정된다() {
+        contextRunner.run(context -> {
+            ClientOverrideConfiguration override = context.getBean(S3Client.class)
+                .serviceClientConfiguration().overrideConfiguration();
+            assertThat(override.apiCallTimeout()).contains(Duration.ofSeconds(15));
+            assertThat(override.apiCallAttemptTimeout()).contains(Duration.ofSeconds(5));
         });
     }
 
