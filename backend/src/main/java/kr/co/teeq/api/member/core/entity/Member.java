@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.constant.Role;
@@ -48,6 +49,10 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private boolean privacyPolicyAgreed;
 
+    // AI가 홈 한마디를 마지막으로 정상 생성한 시각. 기본 문구를 쓴 경우는 갱신하지 않는다
+    @Column
+    private Instant lastGreetedAt;
+
     // 가입 계정은 항상 USER다. 관리자 계정은 Admin 엔티티로 분리되어 있다
     @Builder
     private Member(String email, String password, String nickname, boolean serviceTermsAgreed,
@@ -87,6 +92,10 @@ public class Member extends BaseEntity {
 
     public void changePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    public void markGreeted(Instant greetedAt) {
+        this.lastGreetedAt = greetedAt;
     }
 
 }
