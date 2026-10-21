@@ -80,7 +80,7 @@ concurrency:
 # ===================================================================
 env:
   # 🔧 프로젝트 설정 - 실제 프로젝트명으로 변경하세요
-  PROJECT_NAME: "teeq"
+  PROJECT_NAME: "teeq-server"
 
   # ☁️ Spring Boot 설정
   SPRING_PROFILE: "prod"
