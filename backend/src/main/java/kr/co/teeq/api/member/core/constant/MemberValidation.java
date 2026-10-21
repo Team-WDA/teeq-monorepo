@@ -9,8 +9,8 @@ public final class MemberValidation {
     public static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d)[\\x21-\\x7E]{8,64}$";
     public static final String PASSWORD_MESSAGE = "비밀번호는 영문과 숫자를 포함한 8~64자여야 하며 공백과 한글은 사용할 수 없습니다.";
 
-    public static final String NICKNAME_REGEX = "^[가-힣A-Za-z0-9]{2,10}$";
-    public static final String NICKNAME_MESSAGE = "닉네임은 한글, 영문, 숫자만 사용해 2~10자로 입력해 주세요.";
+    public static final String NICKNAME_REGEX = "^[가-힣]{2,10}$";
+    public static final String NICKNAME_MESSAGE = "닉네임은 한글만 사용해 2~10자로 입력해 주세요.";
 
     private MemberValidation() {
     }
