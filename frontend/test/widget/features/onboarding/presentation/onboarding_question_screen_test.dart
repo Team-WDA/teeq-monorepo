@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/core/ui/button/neutral_filled_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/option_card/selectable_option_card.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
@@ -138,6 +139,43 @@ void main() {
       expect(_nextOnPressed(tester), isNotNull);
     },
   );
+
+  testWidgets('first question has no previous button', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.text('이전'), findsNothing);
+    expect(find.byType(NeutralFilledButton), findsNothing);
+  });
+
+  testWidgets('second question shows previous button', (tester) async {
+    await _pumpScreen(tester, startIndex: 1);
+
+    expect(find.text('이전'), findsOneWidget);
+    expect(find.byType(NeutralFilledButton), findsOneWidget);
+  });
+
+  testWidgets('previous button returns to first question and keeps selection', (
+    tester,
+  ) async {
+    final container = await _pumpScreen(tester);
+    await _tapOption(tester, OnboardingOption.relationshipCloseFriend);
+    await tester.tap(find.text('다음'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('이전'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(OnboardingQuestion.relationship.title), findsOneWidget);
+    expect(find.text('이전'), findsNothing);
+    expect(
+      container
+          .read(characterSetupFlowControllerProvider)
+          .selections
+          .selectedFor(OnboardingQuestion.relationship),
+      {OnboardingOption.relationshipCloseFriend},
+    );
+    expect(_nextOnPressed(tester), isNotNull);
+  });
 
   testWidgets('system back on first question in firstTime mode does nothing', (
     tester,
