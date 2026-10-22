@@ -122,6 +122,15 @@ void main() {
     ]);
   });
 
+  test('request_appVersionCheck_hasNoAuthorizationHeader', () async {
+    final harness = _Harness(storedTokens: _oldTokens);
+    harness.adapter.on('/api/app-versions/check', [_ok()]);
+
+    await harness.dio.get<dynamic>('/api/app-versions/check');
+
+    expect(harness.authorizationsTo('/api/app-versions/check'), [null]);
+  });
+
   test('expiredToken_refreshesOnceAndRetriesOnceWithNewToken', () async {
     final harness = _Harness(storedTokens: _oldTokens);
     harness.adapter

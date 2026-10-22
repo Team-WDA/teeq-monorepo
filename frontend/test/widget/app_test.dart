@@ -7,6 +7,9 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
+import 'package:teeq/features/app_update/domain/app_update_requirement.dart';
+import 'package:teeq/features/app_update/presentation/app_update_controller.dart';
+import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
@@ -18,6 +21,7 @@ import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_app_update_controller.dart';
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
 import '../support/fake_splash_minimum_display_controller.dart';
@@ -146,6 +150,7 @@ void main() {
         overrides: [
           tokenStorageProvider.overrideWithValue(tokenStorage),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
         ],
         child: const App(),
       ),
@@ -171,6 +176,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
           tokenStorageProvider.overrideWithValue(
             FakeTokenStorage(
               storedTokens: const AuthTokens(
@@ -210,5 +216,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(SplashScreen), findsNothing);
+  });
+
+  testWidgets('업데이트가 필요하면 복원을 시작하지 않고 업데이트 필요 화면에 머문다', (tester) async {
+    final tokenStorage = FakeTokenStorage();
+    late final FakeAppUpdateController updateController;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(tokenStorage),
+          authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+          appUpdateControllerProvider.overrideWith(() {
+            updateController = FakeAppUpdateController(
+              requirement: const AppUpdateRequirement(
+                minimumVersion: '1.3.0',
+                storeUrl: 'https://store.example.test/teeq',
+              ),
+            );
+            return updateController;
+          }),
+        ],
+        child: const App(),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    // 화면 전환 애니메이션이 끝나 스플래시가 트리에서 빠질 때까지 1.5초 미만으로 진행한다.
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(updateController.checkCount, 1);
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(SplashScreen), findsNothing);
+    expect(tokenStorage.readCount, 0);
+
+    await tester.pump(
+      splashMinimumDisplayDuration + const Duration(milliseconds: 1),
+    );
+    await tester.pump();
+    expect(find.byType(UpdateRequiredScreen), findsOneWidget);
+    expect(find.byType(SplashScreen), findsNothing);
+    expect(tokenStorage.readCount, 0);
   });
 }

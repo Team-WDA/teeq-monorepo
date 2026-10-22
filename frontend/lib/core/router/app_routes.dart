@@ -19,6 +19,7 @@ abstract final class AppRoutes {
   static const String serviceTerms = '/my-page/service-terms';
   static const String privacyPolicy = '/my-page/privacy-policy';
   static const String error = '/error';
+  static const String updateRequired = '/update-required';
   static const String feedbackClosing = '/calls/:callSessionId/feedback';
   static const String feedbackCompletion =
       '/calls/:callSessionId/feedback/completion';

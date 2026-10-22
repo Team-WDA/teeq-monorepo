@@ -9,14 +9,21 @@ import 'package:teeq/core/router/app_routes.dart';
 /// 가입을 마쳤지만 캐릭터가 없는 회원은 `/onboarding/**` 밖의 모든 위치에서 온보딩으로 보낸다.
 /// 스플래시 최소 노출 시간이 지나기 전에는 로그인 상태와 무관하게 `/splash`에 머문다.
 /// 복원이 더 오래 걸려 이미 지난 뒤라면 영향이 없다.
+/// 앱 업데이트가 필요하면(`/error` 제외) 로그인 상태와 무관하게 `/update-required`에만 머문다.
 String? authRedirect(
   AuthStatus status,
   Member? member,
   String location, {
   required bool isSplashMinimumDisplayElapsed,
+  required bool isUpdateRequired,
 }) {
   if (location == AppRoutes.error) {
     return null;
+  }
+  if (isUpdateRequired) {
+    return location == AppRoutes.updateRequired
+        ? null
+        : AppRoutes.updateRequired;
   }
   if (location == AppRoutes.splash && !isSplashMinimumDisplayElapsed) {
     return null;

@@ -41,6 +41,7 @@ void main() {
               member,
               AppRoutes.error,
               isSplashMinimumDisplayElapsed: true,
+              isUpdateRequired: false,
             ),
             isNull,
           );
@@ -55,6 +56,7 @@ void main() {
           null,
           AppRoutes.home,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         AppRoutes.splash,
       );
@@ -64,6 +66,7 @@ void main() {
           null,
           AppRoutes.login,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         AppRoutes.splash,
       );
@@ -73,6 +76,7 @@ void main() {
           null,
           AppRoutes.splash,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         isNull,
       );
@@ -91,6 +95,7 @@ void main() {
             null,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           AppRoutes.welcome,
         );
@@ -107,6 +112,7 @@ void main() {
             null,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           isNull,
         );
@@ -128,6 +134,7 @@ void main() {
             _incompleteMember,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           AppRoutes.signupCompletion,
         );
@@ -138,6 +145,7 @@ void main() {
           _incompleteMember,
           AppRoutes.signupCompletion,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         isNull,
       );
@@ -150,6 +158,7 @@ void main() {
           _incompleteMember,
           AppRoutes.signupNickname,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         isNull,
       );
@@ -171,6 +180,7 @@ void main() {
             _memberWithoutCharacter,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           AppRoutes.onboarding,
         );
@@ -191,6 +201,7 @@ void main() {
             _memberWithoutCharacter,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           isNull,
         );
@@ -204,6 +215,7 @@ void main() {
           _memberWithCharacter,
           AppRoutes.onboarding,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         AppRoutes.home,
       );
@@ -222,6 +234,7 @@ void main() {
             _memberWithCharacter,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           isNull,
         );
@@ -242,6 +255,7 @@ void main() {
             _memberWithCharacter,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           AppRoutes.home,
         );
@@ -253,6 +267,7 @@ void main() {
             _memberWithCharacter,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           isNull,
         );
@@ -266,6 +281,7 @@ void main() {
           null,
           AppRoutes.onboarding,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         AppRoutes.home,
       );
@@ -275,6 +291,7 @@ void main() {
           null,
           AppRoutes.characterResult,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         isNull,
       );
@@ -297,6 +314,7 @@ void main() {
                 member,
                 AppRoutes.splash,
                 isSplashMinimumDisplayElapsed: false,
+                isUpdateRequired: false,
               ),
               isNull,
             );
@@ -313,6 +331,7 @@ void main() {
                 member,
                 AppRoutes.error,
                 isSplashMinimumDisplayElapsed: false,
+                isUpdateRequired: false,
               ),
               isNull,
             );
@@ -328,6 +347,7 @@ void main() {
               null,
               location,
               isSplashMinimumDisplayElapsed: false,
+              isUpdateRequired: false,
             ),
             AppRoutes.splash,
           );
@@ -341,6 +361,7 @@ void main() {
             null,
             AppRoutes.home,
             isSplashMinimumDisplayElapsed: false,
+            isUpdateRequired: false,
           ),
           AppRoutes.welcome,
         );
@@ -350,6 +371,7 @@ void main() {
             _memberWithCharacter,
             AppRoutes.onboarding,
             isSplashMinimumDisplayElapsed: false,
+            isUpdateRequired: false,
           ),
           AppRoutes.home,
         );
@@ -370,6 +392,7 @@ void main() {
             null,
             location,
             isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: false,
           ),
           AppRoutes.home,
         );
@@ -380,9 +403,88 @@ void main() {
           null,
           AppRoutes.home,
           isSplashMinimumDisplayElapsed: true,
+          isUpdateRequired: false,
         ),
         isNull,
       );
+    });
+
+    group('업데이트 필요 게이트', () {
+      const members = <Member?>[
+        null,
+        _memberWithoutCharacter,
+        _memberWithCharacter,
+        _incompleteMember,
+      ];
+      const locations = [
+        AppRoutes.splash,
+        AppRoutes.welcome,
+        AppRoutes.home,
+        AppRoutes.myPage,
+      ];
+
+      test('어떤 상태와 위치에서도 update-required로 보낸다', () {
+        for (final status in AuthStatus.values) {
+          for (final member in members) {
+            for (final location in locations) {
+              expect(
+                authRedirect(
+                  status,
+                  member,
+                  location,
+                  isSplashMinimumDisplayElapsed: true,
+                  isUpdateRequired: true,
+                ),
+                AppRoutes.updateRequired,
+                reason: '$status $member $location',
+              );
+            }
+          }
+        }
+      });
+
+      test('이미 update-required에 있으면 null', () {
+        for (final status in AuthStatus.values) {
+          for (final member in members) {
+            expect(
+              authRedirect(
+                status,
+                member,
+                AppRoutes.updateRequired,
+                isSplashMinimumDisplayElapsed: true,
+                isUpdateRequired: true,
+              ),
+              isNull,
+            );
+          }
+        }
+      });
+
+      test('error 위치는 게이트보다 먼저 null', () {
+        expect(
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithCharacter,
+            AppRoutes.error,
+            isSplashMinimumDisplayElapsed: true,
+            isUpdateRequired: true,
+          ),
+          isNull,
+        );
+      });
+
+      test('스플래시 최소 노출 시간 전에도 splash에서 update-required로 간다', () {
+        expect(
+          authRedirect(
+            AuthStatus.unknown,
+            null,
+            AppRoutes.splash,
+            isSplashMinimumDisplayElapsed: false,
+            isUpdateRequired: true,
+          ),
+          AppRoutes.updateRequired,
+        );
+      });
     });
   });
 }
