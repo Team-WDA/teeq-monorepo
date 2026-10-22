@@ -7,7 +7,7 @@ import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
-import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
+import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
@@ -17,17 +17,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
+import '../support/fake_current_member_controller.dart';
 import '../support/fake_home_repository.dart';
 import '../support/fake_token_storage.dart';
-
-class _FakeCurrentMemberController extends CurrentMemberController {
-  _FakeCurrentMemberController(this._initialMember);
-
-  final Member? _initialMember;
-
-  @override
-  Member? build() => _initialMember;
-}
 
 const _homeSummary = HomeSummary(
   characterName: '티티',
@@ -43,7 +35,7 @@ Future<void> _pumpSignedInApp(WidgetTester tester, Member member) async {
           () => FakeAuthStatusController(AuthStatus.signedIn),
         ),
         currentMemberControllerProvider.overrideWith(
-          () => _FakeCurrentMemberController(member),
+          () => FakeCurrentMemberController(member),
         ),
         homeRepositoryProvider.overrideWithValue(
           FakeHomeRepository(summary: _homeSummary),
@@ -99,7 +91,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(SignupCompletionScreen), findsOneWidget);
+    expect(find.byType(SignupCompletionConsentScreen), findsOneWidget);
     expect(find.byType(HomeScreen), findsNothing);
   });
 
@@ -115,7 +107,7 @@ void main() {
     );
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.byType(SignupCompletionScreen), findsNothing);
+    expect(find.byType(SignupCompletionConsentScreen), findsNothing);
   });
 
   testWidgets('signedIn + 가입 완료 + 캐릭터 없는 회원이면 온보딩 시작 화면을 보여 준다', (

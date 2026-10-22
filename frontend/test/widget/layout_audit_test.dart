@@ -20,7 +20,7 @@ import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
-import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
+import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
@@ -334,7 +334,8 @@ final Map<String, _ScreenBuilder> _screens = {
     AppRoutes.signupNickname,
     const SignupNicknameScreen(),
   ),
-  '가입 완료': () => _hostPlain(_newContainer(), const SignupCompletionScreen()),
+  '가입 완료': () =>
+      _hostPlain(_newContainer(), const SignupCompletionConsentScreen()),
   '닉네임 변경': () {
     final container = _newContainer();
     container.read(currentMemberControllerProvider.notifier).update(_member);
@@ -497,7 +498,7 @@ final Map<String, _ScreenFinder> _expectedScreens = {
   '이메일 로그인': () => find.byType(EmailLoginScreen),
   '이메일 가입 자격 증명': () => find.byType(EmailSignupCredentialsScreen),
   '닉네임': () => find.byType(SignupNicknameScreen),
-  '가입 완료': () => find.byType(SignupCompletionScreen),
+  '가입 완료': () => find.byType(SignupCompletionConsentScreen),
   '닉네임 변경': () => find.byType(NicknameChangeScreen),
   '비밀번호 변경': () => find.byType(PasswordChangeScreen),
   '비밀번호 변경 완료': () => find.byType(PasswordChangeCompletionScreen),
