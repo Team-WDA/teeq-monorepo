@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
@@ -25,6 +26,7 @@ import 'package:teeq/features/home/presentation/home_screen.dart';
 
 import '../../../../support/fake_auth_repository.dart';
 import '../../../../support/fake_auth_status_controller.dart';
+import '../../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../../support/fake_feedback_repository.dart';
 import '../../../../support/fake_home_repository.dart';
 import '../../../../support/fake_token_storage.dart';
@@ -69,6 +71,9 @@ Future<_Harness> _pumpApp(
   final container = ProviderContainer(
     retry: (retryCount, error) => null,
     overrides: [
+      splashMinimumDisplayControllerProvider.overrideWith(
+        () => FakeSplashMinimumDisplayController(true),
+      ),
       appVersionProvider.overrideWith((ref) async => '0.15.0'),
       authStatusControllerProvider.overrideWith(
         () => FakeAuthStatusController(AuthStatus.signedIn),

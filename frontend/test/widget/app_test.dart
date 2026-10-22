@@ -1,6 +1,8 @@
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/auth/auth_tokens.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
@@ -12,11 +14,13 @@ import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
+import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
+import '../support/fake_splash_minimum_display_controller.dart';
 import '../support/fake_current_member_controller.dart';
 import '../support/fake_home_repository.dart';
 import '../support/fake_token_storage.dart';
@@ -31,6 +35,9 @@ Future<void> _pumpSignedInApp(WidgetTester tester, Member member) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        splashMinimumDisplayControllerProvider.overrideWith(
+          () => FakeSplashMinimumDisplayController(true),
+        ),
         authStatusControllerProvider.overrideWith(
           () => FakeAuthStatusController(AuthStatus.signedIn),
         ),
@@ -52,6 +59,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          splashMinimumDisplayControllerProvider.overrideWith(
+            () => FakeSplashMinimumDisplayController(true),
+          ),
           authStatusControllerProvider.overrideWith(
             () => FakeAuthStatusController(AuthStatus.signedOut),
           ),
@@ -127,7 +137,9 @@ void main() {
     expect(find.byType(HomeScreen), findsNothing);
   });
 
-  testWidgets('빈 저장소로 unknown에서 시작하면 스플래시 복원 뒤 시작 화면을 보여 준다', (tester) async {
+  testWidgets('빈 저장소로 시작하면 복원이 끝나도 1.5초까지 스플래시에 머문 뒤 시작 화면을 보여 준다', (
+    tester,
+  ) async {
     final tokenStorage = FakeTokenStorage();
     await tester.pumpWidget(
       ProviderScope(
@@ -138,9 +150,65 @@ void main() {
         child: const App(),
       ),
     );
-    await tester.pumpAndSettle();
 
+    // 복원 완료와 리다이렉트가 반영될 프레임을 먼저 돌린 뒤 1.5초 직전까지 진행한다.
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(
+      splashMinimumDisplayDuration - const Duration(milliseconds: 1),
+    );
     expect(tokenStorage.readCount, 1);
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.byType(WelcomeScreen), findsNothing);
+
+    await tester.pumpAndSettle();
     expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(find.byType(SplashScreen), findsNothing);
+  });
+
+  testWidgets('저장된 토큰으로 회원 조회가 성공해도 1.5초까지 스플래시에 머문 뒤 홈으로 간다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(
+            FakeTokenStorage(
+              storedTokens: const AuthTokens(
+                accessToken: 'access',
+                refreshToken: 'refresh',
+              ),
+            ),
+          ),
+          authRepositoryProvider.overrideWithValue(
+            FakeAuthRepository(
+              member: const Member(
+                memberId: 'member-1',
+                nickname: '티큐',
+                hasAiCharacter: true,
+                loginType: LoginType.apple,
+              ),
+            ),
+          ),
+          homeRepositoryProvider.overrideWithValue(
+            FakeHomeRepository(summary: _homeSummary),
+          ),
+        ],
+        child: const App(),
+      ),
+    );
+
+    // 복원 완료와 리다이렉트가 반영될 프레임을 먼저 돌린 뒤 1.5초 직전까지 진행한다.
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(
+      splashMinimumDisplayDuration - const Duration(milliseconds: 1),
+    );
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(SplashScreen), findsNothing);
   });
 }

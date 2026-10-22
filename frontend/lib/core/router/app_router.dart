@@ -6,6 +6,7 @@ import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/auth_redirect.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/ui/layout/main_tab_shell_screen.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
@@ -46,6 +47,9 @@ GoRouter appRouter(Ref ref) {
   ref.listen(currentMemberControllerProvider, (previous, next) {
     refreshNotifier.value++;
   });
+  ref.listen(splashMinimumDisplayControllerProvider, (previous, next) {
+    refreshNotifier.value++;
+  });
 
   // 흐름 상태 없이 이름·결과 화면에 들어오면 캐릭터 보유 여부에 따라 시작 화면이나 홈으로 보낸다.
   String redirectWithoutGeneratedCharacter() =>
@@ -68,6 +72,9 @@ GoRouter appRouter(Ref ref) {
       ref.read(authStatusControllerProvider),
       ref.read(currentMemberControllerProvider),
       state.uri.path,
+      isSplashMinimumDisplayElapsed: ref.read(
+        splashMinimumDisplayControllerProvider,
+      ),
     ),
     routes: [
       GoRoute(

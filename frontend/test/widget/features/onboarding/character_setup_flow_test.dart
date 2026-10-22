@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
@@ -23,6 +24,7 @@ import 'package:teeq/features/onboarding/presentation/onboarding_introduction_sc
 
 import '../../../support/fake_ai_character_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../support/fake_home_repository.dart';
 
 class _FakeCurrentMemberController extends CurrentMemberController {
@@ -69,6 +71,9 @@ Future<ProviderContainer> _pumpApp(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      splashMinimumDisplayControllerProvider.overrideWith(
+        () => FakeSplashMinimumDisplayController(true),
+      ),
       authStatusControllerProvider.overrideWith(
         () => FakeAuthStatusController(AuthStatus.signedIn),
       ),

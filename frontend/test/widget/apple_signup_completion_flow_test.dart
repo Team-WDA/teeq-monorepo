@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
@@ -21,6 +22,7 @@ import 'package:teeq/features/onboarding/presentation/onboarding_introduction_sc
 
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
+import '../support/fake_splash_minimum_display_controller.dart';
 import '../support/fake_current_member_controller.dart';
 import '../support/fake_token_storage.dart';
 
@@ -48,6 +50,9 @@ Future<FakeAuthRepository> _pumpIncompleteAppleMemberApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        splashMinimumDisplayControllerProvider.overrideWith(
+          () => FakeSplashMinimumDisplayController(true),
+        ),
         authStatusControllerProvider.overrideWith(
           () => FakeAuthStatusController(AuthStatus.signedIn),
         ),
