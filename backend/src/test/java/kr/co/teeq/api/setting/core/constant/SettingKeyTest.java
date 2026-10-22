@@ -38,4 +38,20 @@ class SettingKeyTest {
             .isInstanceOf(CustomException.class);
     }
 
+    @Test
+    void validate_appMinimumVersionKey_checksVersionFormat() {
+        assertThatThrownBy(() -> SettingKey.APP_MIN_VERSION_ANDROID.validate("1.2"))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_SETTING_VALUE));
+        assertThatCode(() -> SettingKey.APP_MIN_VERSION_IOS.validate("1.2.3")).doesNotThrowAnyException();
+    }
+
+    @Test
+    void validate_appStoreUrlKey_onlyRejectsBlank() {
+        assertThatCode(() -> SettingKey.APP_STORE_URL_IOS.validate("아무 문자열")).doesNotThrowAnyException();
+        assertThatThrownBy(() -> SettingKey.APP_STORE_URL_IOS.validate("  "))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_SETTING_VALUE));
+    }
+
 }
