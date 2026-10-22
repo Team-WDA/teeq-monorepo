@@ -22,17 +22,21 @@ final class AppUpdateRepositoryImpl implements AppUpdateRepository {
     required AppPlatform platform,
     required String appVersion,
   }) async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/api/app-versions/check',
-      queryParameters: {
-        'platform': platform.serverName,
-        'appVersion': appVersion,
-      },
-      options: Options(
-        connectTimeout: appVersionCheckTimeout,
-        receiveTimeout: appVersionCheckTimeout,
-      ),
-    );
+    // 연결·수신 타임아웃은 단계별 제한이라 합계를 막지 못하므로 요청 전체에도 마감을 건다.
+    // 마감을 넘기면 TimeoutException이 나며, 호출한 쪽이 통과(fail-open)로 처리한다.
+    final response = await _dio
+        .get<Map<String, dynamic>>(
+          '/api/app-versions/check',
+          queryParameters: {
+            'platform': platform.serverName,
+            'appVersion': appVersion,
+          },
+          options: Options(
+            connectTimeout: appVersionCheckTimeout,
+            receiveTimeout: appVersionCheckTimeout,
+          ),
+        )
+        .timeout(appVersionCheckTimeout);
     return AppVersionCheckResponseDto.fromJson(response.data!).toRequirement();
   }
 }
