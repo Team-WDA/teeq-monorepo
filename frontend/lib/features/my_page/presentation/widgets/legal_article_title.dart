@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 
 /// 조 제목(예: 제1조 목적과 운영자).

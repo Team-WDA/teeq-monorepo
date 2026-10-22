@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
 
 /// 부모 중심에서 [offset]만큼 옮긴 위치에 [width]x[height]로 이미지를 그린다.

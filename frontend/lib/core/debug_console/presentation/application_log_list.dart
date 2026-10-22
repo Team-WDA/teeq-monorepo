@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/debug_console/presentation/application_log_list_item.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_empty_message.dart';
 import 'package:teeq/core/design/app_border_widths.dart';

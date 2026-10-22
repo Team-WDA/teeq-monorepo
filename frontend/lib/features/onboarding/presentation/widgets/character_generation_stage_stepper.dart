@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/ui/progress/stage_progress_stepper.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/character_generation_stage.dart';
 

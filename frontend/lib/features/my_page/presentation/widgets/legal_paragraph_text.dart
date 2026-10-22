@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 
 /// 항목 문단 한 개.

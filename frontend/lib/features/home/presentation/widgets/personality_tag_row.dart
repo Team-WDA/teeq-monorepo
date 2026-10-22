@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
 

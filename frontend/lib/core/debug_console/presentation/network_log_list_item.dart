@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/debug_console/network_log_entry.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_time_format.dart';
 import 'package:teeq/core/design/app_colors.dart';

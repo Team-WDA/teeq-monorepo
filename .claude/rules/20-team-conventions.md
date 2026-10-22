@@ -19,6 +19,7 @@
 - DB: 스키마는 Flyway로만 바꾼다(`ddl-auto: validate`). 파일명 `V{yyyyMMdd}_{HHmmss}__{snake_case}.sql`, 적용된 마이그레이션은 수정하지 않는다.
 - 설정: `@Value`가 아니라 `@ConfigurationProperties`(도메인 `infrastructure/properties`)로 바인딩하고 필수 값이 비면 기동 시 실패시킨다. `application.yml`은 공통 설정만(값 없음), 실제 값은 `application-{dev,prod}.yml`(gitignore).
 - FE: `flutter_lints`와 `dart format`, `print` 금지, 모델은 freezed + json_serializable(생성 코드 `*.g.dart`·`*.freezed.dart`는 커밋하지 않음), 환경값은 `--dart-define-from-file`로 주입하고 키 정의는 `AppConfig` 한 곳에 둔다.
+- FE Material import: Material 위젯은 `package:material_ui/material_ui.dart`에서만 import하고 `package:flutter/material.dart`는 쓰지 않는다. go_router 18이 `material_ui`의 `MaterialApp`으로 앱 종류를 판별하므로 SDK 쪽을 쓰면 전환 애니메이션과 iOS 스와이프 뒤로가기가 사라진다.
 - Spring Boot 4 주의: Web starter는 `spring-boot-starter-webmvc`, Flyway는 `spring-boot-starter-flyway`, JSON은 Jackson 3(`tools.jackson`).
 
 ## Responsibility separation
