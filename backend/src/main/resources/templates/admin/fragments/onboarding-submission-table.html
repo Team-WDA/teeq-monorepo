@@ -19,7 +19,7 @@
         <tr th:each="submission : ${result.items}">
           <td class="mono" th:text="${#temporals.format(submission.submittedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-17 12:00:00</td>
           <td>
-            <a class="link link-primary mono" th:href="@{/admin/call-bonuses(memberId=${submission.memberId})}"
+            <a class="link link-primary mono" th:href="@{/admin/members/{memberId}(memberId=${submission.memberId})}"
                th:text="${submission.memberId}">회원 ID</a>
           </td>
           <td class="numeric-cell" th:text="${submission.submissionOrder}">1</td>

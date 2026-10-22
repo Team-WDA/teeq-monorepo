@@ -84,7 +84,7 @@ class AdminCallUsageControllerTest {
             .andExpect(content().string(containsString("value=\"2026-10-01\"")))
             .andExpect(content().string(containsString("value=\"2026-10-03\"")))
             // 회원 필터가 없으면 보너스 링크가 없다
-            .andExpect(content().string(not(containsString("/admin/call-bonuses?memberId="))));
+            .andExpect(content().string(not(containsString("/admin/members/"))));
 
         verify(callUsageService).getUsages(CallUsageUnit.DAY, from, to, null);
     }
@@ -174,7 +174,7 @@ class AdminCallUsageControllerTest {
     }
 
     @Test
-    void memberIdFilter_linksToCallBonusScreen() throws Exception {
+    void memberIdFilter_linksToMemberDetailScreen() throws Exception {
         given(callUsageService.getUsages(CallUsageUnit.DAY, LocalDate.of(2026, 10, 14), LocalDate.of(2026, 10, 20),
             MEMBER_ID)).willReturn(List.of(new CallUsageResponse(LocalDate.of(2026, 10, 20), 60, 1)));
 
@@ -182,7 +182,7 @@ class AdminCallUsageControllerTest {
                 .with(asAdmin())
                 .param("memberId", MEMBER_ID.toString()))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("href=\"/admin/call-bonuses?memberId=" + MEMBER_ID + "\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "\"")))
             .andExpect(content().string(containsString("value=\"" + MEMBER_ID + "\"")));
     }
 
