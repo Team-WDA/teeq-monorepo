@@ -148,6 +148,12 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                 showsChevron: true,
                 onTap: () => context.push(AppRoutes.privacyPolicy),
               ),
+              SettingsRow(
+                label: '버그 제보',
+                leadingIconAssetPath: AppAssets.documentIcon,
+                showsChevron: true,
+                onTap: () => context.push(AppRoutes.bugReport),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.space52),
