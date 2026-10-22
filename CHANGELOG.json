@@ -1,14 +1,39 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T08:11:15Z",
-    "currentVersion": "0.28.0",
+    "lastUpdated": "2026-10-22T10:03:41Z",
+    "currentVersion": "0.28.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 35
+    "totalReleases": 36
   },
   "releases": [
+    {
+      "version": "0.28.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.28.1]\n\n### 🐛 수정\n- 회원 삭제 코어와 중복된 기존 탈퇴 API 제거\n\n### ✅ 테스트\n- 컨트롤러 HTTP 메서드와 경로 중복 매핑 검사 추가",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "회원 삭제 코어와 중복된 기존 탈퇴 API 제거"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "컨트롤러 HTTP 메서드와 경로 중복 매핑 검사 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.28.0",
       "project_types": [
