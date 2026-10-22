@@ -30,6 +30,12 @@ open -a "Android Studio" frontend
 - 이 기간에 가입한 회원의 `personaId`는 `stub-persona`로 저장되어 통화 요청과 통화 기록에도 그대로 남는다. 내부 테스트 후 DB를 초기화한다.
 - `true`나 `false`가 아닌 값을 넣으면 기동에 실패한다. AI 서버가 완성되면 이 설정과 임시 구현을 삭제한다.
 
+## 버그 제보 Discord 알림 설정
+
+- 설정 키: `bug-report.discord.webhook-url`, `bug-report.admin-base-url` (둘 다 필수)
+- 값은 `application-{dev,prod}.yml`(운영은 시크릿 `APPLICATION_PROD_YML`)에 직접 채운다. 웹훅 URL은 시크릿이므로 문서·로그·PR에 적지 않는다.
+- 하나라도 비어 있으면 기동에 실패한다.
+
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->
