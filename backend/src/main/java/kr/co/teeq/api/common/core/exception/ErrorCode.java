@@ -62,6 +62,12 @@ public enum ErrorCode {
     PROFILE_IMAGE_INVALID(400, "프로필 사진으로 사용할 수 없는 파일입니다. JPEG, PNG, WebP 이미지만 올릴 수 있습니다."),
     PROFILE_IMAGE_TOO_LARGE(413, "프로필 사진은 5MB 이하만 올릴 수 있습니다."),
 
+    // 버그 제보
+    BUG_REPORT_IMAGE_INVALID(400, "제보 이미지로 사용할 수 없는 파일입니다. JPEG, PNG, WebP 이미지만 올릴 수 있습니다."),
+    BUG_REPORT_IMAGE_TOO_LARGE(413, "제보 이미지는 장당 5MB 이하만 올릴 수 있습니다."),
+    BUG_REPORT_IMAGE_TOO_MANY(400, "이미지는 최대 5장까지 첨부할 수 있습니다."),
+    BUG_REPORT_NOT_FOUND(404, "버그 제보를 찾을 수 없습니다."),
+
     // 동적 설정
     SETTING_CONFIG_NOT_FOUND(404, "설정을 찾을 수 없습니다."),
     INVALID_SETTING_VALUE(400, "설정 값이 올바르지 않습니다.");
