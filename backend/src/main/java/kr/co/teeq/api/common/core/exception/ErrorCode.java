@@ -39,6 +39,7 @@ public enum ErrorCode {
     CALL_SERVICE_LIMIT_EXCEEDED(403, "지금은 통화를 이용할 수 없습니다."),
     CALL_BONUS_NOT_FOUND(404, "추가 통화 시간을 찾을 수 없습니다."),
     CALL_ALREADY_IN_PROGRESS(409, "이미 진행 중인 통화가 있습니다."),
+    MEMBER_HAS_ACTIVE_CALL(409, "진행 중인 통화가 있어 처리할 수 없습니다."),
     AI_SERVER_UNAVAILABLE(502, "AI 서버와 통신할 수 없습니다."),
     CALL_SESSION_NOT_FOUND(404, "통화 세션을 찾을 수 없습니다."),
 

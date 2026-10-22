@@ -39,6 +39,7 @@ extension ErrorCodeUserMessage on ErrorCode {
     ErrorCode.callServiceLimitExceeded => '지금은 통화를 이용할 수 없어요. 잠시 후 다시 시도해 주세요.',
     ErrorCode.callBonusNotFound => '추가 통화 시간을 찾을 수 없어요.',
     ErrorCode.callAlreadyInProgress => '이미 진행 중인 통화가 있어요.',
+    ErrorCode.memberHasActiveCall => '진행 중인 통화가 끝난 뒤에 다시 시도해 주세요.',
     ErrorCode.aiServerUnavailable => '지금은 연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.',
     ErrorCode.callSessionNotFound => '통화 정보를 찾을 수 없어요.',
     ErrorCode.callNotFeedbackable => '의견을 남길 수 없는 통화예요.',
