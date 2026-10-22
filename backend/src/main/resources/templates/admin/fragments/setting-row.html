@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <table>
   <!--
@@ -15,7 +16,7 @@
       <div class="setting-description muted" th:text="${setting.description}">설명</div>
     </td>
     <td class="setting-value-cell">
-      <form class="setting-form" method="post"
+      <form class="setting-form" method="post" sec:authorize="hasRole('SUPER_ADMIN')"
             th:action="@{/admin/settings/{key}(key=${setting.key})}"
             th:attr="hx-post=@{/admin/settings/{key}(key=${setting.key})}"
             hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
@@ -46,6 +47,14 @@
           <button class="btn btn-sm btn-primary" type="submit">저장</button>
         </div>
       </form>
+      <!-- ADMIN은 값을 읽기만 한다. 저장·되돌리기 입력은 SUPER_ADMIN에게만 보인다 -->
+      <div class="setting-readonly" sec:authorize="!hasRole('SUPER_ADMIN')">
+        <pre class="setting-readonly-value mono" th:text="${setting.value}">1200</pre>
+        <div class="setting-default-value muted">
+          <span>기본값</span>
+          <span class="setting-default-value-text" th:text="${setting.defaultValue}">1200</span>
+        </div>
+      </div>
     </td>
     <td class="setting-state-cell">
       <span th:if="${setting.usingDefaultValue()}" class="badge badge-ghost badge-sm">기본값 사용 중</span>

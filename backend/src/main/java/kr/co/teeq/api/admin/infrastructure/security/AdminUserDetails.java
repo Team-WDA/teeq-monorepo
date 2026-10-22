@@ -3,6 +3,7 @@ package kr.co.teeq.api.admin.infrastructure.security;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import kr.co.teeq.api.member.core.constant.AdminRole;
 import kr.co.teeq.api.member.core.entity.Admin;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -11,17 +12,17 @@ import org.springframework.security.core.userdetails.UserDetails;
 /**
  * 비밀번호 검증 동안만 쓰는 관리자 정보. 인증이 끝나면 principal은 {@code AuthenticatedAdmin}으로 바뀐다.
  */
-public record AdminUserDetails(UUID adminId, String username, String password, String name) implements UserDetails {
-
-    static final String ADMIN_AUTHORITY = "ROLE_ADMIN";
+public record AdminUserDetails(UUID adminId, String username, String password, String name, AdminRole role)
+    implements UserDetails {
 
     public static AdminUserDetails from(Admin admin) {
-        return new AdminUserDetails(admin.getId(), admin.getUsername(), admin.getPassword(), admin.getName());
+        return new AdminUserDetails(admin.getId(), admin.getUsername(), admin.getPassword(), admin.getName(),
+            admin.getRole());
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(ADMIN_AUTHORITY));
+        return List.of(new SimpleGrantedAuthority(role.authority()));
     }
 
     @Override

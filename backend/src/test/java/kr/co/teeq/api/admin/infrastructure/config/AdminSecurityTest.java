@@ -2,6 +2,7 @@ package kr.co.teeq.api.admin.infrastructure.config;
 
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.ADMIN_ID;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
+import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -10,16 +11,19 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import kr.co.teeq.api.admin.application.controller.AdminLoginController;
 import kr.co.teeq.api.admin.support.AdminSliceTestConfig;
+import kr.co.teeq.api.member.core.constant.AdminRole;
 import kr.co.teeq.api.member.core.entity.Admin;
 import kr.co.teeq.api.member.core.principal.AuthenticatedAdmin;
 import kr.co.teeq.api.member.core.repository.AdminRepository;
@@ -29,6 +33,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,6 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -106,7 +112,7 @@ class AdminSecurityTest {
 
     @Test
     void login_withValidCredentials_redirectsToHomeAndSetsOneHourSession() throws Exception {
-        givenStoredAdmin();
+        givenStoredAdmin(AdminRole.ADMIN);
 
         MvcResult result = mockMvc.perform(loginRequest(USERNAME, RAW_PASSWORD))
             .andExpect(status().isFound())
@@ -122,8 +128,62 @@ class AdminSecurityTest {
     }
 
     @Test
+    void login_withSuperAdminRole_grantsSuperAdminAuthority() throws Exception {
+        givenStoredAdmin(AdminRole.SUPER_ADMIN);
+
+        mockMvc.perform(loginRequest(USERNAME, RAW_PASSWORD))
+            .andExpect(status().isFound())
+            .andExpect(authenticated().withRoles("SUPER_ADMIN"));
+    }
+
+    @Test
+    void login_withAdminRole_doesNotGrantSuperAdminAuthority() throws Exception {
+        givenStoredAdmin(AdminRole.ADMIN);
+
+        mockMvc.perform(loginRequest(USERNAME, RAW_PASSWORD))
+            .andExpect(status().isFound())
+            .andExpect(authenticated().withAuthorities(
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
+    @Test
+    void admin_isDeniedSuperAdminOnlyPaths() throws Exception {
+        mockMvc.perform(get("/admin/accounts/probe").with(asAdmin()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+        mockMvc.perform(post("/admin/settings/probe").with(asAdmin()).with(csrf()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+        mockMvc.perform(patch("/api/admin/setting-configs/probe").with(asAdmin()).with(csrf()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    void admin_canReadSettingsAndOtherPaths() throws Exception {
+        mockMvc.perform(get("/admin/settings/probe").with(asAdmin()))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/other/probe").with(asAdmin()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void superAdmin_canAccessAllPaths() throws Exception {
+        mockMvc.perform(get("/admin/accounts/probe").with(asSuperAdmin()))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/admin/settings/probe").with(asSuperAdmin()).with(csrf()))
+            .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/admin/setting-configs/probe").with(asSuperAdmin()).with(csrf()))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/settings/probe").with(asSuperAdmin()))
+            .andExpect(status().isOk());
+        mockMvc.perform(get("/admin/other/probe").with(asSuperAdmin()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void login_withWrongPasswordOrUnknownUser_redirectsToErrorWithSameResult() throws Exception {
-        givenStoredAdmin();
+        givenStoredAdmin(AdminRole.ADMIN);
         given(adminRepository.findByUsernameAndDeletedFalse("ghost")).willReturn(Optional.empty());
 
         mockMvc.perform(loginRequest(USERNAME, "wrong-password"))
@@ -136,7 +196,7 @@ class AdminSecurityTest {
 
     @Test
     void login_withoutCsrfAndSession_redirectsToLogin() throws Exception {
-        givenStoredAdmin();
+        givenStoredAdmin(AdminRole.ADMIN);
 
         // 로그인 화면을 오래 열어 두어 세션이 만료된 경우: 저장된 토큰이 없으면 로그인 화면으로 다시 보낸다
         mockMvc.perform(post("/admin/login")
@@ -149,7 +209,7 @@ class AdminSecurityTest {
 
     @Test
     void login_withWrongCsrf_returns403() throws Exception {
-        givenStoredAdmin();
+        givenStoredAdmin(AdminRole.ADMIN);
         MockHttpSession session = sessionWithCsrfToken();
 
         mockMvc.perform(post("/admin/login")
@@ -197,7 +257,7 @@ class AdminSecurityTest {
 
     @Test
     void logout_isPostOnly() throws Exception {
-        givenStoredAdmin();
+        givenStoredAdmin(AdminRole.ADMIN);
         MockHttpSession session = (MockHttpSession) mockMvc.perform(loginRequest(USERNAME, RAW_PASSWORD))
             .andExpect(authenticated())
             .andReturn().getRequest().getSession(false);
@@ -237,11 +297,12 @@ class AdminSecurityTest {
             .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
     }
 
-    private void givenStoredAdmin() {
+    private void givenStoredAdmin(AdminRole role) {
         Admin admin = Admin.builder()
             .username(USERNAME)
             .password(passwordEncoder.encode(RAW_PASSWORD))
             .name("운영자")
+            .role(role)
             .build();
         ReflectionTestUtils.setField(admin, "id", ADMIN_ID);
         given(adminRepository.findByUsernameAndDeletedFalse(USERNAME)).willReturn(Optional.of(admin));
@@ -271,6 +332,31 @@ class AdminSecurityTest {
 
         @PostMapping("/admin/probe")
         String pagePostProbe() {
+            return "ok";
+        }
+
+        @GetMapping("/admin/accounts/probe")
+        String accountsProbe() {
+            return "ok";
+        }
+
+        @PostMapping("/admin/settings/probe")
+        String settingsPostProbe() {
+            return "ok";
+        }
+
+        @GetMapping("/admin/settings/probe")
+        String settingsGetProbe() {
+            return "ok";
+        }
+
+        @PatchMapping("/api/admin/setting-configs/probe")
+        String settingConfigsPatchProbe() {
+            return "ok";
+        }
+
+        @GetMapping("/admin/other/probe")
+        String otherProbe() {
             return "ok";
         }
 

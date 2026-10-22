@@ -1,6 +1,7 @@
 package kr.co.teeq.api.admin.application.controller;
 
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
+import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
@@ -79,15 +80,49 @@ class AdminSettingControllerTest {
             .andExpect(content().string(containsString("기본값 사용 중")))
             .andExpect(content().string(containsString("변경됨")))
             .andExpect(content().string(containsString("저장하면 즉시 반영됩니다")))
-            // 문자열 값은 여러 줄 입력칸, 정수 값은 한 줄 입력칸
-            .andExpect(content().string(containsString("<textarea")))
-            .andExpect(content().string(containsString("type=\"number\"")))
             // 수정 시각은 KST로 표시한다
             .andExpect(content().string(containsString("2026-10-20 12:00:00")))
             // 공통 셸: 관리자 이름, 메뉴, CSRF meta
             .andExpect(content().string(containsString("<span class=\"top-bar-admin-name\">운영자</span>")))
             .andExpect(content().string(containsString("href=\"/admin/onboarding-submissions\"")))
             .andExpect(content().string(containsString("name=\"_csrf\"")));
+    }
+
+    @Test
+    void adminViewingSettings_hasNoInputFormButSeesValues() throws Exception {
+        given(settingConfigService.getAll()).willReturn(List.of(defaultSessionSetting()));
+
+        mockMvc.perform(get("/admin/settings").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString(SESSION_KEY)))
+            .andExpect(content().string(not(containsString("name=\"value\""))))
+            .andExpect(content().string(not(containsString("setting-form"))));
+    }
+
+    @Test
+    void superAdminViewingSettings_hasInputForm() throws Exception {
+        given(settingConfigService.getAll()).willReturn(List.of(defaultSessionSetting(),
+            new SettingConfigResponse(GREETING_KEY, "{호칭},\n인사말", SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL.valueType(),
+                SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL.description(), AdminSliceTestConfig.NOW)));
+
+        mockMvc.perform(get("/admin/settings").with(asSuperAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("name=\"value\"")))
+            // 문자열 값은 여러 줄 입력칸, 정수 값은 한 줄 입력칸
+            .andExpect(content().string(containsString("<textarea")))
+            .andExpect(content().string(containsString("type=\"number\"")));
+    }
+
+    @Test
+    void adminSavingSetting_returns403() throws Exception {
+        mockMvc.perform(post("/admin/settings/{key}", SESSION_KEY)
+                .with(asAdmin())
+                .with(csrf())
+                .param("value", "1500"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+
+        verify(settingConfigService, never()).update(anyString(), any());
     }
 
     @Test
@@ -98,7 +133,7 @@ class AdminSettingControllerTest {
 
         mockMvc.perform(post("/admin/settings/{key}", SESSION_KEY)
                 .header(HTMX_HEADER, "true")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf())
                 .param("value", "1500"))
             .andExpect(status().isOk())
@@ -122,7 +157,7 @@ class AdminSettingControllerTest {
 
         mockMvc.perform(post("/admin/settings/{key}", GREETING_KEY)
                 .header(HTMX_HEADER, "true")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf())
                 .param("value", MARKUP_VALUE))
             .andExpect(status().isOk())
@@ -138,7 +173,7 @@ class AdminSettingControllerTest {
 
         mockMvc.perform(post("/admin/settings/{key}", SESSION_KEY)
                 .header(HTMX_HEADER, "true")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf())
                 .param("value", "abc"))
             .andExpect(status().isUnprocessableContent())
@@ -158,7 +193,7 @@ class AdminSettingControllerTest {
 
         mockMvc.perform(post("/admin/settings/{key}/reset", SESSION_KEY)
                 .header(HTMX_HEADER, "true")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf()))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("value=\"" + defaultValue + "\"")))
@@ -177,7 +212,7 @@ class AdminSettingControllerTest {
 
         mockMvc.perform(post("/admin/settings/{key}", SESSION_KEY)
                 .session(session)
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .param("value", "1500"))
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
@@ -191,7 +226,7 @@ class AdminSettingControllerTest {
             .willThrow(new CustomException(ErrorCode.SETTING_CONFIG_NOT_FOUND));
 
         mockMvc.perform(post("/admin/settings/{key}", "UNKNOWN_KEY")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf())
                 .param("value", "1"))
             .andExpect(status().isNotFound())
@@ -203,7 +238,7 @@ class AdminSettingControllerTest {
     @Test
     void resetUnknownKey_showsErrorPageWithoutCallingService() throws Exception {
         mockMvc.perform(post("/admin/settings/{key}/reset", "UNKNOWN_KEY")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .with(csrf()))
             .andExpect(status().isNotFound())
             .andExpect(view().name("admin/error"))
