@@ -688,8 +688,11 @@ jobs:
             -destination 'generic/platform=iOS' \
             archive \
             CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=G2W3593MWU \
             PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
             CODE_SIGN_IDENTITY="Apple Distribution"
+          # [teeq: DEVELOPMENT_TEAM 추가 - 명령행 서명 설정은 플러그인 Swift Package 타깃에도 적용되는데,
+          #  이 타깃들에는 팀이 없어 "Signing ... requires a development team"으로 archive가 실패함]
 
       - name: Export IPA
         run: |
