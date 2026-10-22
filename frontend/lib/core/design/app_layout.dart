@@ -78,6 +78,9 @@ abstract final class AppLayout {
   static const double greetingDotSize = 14;
   static const double brandLogoWidth = 77.255;
   static const double brandLogoHeight = 28.998;
+  // 스플래시 화면 중앙에 놓는 브랜드 로고. 네이티브 시작 화면의 로고와 같은 크기다.
+  static const double splashLogoWidth = 118;
+  static const double splashLogoHeight = 44.294;
   static const double homeCharacterWidth = 297;
   static const double homeCharacterHeight = 255.576;
   static const double homeGlowWidth = editResultGlowWidth;
