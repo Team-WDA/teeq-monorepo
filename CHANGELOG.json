@@ -1,14 +1,43 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-21T17:34:54Z",
-    "currentVersion": "0.22.0",
+    "lastUpdated": "2026-10-22T02:51:54Z",
+    "currentVersion": "0.23.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 25
+    "totalReleases": 26
   },
   "releases": [
+    {
+      "version": "0.23.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.23.0]\n\n### ✨ 기능\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 계정 관리·비밀번호 변경 화면 추가\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 계정 관리 서비스와 에러 코드 추가\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 부트스트랩 계정으로 yml 시드 대체\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 role 기반 인가와 설정 화면 읽기 전용 적용\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 역할 모델과 role 컬럼 마이그레이션 추가\n\n### 🐛 수정\n- 관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — FE ErrorCode를 BE 에러 코드와 동기화",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 계정 관리·비밀번호 변경 화면 추가",
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 계정 관리 서비스와 에러 코드 추가",
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 부트스트랩 계정으로 yml 시드 대체",
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 role 기반 인가와 설정 화면 읽기 전용 적용",
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — 관리자 역할 모델과 role 컬럼 마이그레이션 추가"
+          ]
+        },
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "관리자_계정_DB_관리와_SUPER_ADMIN_ADMIN_역할_분리 — FE ErrorCode를 BE 에러 코드와 동기화"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.22.0",
       "project_types": [
