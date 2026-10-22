@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<!--
+  회원 삭제 버튼과 확인 모달. SUPER_ADMIN에게만 렌더링한다(요청 자체도 보안 설정이 막는다).
+  삭제는 htmx 없이 일반 폼 POST이며 CSRF 숨은 필드는 th:action이 넣는다. 컨텍스트 변수 member
+-->
+<div th:fragment="member-delete-modal" sec:authorize="hasRole('SUPER_ADMIN')">
+  <button class="btn btn-sm btn-error" type="button"
+          onclick="document.getElementById('member-delete-dialog').showModal()">회원 삭제</button>
+  <dialog id="member-delete-dialog" class="modal">
+    <div class="modal-box">
+      <h3 class="member-delete-title">회원을 삭제할까요?</h3>
+      <p>삭제하면 이 회원의 통화 기록, 통화 보너스, 피드백, 온보딩 응답, AI 캐릭터, 프로필 사진 기록 등 연관 데이터가 함께 삭제되며 되돌릴 수 없습니다.</p>
+      <div class="modal-action">
+        <form method="dialog">
+          <button class="btn btn-sm btn-ghost" type="submit">취소</button>
+        </form>
+        <form method="post" th:action="@{/admin/members/{memberId}/delete(memberId=${member.id})}">
+          <button class="btn btn-sm btn-error" type="submit">삭제</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+</div>
+</body>
+</html>

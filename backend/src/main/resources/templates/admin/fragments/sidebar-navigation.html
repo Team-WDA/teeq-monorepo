@@ -10,8 +10,8 @@
      th:attr="aria-current=${activeMenu == 'settings'} ? 'page'">서비스 설정</a>
   <a th:href="@{/admin/call-usages}" th:classappend="${activeMenu == 'call-usages'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'call-usages'} ? 'page'">통화 사용량</a>
-  <a th:href="@{/admin/call-bonuses}" th:classappend="${activeMenu == 'call-bonuses'} ? 'active'"
-     th:attr="aria-current=${activeMenu == 'call-bonuses'} ? 'page'">통화 보너스</a>
+  <a th:href="@{/admin/members}" th:classappend="${activeMenu == 'members'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'members'} ? 'page'">회원 관리</a>
   <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
   <a th:href="@{/admin/accounts}" th:classappend="${activeMenu == 'accounts'} ? 'active'"

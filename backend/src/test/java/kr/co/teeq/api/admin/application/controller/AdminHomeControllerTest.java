@@ -78,7 +78,7 @@ class AdminHomeControllerTest {
             .andExpect(content().string(containsString("href=\"/admin\"")))
             .andExpect(content().string(containsString("href=\"/admin/settings\"")))
             .andExpect(content().string(containsString("href=\"/admin/call-usages\"")))
-            .andExpect(content().string(containsString("href=\"/admin/call-bonuses\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members\"")))
             .andExpect(content().string(containsString("href=\"/admin/onboarding-submissions\"")));
     }
 

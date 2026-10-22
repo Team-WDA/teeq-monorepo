@@ -140,11 +140,10 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .numeric-cell { text-align: right; font-variant-numeric: tabular-nums; }
 .call-usage-total-row th { background: var(--admin-accent-soft); }
 
-/* 통화 보너스: 회원 입력, 부여 폼, 이력 표 */
-.call-bonus-member-form, .call-bonus-grant-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+/* 통화 보너스: 부여 폼, 이력 표 */
+.call-bonus-grant-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .call-bonus-field { display: flex; flex-direction: column; gap: 4px; }
 .call-bonus-label { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
-.call-bonus-member-field { flex: 1; min-width: 280px; }
 .call-bonus-reason-field { flex: 1; min-width: 240px; }
 .call-bonus-form-errors { flex-basis: 100%; margin: 0; padding: 10px 12px 10px 28px; border-radius: 6px; background: var(--admin-danger-soft); color: var(--admin-danger); }
 .call-bonus-reason-cell { white-space: normal; min-width: 160px; }
@@ -160,6 +159,18 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .onboarding-submission-answer-list dt { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
 .onboarding-submission-answer-list dd { margin: 2px 0 0; }
 .onboarding-submission-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+
+/* 회원 관리: 필터 폼, 페이지 이동, 상세 정보, 삭제 안내 */
+.member-filter-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.member-filter-field { display: flex; flex-direction: column; gap: 4px; }
+.member-filter-label { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
+.member-filter-keyword { flex: 1; min-width: 280px; }
+.member-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+.member-info-list { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.member-info-list dt { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
+.member-info-list dd { margin: 2px 0 0; }
+.member-deleted-notice { margin: 0 0 12px; padding: 10px 12px; border-radius: 6px; background: var(--admin-accent-soft); color: var(--admin-accent); }
+.member-delete-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
 
 /* 로그인: 좌우 분할, 왼쪽 어두운 패널 */
 .login-split { min-height: 100vh; display: grid; grid-template-columns: minmax(280px, 5fr) 7fr; }

@@ -33,6 +33,7 @@ public class AdminSecurityConfig {
     private static final String ASSET_PATH = "/admin/assets/**";
     private static final String ACCOUNTS_PATH = "/admin/accounts/**";
     private static final String SETTINGS_PATH = "/admin/settings/**";
+    private static final String MEMBER_DELETE_PATH = "/admin/members/*/delete";
     private static final String SETTING_CONFIGS_PATH = "/api/admin/setting-configs/**";
 
     private final AdminRepository adminRepository;
@@ -61,6 +62,7 @@ public class AdminSecurityConfig {
                 .requestMatchers(ACCOUNTS_PATH).hasRole("SUPER_ADMIN")
                 .requestMatchers(HttpMethod.POST, SETTINGS_PATH).hasRole("SUPER_ADMIN")
                 .requestMatchers(HttpMethod.PATCH, SETTING_CONFIGS_PATH).hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.POST, MEMBER_DELETE_PATH).hasRole("SUPER_ADMIN")
                 .anyRequest().hasRole("ADMIN"))
             .formLogin(form -> form
                 .loginPage(LOGIN_PATH)

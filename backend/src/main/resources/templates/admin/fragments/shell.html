@@ -3,7 +3,7 @@
   관리자 화면 공통 셸. 화면은 <html th:replace="~{admin/fragments/shell :: shell('제목', ~{::main}, '메뉴키')}">로 조립한다.
   title: 브라우저 탭과 상단 바에 보이는 화면 이름
   content: 화면 본문(<main class="content">)
-  active: 강조할 메뉴 키(home, settings, call-usages, call-bonuses, onboarding-submissions). 해당 없음이면 ''
+  active: 강조할 메뉴 키(home, settings, call-usages, members, onboarding-submissions). 해당 없음이면 ''
 -->
 <html lang="ko" data-theme="light" xmlns:th="http://www.thymeleaf.org" th:fragment="shell(title, content, active)">
 <head>

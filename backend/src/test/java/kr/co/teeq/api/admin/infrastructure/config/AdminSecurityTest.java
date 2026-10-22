@@ -160,6 +160,34 @@ class AdminSecurityTest {
     }
 
     @Test
+    void admin_isDeniedMemberDeletePath() throws Exception {
+        mockMvc.perform(post("/admin/members/probe-id/delete").with(asAdmin()).with(csrf()))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+    }
+
+    @Test
+    void superAdmin_canDeleteMember() throws Exception {
+        mockMvc.perform(post("/admin/members/probe-id/delete").with(asSuperAdmin()).with(csrf()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void unauthenticatedMemberDelete_redirectsToLogin() throws Exception {
+        mockMvc.perform(post("/admin/members/probe-id/delete"))
+            .andExpect(status().isFound())
+            .andExpect(header().string("Location", endsWith("/admin/login")));
+    }
+
+    @Test
+    void admin_canListMembersAndGrantBonus() throws Exception {
+        mockMvc.perform(get("/admin/members/probe").with(asAdmin()))
+            .andExpect(status().isOk());
+        mockMvc.perform(post("/admin/members/probe-id/call-bonuses/grant").with(asAdmin()).with(csrf()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void admin_canReadSettingsAndOtherPaths() throws Exception {
         mockMvc.perform(get("/admin/settings/probe").with(asAdmin()))
             .andExpect(status().isOk());
@@ -352,6 +380,21 @@ class AdminSecurityTest {
 
         @PatchMapping("/api/admin/setting-configs/probe")
         String settingConfigsPatchProbe() {
+            return "ok";
+        }
+
+        @PostMapping("/admin/members/{id}/delete")
+        String memberDeleteProbe() {
+            return "ok";
+        }
+
+        @GetMapping("/admin/members/probe")
+        String memberListProbe() {
+            return "ok";
+        }
+
+        @PostMapping("/admin/members/{id}/call-bonuses/grant")
+        String memberBonusGrantProbe() {
             return "ok";
         }
 
