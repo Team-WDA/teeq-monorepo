@@ -1,0 +1,17 @@
+flutter_native_splash:
+  color: "#FDFDFD"
+  image: assets/launcher/splash_logo.png
+  # 앱이 라이트 테마 전용이라 다크 모드 기기에서도 같은 스플래시를 쓴다.
+  color_dark: "#FDFDFD"
+  image_dark: assets/launcher/splash_logo.png
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: false
+  # 생성기가 지정하지 않으면 매니페스트의 세로 고정을 지운다.
+  android_screen_orientation: portrait
+  web: false
+  android_12:
+    color: "#FDFDFD"
+    image: assets/launcher/splash_logo_android_12.png
+    color_dark: "#FDFDFD"
+    image_dark: assets/launcher/splash_logo_android_12.png
