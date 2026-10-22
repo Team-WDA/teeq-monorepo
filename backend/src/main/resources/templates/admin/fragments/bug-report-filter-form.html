@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 버그 제보 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 statusFilter, sourceFilter, statuses, sources -->
+<section class="panel" th:fragment="bug-report-filter-form">
+  <form class="panel-body bug-report-filter-form" method="get" th:action="@{/admin/bug-reports}">
+    <label>
+      <span>처리 상태</span>
+      <select class="select select-sm" name="status">
+        <option value="" th:selected="${statusFilter == null}">전체</option>
+        <option th:each="candidate : ${statuses}" th:value="${candidate.name()}" th:selected="${statusFilter != null and statusFilter == candidate}"
+                th:text="${candidate.name() == 'RECEIVED' ? '접수' : candidate.name() == 'IN_PROGRESS' ? '확인 중' : '해결'}">접수</option>
+      </select>
+    </label>
+    <label>
+      <span>출처</span>
+      <select class="select select-sm" name="source">
+        <option value="" th:selected="${sourceFilter == null}">전체</option>
+        <option th:each="candidate : ${sources}" th:value="${candidate.name()}" th:selected="${sourceFilter != null and sourceFilter == candidate}"
+                th:text="${candidate.name() == 'USER' ? '일반' : '개발자 콘솔'}">일반</option>
+      </select>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>

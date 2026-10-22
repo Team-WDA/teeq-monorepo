@@ -57,6 +57,12 @@ enum ErrorCode {
   profileImageInvalid('PROFILE_IMAGE_INVALID'),
   profileImageTooLarge('PROFILE_IMAGE_TOO_LARGE'),
 
+  // 앱 제보
+  bugReportImageInvalid('BUG_REPORT_IMAGE_INVALID'),
+  bugReportImageTooLarge('BUG_REPORT_IMAGE_TOO_LARGE'),
+  bugReportImageTooMany('BUG_REPORT_IMAGE_TOO_MANY'),
+  bugReportNotFound('BUG_REPORT_NOT_FOUND'),
+
   // 동적 설정
   settingConfigNotFound('SETTING_CONFIG_NOT_FOUND'),
   invalidSettingValue('INVALID_SETTING_VALUE'),

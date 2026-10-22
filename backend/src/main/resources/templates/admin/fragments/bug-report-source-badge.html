@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 제보 출처 배지. 매개변수 source(BugReportSource) -->
+<span th:fragment="bug-report-source-badge(source)">
+  <span th:if="${source.name() == 'DEVELOPER_CONSOLE'}" class="badge badge-info badge-sm">개발자 콘솔</span>
+  <span th:unless="${source.name() == 'DEVELOPER_CONSOLE'}" class="badge badge-ghost badge-sm">일반</span>
+</span>
+</body>
+</html>

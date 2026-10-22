@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  제보 상세의 상태 변경 폼. htmx로 보내고 응답은 이 폼 조각이며 폼을 통째로 바꾼다.
+  컨텍스트 변수 bugReportId, currentStatus, statuses
+-->
+<form th:fragment="bug-report-status-form" class="bug-report-status-form" method="post"
+      th:id="|bug-report-status-form-${bugReportId}|"
+      th:action="@{/admin/bug-reports/{bugReportId}/status(bugReportId=${bugReportId})}"
+      th:attr="hx-post=@{/admin/bug-reports/{bugReportId}/status(bugReportId=${bugReportId})}"
+      hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+  <span th:replace="~{admin/fragments/bug-report-status-badge :: bug-report-status-badge(${currentStatus})}"></span>
+  <label>
+    <span class="muted">상태 변경</span>
+    <select class="select select-sm" name="status" aria-label="처리 상태">
+      <option th:each="candidate : ${statuses}" th:value="${candidate.name()}" th:if="${candidate != currentStatus}"
+              th:text="${candidate.name() == 'RECEIVED' ? '접수' : candidate.name() == 'IN_PROGRESS' ? '확인 중' : '해결'}">접수</option>
+    </select>
+  </label>
+  <button class="btn btn-sm btn-primary" type="submit">변경</button>
+</form>
+</body>
+</html>

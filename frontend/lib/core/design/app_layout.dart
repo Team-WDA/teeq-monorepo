@@ -101,6 +101,10 @@ abstract final class AppLayout {
   static const double settingsRowHeight = 52;
   static const double textButtonHeight = 44;
 
+  // 버그 제보 화면. 디자인 시안이 없어 기존 입력 상자 비율에 맞춰 정한 값이다.
+  static const double bugReportContentMinHeight = 200;
+  static const double bugReportAttachmentSize = 88;
+
   // 닉네임 변경 화면. Figma 393폭 프레임 기준 값이다.
   static const double nicknameHelperMascotWidth = 168;
   static const double nicknameHelperBubbleMinHeight = 76;

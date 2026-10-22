@@ -85,7 +85,7 @@ env:
   # 🔧 프로젝트별 설정
   FLUTTER_VERSION: "3.47.5"  # [teeq]
   JAVA_VERSION: "21"
-  XCODE_VERSION: "26.0"
+  XCODE_VERSION: "26.6"
   ENV_FILE_PATH: ".env"     # 환경변수 파일 경로 (커스터마이징 가능)
 
 concurrency:

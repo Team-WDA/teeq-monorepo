@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 네트워크 기록 표. 모든 문자열은 th:text로만 보인다. 매개변수 networkLogs, omittedCount -->
+<section class="panel" th:fragment="bug-report-network-log-table(networkLogs, omittedCount)">
+  <div class="panel-head"><h2>네트워크 기록</h2></div>
+  <p class="panel-body muted" th:if="${omittedCount > 0}"
+     th:text="|${networkLogs.size() + omittedCount}건 중 ${networkLogs.size()}건만 첨부됨|">4건 중 1건만 첨부됨</p>
+  <p class="panel-body muted" th:if="${#lists.isEmpty(networkLogs)}">첨부된 네트워크 기록이 없습니다.</p>
+  <div class="table-wrap" th:unless="${#lists.isEmpty(networkLogs)}">
+    <table class="table bug-report-network-log-table">
+      <thead>
+        <tr>
+          <th>시작 시각</th>
+          <th>요청</th>
+          <th>상태 코드</th>
+          <th class="numeric-cell">소요(ms)</th>
+          <th>상세</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="log : ${networkLogs}">
+          <td class="mono" th:text="${#temporals.format(log.startedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-22 12:00:00</td>
+          <td class="mono" th:text="|${log.method} ${log.url}|">GET https://api.example/x</td>
+          <td th:text="${log.statusCode != null ? log.statusCode : '응답 없음'}">200</td>
+          <td class="numeric-cell" th:text="${log.durationMilliseconds}">12</td>
+          <td>
+            <details>
+              <summary>보기</summary>
+              <dl>
+                <div th:if="${log.errorDescription != null}">
+                  <dt>에러 설명</dt>
+                  <dd><pre class="mono" th:text="${log.errorDescription}">설명</pre></dd>
+                </div>
+                <div th:if="${not #maps.isEmpty(log.requestHeaders)}">
+                  <dt>요청 헤더</dt>
+                  <dd class="mono" th:each="header : ${log.requestHeaders}" th:text="|${header.key}: ${header.value}|">key: value</dd>
+                </div>
+                <div th:if="${log.requestBody != null}">
+                  <dt>요청 본문<span th:if="${log.requestBodyTruncated}"> (잘림)</span></dt>
+                  <dd><pre class="mono" th:text="${log.requestBody}">본문</pre></dd>
+                </div>
+                <div th:if="${not #maps.isEmpty(log.responseHeaders)}">
+                  <dt>응답 헤더</dt>
+                  <dd class="mono" th:each="header : ${log.responseHeaders}" th:text="|${header.key}: ${header.value}|">key: value</dd>
+                </div>
+                <div th:if="${log.responseBody != null}">
+                  <dt>응답 본문<span th:if="${log.responseBodyTruncated}"> (잘림)</span></dt>
+                  <dd><pre class="mono" th:text="${log.responseBody}">본문</pre></dd>
+                </div>
+              </dl>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

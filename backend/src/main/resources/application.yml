@@ -55,5 +55,9 @@ server:
 # 값은 application-{dev,prod}.yml에 둔다. 한 버킷을 환경이 함께 쓰므로 key-prefix(dev/, prod/)로 구분한다
 # 자격 증명은 설정에 두지 않고 SDK 기본 자격 증명 체인(EC2 role)을 쓴다
 
+# 버그 제보 Discord 알림 설정 키(둘 다 필수, 비면 기동 실패): bug-report.discord.webhook-url, bug-report.admin-base-url
+# 값은 application-{dev,prod}.yml에 둔다. 웹훅 URL은 시크릿이다. admin-base-url은 알림 메시지의 관리자 상세 링크 접두사다
+# 웹훅 호출 타임아웃은 코드 상수이며 설정 키가 아니다: 연결 1초, 읽기 2초(BugReportRestClientConfig)
+
 # 관리자 부트스트랩 설정 키(선택): admin.bootstrap-account.{username,password,name}
 # 활성 SUPER_ADMIN이 0명일 때만 생성한다. 값은 application-{dev,prod}.yml에 둔다

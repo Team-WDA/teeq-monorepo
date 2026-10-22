@@ -16,6 +16,7 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
+import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/domain/profile_image_picker.dart';
@@ -168,6 +169,10 @@ class MyPageHarness {
           path: AppRoutes.privacyPolicy,
           builder: (context, state) =>
               const LegalDocumentScreen(type: LegalDocumentType.privacyPolicy),
+        ),
+        GoRoute(
+          path: AppRoutes.bugReport,
+          builder: (context, state) => const BugReportScreen(),
         ),
       ],
     );

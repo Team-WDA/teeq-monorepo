@@ -29,7 +29,9 @@ class MemberDeletionHandlerCoverageTest {
     private static final String MEMBER_ENTITY_NAME = "kr.co.teeq.api.member.core.entity.Member";
 
     // 의도적으로 삭제 핸들러를 두지 않는 엔티티의 전체 이름. 항목을 넣을 때는 반드시 이유를 주석으로 적는다
-    private static final Set<String> EXCLUDED_ENTITIES = Set.of();
+    private static final Set<String> EXCLUDED_ENTITIES = Set.of(
+        // 탈퇴한 회원이 남긴 제보도 원인 수정에 필요해 보존한다
+        "kr.co.teeq.api.support.core.entity.BugReport");
 
     @ArchTest
     static void everyEntityReferencingMemberMustBeHandled(JavaClasses classes) {

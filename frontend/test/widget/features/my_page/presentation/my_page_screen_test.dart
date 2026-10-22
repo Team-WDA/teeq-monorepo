@@ -6,6 +6,7 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
+import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
@@ -158,6 +159,20 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('myPage_showsBugReportRowAndNavigates', (tester) async {
+    final harness = MyPageHarness();
+    await pumpAtViewport(tester, _defaultViewport, harness.routedApp());
+
+    expect(find.text('버그 제보'), findsOneWidget);
+
+    await tester.tap(find.text('버그 제보'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MyPageScreen), findsNothing);
+    expect(find.byType(BugReportScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'profile card exposes a button semantics that opens nickname change',

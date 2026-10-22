@@ -14,6 +14,8 @@
      th:attr="aria-current=${activeMenu == 'members'} ? 'page'">회원 관리</a>
   <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
+  <a th:href="@{/admin/bug-reports}" th:classappend="${activeMenu == 'bug-reports'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'bug-reports'} ? 'page'">버그 제보</a>
   <a th:href="@{/admin/accounts}" th:classappend="${activeMenu == 'accounts'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'accounts'} ? 'page'" sec:authorize="hasRole('SUPER_ADMIN')">관리자 계정</a>
 </nav>

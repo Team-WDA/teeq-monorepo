@@ -15,6 +15,7 @@ import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
+import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_redirect.dart';
@@ -184,6 +185,10 @@ GoRouter appRouter(Ref ref) {
         path: AppRoutes.privacyPolicy,
         builder: (context, state) =>
             const LegalDocumentScreen(type: LegalDocumentType.privacyPolicy),
+      ),
+      GoRoute(
+        path: AppRoutes.bugReport,
+        builder: (context, state) => const BugReportScreen(),
       ),
       GoRoute(
         path: AppRoutes.feedbackClosing,

@@ -8,7 +8,9 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 public enum MediaCategory {
 
     PROFILE_IMAGE("member", "profile-images", 5L * 1024 * 1024,
-        ErrorCode.PROFILE_IMAGE_TOO_LARGE, ErrorCode.PROFILE_IMAGE_INVALID);
+        ErrorCode.PROFILE_IMAGE_TOO_LARGE, ErrorCode.PROFILE_IMAGE_INVALID),
+    BUG_REPORT_IMAGE("support", "bug-report-images", 5L * 1024 * 1024,
+        ErrorCode.BUG_REPORT_IMAGE_TOO_LARGE, ErrorCode.BUG_REPORT_IMAGE_INVALID);
 
     private final String domainName;
     private final String directoryName;

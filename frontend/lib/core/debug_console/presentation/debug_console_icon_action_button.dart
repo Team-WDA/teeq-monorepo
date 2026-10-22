@@ -9,11 +9,15 @@ class DebugConsoleIconActionButton extends StatefulWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    this.iconColor = AppColors.textPrimary,
   });
 
   final IconData icon;
   final String tooltip;
   final Future<void> Function() onPressed;
+
+  /// 비활성처럼 보이게 하려면 흐린 색을 넘긴다. 탭은 그대로 받는다.
+  final Color iconColor;
 
   @override
   State<DebugConsoleIconActionButton> createState() =>
@@ -44,7 +48,7 @@ class _DebugConsoleIconActionButtonState
       icon: Icon(
         widget.icon,
         size: AppLayout.iconSize,
-        color: AppColors.textPrimary,
+        color: widget.iconColor,
       ),
     );
   }
