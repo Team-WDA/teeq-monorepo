@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/core/ui/button/neutral_filled_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
@@ -26,6 +27,19 @@ class OnboardingQuestionScreen extends ConsumerWidget {
     final isLastQuestion =
         state.questionIndex == OnboardingQuestion.values.length - 1;
     final selectionGuide = question.isMultipleChoice ? '(복수 선택)' : '(단일 선택)';
+
+    final nextButton = PrimaryFilledButton(
+      label: '다음',
+      onPressed: state.selections.isAnswered(question)
+          ? () {
+              if (isLastQuestion) {
+                context.go(AppRoutes.onboardingGenerating);
+              } else {
+                controller.goToNextQuestion();
+              }
+            }
+          : null,
+    );
 
     return PopScope(
       canPop: false,
@@ -70,18 +84,20 @@ class OnboardingQuestionScreen extends ConsumerWidget {
             ],
           ],
         ),
-        bottomAction: PrimaryFilledButton(
-          label: '다음',
-          onPressed: state.selections.isAnswered(question)
-              ? () {
-                  if (isLastQuestion) {
-                    context.go(AppRoutes.onboardingGenerating);
-                  } else {
-                    controller.goToNextQuestion();
-                  }
-                }
-              : null,
-        ),
+        bottomAction: state.questionIndex > 0
+            ? Row(
+                children: [
+                  Expanded(
+                    child: NeutralFilledButton(
+                      label: '이전',
+                      onPressed: controller.goToPreviousQuestion,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.space8),
+                  Expanded(flex: 2, child: nextButton),
+                ],
+              )
+            : nextButton,
       ),
     );
   }
