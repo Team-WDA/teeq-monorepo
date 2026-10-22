@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
@@ -11,6 +12,7 @@ import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_back_button.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
@@ -117,6 +119,18 @@ void main() {
     expect(repository.fetchMeCount, 1);
     expect(find.byType(OnboardingIntroductionScreen), findsOneWidget);
     expect(find.byType(SignupNicknameScreen), findsNothing);
+  });
+
+  testWidgets('약관에 동의하지 않고 닉네임 화면에 들어오면 약관 화면으로 되돌아간다', (tester) async {
+    final repository = await _pumpIncompleteAppleMemberApp(tester);
+
+    GoRouter.of(tester.element(find.byType(SignupCompletionConsentScreen)))
+        .push(AppRoutes.signupNickname);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SignupNicknameScreen), findsNothing);
+    expect(find.byType(SignupCompletionConsentScreen), findsOneWidget);
+    expect(repository.completeSignupCount, 0);
   });
 
   testWidgets('닉네임 화면에서 뒤로가기를 누르면 약관 화면으로 돌아온다', (tester) async {
