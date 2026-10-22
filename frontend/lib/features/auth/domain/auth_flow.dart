@@ -16,6 +16,7 @@ class AuthFlow {
     required this._tokenStorage,
     required this._readStatus,
     required this._reportError,
+    required this._isSignupAlreadyCompleted,
   });
 
   final AuthRepository _repository;
@@ -24,6 +25,10 @@ class AuthFlow {
   final TokenStorage _tokenStorage;
   final AuthStatus Function() _readStatus;
   final void Function(Object error, {bool blocking}) _reportError;
+
+  /// 가입 완료 요청의 오류가 "서버는 이미 가입이 끝났다(STATE_CONFLICT)"인지 판정한다.
+  /// 오류 객체를 해석하려면 dio에 의존해야 하므로 domain 밖에서 주입한다.
+  final bool Function(Object error) _isSignupAlreadyCompleted;
 
   /// 앱 시작 시 저장된 토큰으로 로그인 상태를 복원한다. 이미 복원된 뒤에는 아무것도 하지 않는다.
   /// 실패하면 상태와 토큰을 그대로 두고 오류만 알린다(오프라인 시작이 토큰을 지우면 안 된다).
@@ -83,16 +88,27 @@ class AuthFlow {
   }
 
   /// 가입을 완료하고 돌려받은 회원으로 보관 중인 회원을 갱신한다.
+  /// 서버가 이미 가입을 마친 상태(STATE_CONFLICT)라면 최신 회원을 받아 반영하고 정상 종료한다.
+  /// 그 밖의 오류와 최신 회원 조회 실패는 그대로 던진다.
   Future<void> completeSignup({
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
-    final member = await _repository.completeSignup(
-      nickname: nickname,
-      serviceTermsAgreed: serviceTermsAgreed,
-      privacyPolicyAgreed: privacyPolicyAgreed,
-    );
+    final Member member;
+    try {
+      member = await _repository.completeSignup(
+        nickname: nickname,
+        serviceTermsAgreed: serviceTermsAgreed,
+        privacyPolicyAgreed: privacyPolicyAgreed,
+      );
+    } on Object catch (error) {
+      if (!_isSignupAlreadyCompleted(error)) {
+        rethrow;
+      }
+      await refreshMember();
+      return;
+    }
     await _session.restored(member);
   }
 
