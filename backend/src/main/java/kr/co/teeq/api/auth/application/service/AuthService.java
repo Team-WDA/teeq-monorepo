@@ -1,6 +1,5 @@
 package kr.co.teeq.api.auth.application.service;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -19,7 +18,6 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
-import kr.co.teeq.api.member.core.repository.ProfileImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,11 +37,9 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
-    private final Clock clock;
     private final AuthTokenIssuer authTokenIssuer;
     private final SocialLoginCommandService socialLoginCommandService;
     private final List<SocialIdentityVerifier> socialIdentityVerifiers;
-    private final ProfileImageRepository profileImageRepository;
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
@@ -129,16 +125,6 @@ public class AuthService {
         }
         member.changePassword(passwordEncoder.encode(request.newPassword()));
         return issueTokens(member);
-    }
-
-    @Transactional
-    public void deleteAccount(Member authenticatedMember) {
-        Member member = findActiveMember(authenticatedMember);
-        member.delete(clock);
-        // 사진 파일은 지우지 않고 활성 행만 soft delete 한다
-        profileImageRepository.findByMemberIdAndDeletedFalse(member.getId())
-            .ifPresent(image -> image.delete(clock));
-        refreshTokenRepository.deleteByMemberId(member.getId());
     }
 
     // 컨트롤러가 넘긴 엔티티는 분리 상태라 수정 전에 항상 id로 다시 조회한다

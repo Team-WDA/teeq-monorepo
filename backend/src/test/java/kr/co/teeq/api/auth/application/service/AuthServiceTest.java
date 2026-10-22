@@ -9,9 +9,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -79,7 +77,6 @@ class AuthServiceTest {
     private MediaService mediaService;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
-    private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
     private AuthService authService;
 
@@ -88,9 +85,9 @@ class AuthServiceTest {
         AuthTokenIssuer authTokenIssuer =
             new AuthTokenIssuer(refreshTokenRepository, tokenProvider, aiCharacterExistencePort,
                 profileImageRepository, mediaService);
-        authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder, clock,
+        authService = new AuthService(memberRepository, refreshTokenRepository, tokenProvider, passwordEncoder,
             authTokenIssuer, new SocialLoginCommandService(memberRepository, authTokenIssuer),
-            List.of(socialIdentityVerifier), profileImageRepository);
+            List.of(socialIdentityVerifier));
     }
 
     private Member memberWithPassword(String rawPassword) {
@@ -258,7 +255,7 @@ class AuthServiceTest {
             ErrorCode.INVALID_REFRESH_TOKEN);
     }
 
-    // ---------- logout / changePassword / deleteAccount ----------
+    // ---------- logout / changePassword ----------
 
     @Test
     void logout_deletesRefreshToken() {
@@ -291,32 +288,6 @@ class AuthServiceTest {
         assertThat(passwordEncoder.matches("abcd1234", member.getPassword())).isFalse();
         assertThat(response.accessToken()).isEqualTo("new-access");
         verify(refreshTokenRepository).save(any(RefreshToken.class));
-    }
-
-    @Test
-    void deleteAccount_softDeletesMemberAndRemovesRefreshToken() {
-        Member member = memberWithPassword("abcd1234");
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
-
-        authService.deleteAccount(member);
-
-        assertThat(member.isDeleted()).isTrue();
-        assertThat(member.getDeletedAt()).isEqualTo(NOW);
-        verify(refreshTokenRepository).deleteByMemberId(MEMBER_ID);
-    }
-
-    @Test
-    void deleteAccount_softDeletesActiveProfileImage() {
-        Member member = memberWithPassword("abcd1234");
-        ProfileImage image = ProfileImage.of(member, "key.jpg", "image/jpeg", 10L);
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
-        given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(image));
-
-        authService.deleteAccount(member);
-
-        assertThat(image.isDeleted()).isTrue();
-        assertThat(image.getDeletedAt()).isEqualTo(NOW);
-        verifyNoInteractions(mediaService);
     }
 
     @Test
