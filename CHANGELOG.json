@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T02:51:54Z",
-    "currentVersion": "0.23.0",
+    "lastUpdated": "2026-10-22T04:49:15Z",
+    "currentVersion": "0.23.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 26
+    "totalReleases": 27
   },
   "releases": [
+    {
+      "version": "0.23.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.23.1]\n\n### 🔧 변경사항\n- AppConfig 운영 값 주입 방식 주석 추가",
+      "parsed_changes": {
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "AppConfig 운영 값 주입 방식 주석 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.23.0",
       "project_types": [
