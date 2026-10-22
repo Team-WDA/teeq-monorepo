@@ -32,6 +32,7 @@ class AuthInterceptor extends Interceptor {
     '/api/auth/login',
     '/api/auth/social-login',
     '/api/auth/refresh',
+    '/api/app-versions/check',
   };
 
   /// 갱신 요청이 이 코드로 실패하면 세션을 끝낸다(저장소 비우기, 로그아웃).
