@@ -6,6 +6,7 @@ import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
 import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
+import kr.co.teeq.api.member.application.service.MemberDeletionService;
 import kr.co.teeq.api.member.application.service.MemberService;
 import kr.co.teeq.api.member.application.service.ProfileImageService;
 import kr.co.teeq.api.member.core.constant.MemberValidation;
@@ -33,6 +34,7 @@ public class MemberController implements MemberControllerDocs {
 
     private final MemberService memberService;
     private final ProfileImageService profileImageService;
+    private final MemberDeletionService memberDeletionService;
 
     @GetMapping("/nickname-availability")
     public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
@@ -72,6 +74,12 @@ public class MemberController implements MemberControllerDocs {
     @DeleteMapping("/me/profile-image")
     public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         profileImageService.delete(authenticatedMember.member());
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
+        memberDeletionService.delete(authenticatedMember.member().getId());
         return ResponseEntity.noContent().build();
     }
 
