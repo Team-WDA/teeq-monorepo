@@ -16,7 +16,7 @@ import kr.co.teeq.api.common.application.exception.ErrorResponse;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "계정", description = "회원 가입, 비밀번호 변경, 계정 삭제")
+@Tag(name = "계정", description = "회원 가입, 비밀번호 변경")
 public interface AccountControllerDocs {
 
     @Operation(summary = "회원 가입",
@@ -58,19 +58,5 @@ public interface AccountControllerDocs {
     ResponseEntity<AuthResponse> changePassword(
         @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
         @Valid ChangePasswordRequest request);
-
-    @Operation(summary = "계정 삭제",
-        description = """
-            회원을 삭제(soft delete)하고 Refresh Token을 폐기한다. 삭제된 회원의 Access Token은 즉시 `UNAUTHENTICATED`로 거부된다.""")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "삭제 성공(본문 없음)"),
-        @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "404",
-            description = "`MEMBER_NOT_FOUND`: 인증 직후 회원이 이미 삭제된 경우(드묾)",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    ResponseEntity<Void> deleteAccount(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
 
 }
