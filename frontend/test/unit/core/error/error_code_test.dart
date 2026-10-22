@@ -38,7 +38,7 @@ void main() {
         .where((name) => name != 'UNKNOWN')
         .toSet();
 
-    expect(backendNames, hasLength(39));
+    expect(backendNames, hasLength(43));
     expect(dartNames, backendNames);
   }, skip: File(_backendErrorCodePath).existsSync() ? false : 'BE 파일 없음');
 }
