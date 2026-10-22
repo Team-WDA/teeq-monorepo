@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T10:03:41Z",
-    "currentVersion": "0.28.1",
+    "lastUpdated": "2026-10-22T12:25:18Z",
+    "currentVersion": "0.29.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 36
+    "totalReleases": 37
   },
   "releases": [
+    {
+      "version": "0.29.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.29.0]\n\n### ✨ 기능\n- 관리자_페이지_favicon_적용 — 관리자 화면 favicon 조각 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "관리자_페이지_favicon_적용 — 관리자 화면 favicon 조각 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.28.1",
       "project_types": [
