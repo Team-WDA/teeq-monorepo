@@ -1,14 +1,40 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T12:25:18Z",
-    "currentVersion": "0.29.0",
+    "lastUpdated": "2026-10-22T16:28:13Z",
+    "currentVersion": "0.30.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 37
+    "totalReleases": 38
   },
   "releases": [
+    {
+      "version": "0.30.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.30.0]\n\n### ✨ 기능\n- 스플래시 최소 노출 시간 1.5초 적용\n- 스플래시 최소 노출 시간 컨트롤러 추가\n\n### ✅ 테스트\n- 스플래시 붙잡기 통합 테스트가 기능 없이 통과하지 않도록 프레임 진행 보강",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "스플래시 최소 노출 시간 1.5초 적용",
+            "스플래시 최소 노출 시간 컨트롤러 추가"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "스플래시 붙잡기 통합 테스트가 기능 없이 통과하지 않도록 프레임 진행 보강"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.29.0",
       "project_types": [
