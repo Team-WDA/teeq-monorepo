@@ -7,6 +7,7 @@ part 'app_config.g.dart';
 /// 이 클래스가 필요한 키의 유일한 정의 위치이다. 키를 추가하면
 /// README 안내도 함께 갱신한다.
 /// 클라이언트에 넣은 값은 앱에서 추출할 수 있으므로 서버 시크릿은 넣지 않는다.
+/// 운영 값은 CI에서 `FRONTEND_CONFIG_JSON` 시크릿으로 `config/prod.json`을 만들어 주입한다.
 class AppConfig {
   const AppConfig({
     required this.apiBaseUrl,
