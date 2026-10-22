@@ -30,6 +30,7 @@ class AppConfig {
   final String appleRedirectUri;
 
   /// 필수 키가 비어 있으면 앱 시작 시점에 즉시 실패시킨다.
+  /// 배포 빌드에서 `FRONTEND_CONFIG_JSON`이 누락된 경우도 여기서 드러난다.
   void validate() {
     final missingKeys = <String>[
       if (apiBaseUrl.isEmpty) 'API_BASE_URL',
