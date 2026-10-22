@@ -16,6 +16,7 @@ import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingQuestion;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,9 @@ import org.springframework.web.client.RestClientException;
 
 @Slf4j
 @Component
+// 임시 어댑터(StubAiCharacterGenerationAdapter)를 켜지 않은 기본 상태에서만 등록한다
+@ConditionalOnProperty(prefix = "ai-server", name = "stub-character-enabled", havingValue = "false",
+    matchIfMissing = true)
 public class AiServerCharacterGenerationAdapter implements AiCharacterGenerationPort {
 
     private static final String PERSONA_ID_FIELD = "personaId";
