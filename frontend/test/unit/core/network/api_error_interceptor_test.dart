@@ -6,6 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/logging/app_log_entry.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/network/api_error_interceptor.dart';
 
 /// 지정한 응답을 돌려주거나 지정한 예외를 던지는 손수 만든 어댑터.
@@ -47,10 +50,10 @@ class _FakeHttpClientAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-Dio _dioWith(HttpClientAdapter adapter) {
+Dio _dioWith(HttpClientAdapter adapter, {AppLogger? logger}) {
   final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'));
   dio.httpClientAdapter = adapter;
-  dio.interceptors.add(ApiErrorInterceptor());
+  dio.interceptors.add(ApiErrorInterceptor(logger: logger ?? AppLogger()));
   return dio;
 }
 
@@ -180,5 +183,38 @@ void main() {
 
     final error = await _captureError(dio);
     expect(error.error, isA<UnexpectedException>());
+  });
+
+  test('4xx API 오류는 warning 로그로 남는다', () async {
+    final entries = <AppLogEntry>[];
+    final dio = _dioWith(
+      _FakeHttpClientAdapter.response(
+        jsonEncode({'errorCode': 'DUPLICATE_EMAIL', 'errorMessage': '상세'}),
+        409,
+      ),
+      logger: AppLogger(onEntry: entries.add),
+    );
+
+    await _captureError(dio);
+
+    expect(entries, hasLength(1));
+    expect(entries.single.level, AppLogLevel.warning);
+    expect(entries.single.name, 'ApiErrorInterceptor');
+    expect(entries.single.message, contains('DUPLICATE_EMAIL'));
+  });
+
+  test('5xx API 오류는 error 로그로 남는다', () async {
+    final entries = <AppLogEntry>[];
+    final dio = _dioWith(
+      _FakeHttpClientAdapter.response(
+        jsonEncode({'errorCode': 'INTERNAL_SERVER_ERROR'}),
+        500,
+      ),
+      logger: AppLogger(onEntry: entries.add),
+    );
+
+    await _captureError(dio);
+
+    expect(entries.single.level, AppLogLevel.error);
   });
 }

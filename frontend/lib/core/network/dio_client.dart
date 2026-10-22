@@ -1,6 +1,9 @@
 import 'package:teeq/core/auth/auth_session.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/config/app_config.dart';
+import 'package:teeq/core/debug_console/debug_console_store.dart';
+import 'package:teeq/core/debug_console/network/network_log_interceptor.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/network/api_error_interceptor.dart';
 import 'package:teeq/core/network/auth_interceptor.dart';
 import 'package:teeq/core/network/token_refresher.dart';
@@ -10,13 +13,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'dio_client.g.dart';
 
 /// 앱 전체에서 공유하는 Dio 인스턴스. base URL은 [AppConfig]에서 가져온다.
-/// 인터셉터 순서: [ApiErrorInterceptor]가 오류를 변환한 뒤 [AuthInterceptor]가 판단한다.
+/// 인터셉터 순서: [NetworkLogInterceptor]가 원본 요청·응답·오류를 기록하고,
+/// [ApiErrorInterceptor]가 오류를 변환한 뒤 [AuthInterceptor]가 판단한다.
 @Riverpod(keepAlive: true)
 Dio dio(Ref ref) {
   final dio = Dio(_baseOptions(ref.watch(appConfigProvider)));
   dio.interceptors.addAll([
-    ApiErrorInterceptor(),
+    NetworkLogInterceptor(store: ref.watch(debugConsoleStoreProvider.notifier)),
+    ApiErrorInterceptor(logger: ref.watch(appLoggerProvider)),
     AuthInterceptor(
+      logger: ref.watch(appLoggerProvider),
       dio: dio,
       tokenStorage: ref.watch(tokenStorageProvider),
       tokenRefresher: ref.watch(tokenRefresherProvider),
@@ -32,7 +38,10 @@ Dio dio(Ref ref) {
 @Riverpod(keepAlive: true)
 Dio plainDio(Ref ref) {
   final dio = Dio(_baseOptions(ref.watch(appConfigProvider)));
-  dio.interceptors.add(ApiErrorInterceptor());
+  dio.interceptors.addAll([
+    NetworkLogInterceptor(store: ref.watch(debugConsoleStoreProvider.notifier)),
+    ApiErrorInterceptor(logger: ref.watch(appLoggerProvider)),
+  ]);
   return dio;
 }
 
