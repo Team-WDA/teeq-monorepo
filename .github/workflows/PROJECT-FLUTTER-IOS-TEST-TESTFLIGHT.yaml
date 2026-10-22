@@ -675,9 +675,28 @@ jobs:
             --build-number="${{ needs.prepare-test-build.outputs.build_number }}" \
             --dart-define-from-file=config/prod.json
 
-      - name: Create Archive
+      # [teeq: 서명 설정을 xcodebuild 명령행 대신 Runner 타깃이 참조하는 Release.xcconfig에 둔다.
+      #  명령행 빌드 설정은 플러그인 Swift Package 타깃(리소스 번들)에도 적용되어
+      #  "requires a development team" / "does not support provisioning profiles"로 archive가 실패함.
+      #  Swift Package는 별도 프로젝트라 Runner의 xcconfig 영향을 받지 않음. 이 변경은 CI 러너 안에서만 일어남]
+      - name: Configure Runner code signing
         env:
           IOS_PROVISIONING_PROFILE_NAME: ${{ secrets.IOS_PROVISIONING_PROFILE_NAME }}
+        run: |
+          if [ -z "$IOS_PROVISIONING_PROFILE_NAME" ]; then
+            echo "::error::IOS_PROVISIONING_PROFILE_NAME secret is not set"
+            exit 1
+          fi
+          cat >> ios/Flutter/Release.xcconfig << XCCONFIG
+          CODE_SIGN_STYLE = Manual
+          DEVELOPMENT_TEAM = G2W3593MWU
+          PROVISIONING_PROFILE_SPECIFIER = $IOS_PROVISIONING_PROFILE_NAME
+          CODE_SIGN_IDENTITY = Apple Distribution
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+          XCCONFIG
+
+      - name: Create Archive
+        env:
           # xcode-select만으로는 서브프로세스에 전파되지 않아 명시적으로 지정
           DEVELOPER_DIR: /Applications/Xcode_${{ env.XCODE_VERSION }}.app/Contents/Developer
         run: |
@@ -686,13 +705,7 @@ jobs:
             -scheme Runner \
             -archivePath build/Runner.xcarchive \
             -destination 'generic/platform=iOS' \
-            archive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=G2W3593MWU \
-            PROVISIONING_PROFILE_SPECIFIER="$IOS_PROVISIONING_PROFILE_NAME" \
-            CODE_SIGN_IDENTITY="Apple Distribution"
-          # [teeq: DEVELOPMENT_TEAM 추가 - 명령행 서명 설정은 플러그인 Swift Package 타깃에도 적용되는데,
-          #  이 타깃들에는 팀이 없어 "Signing ... requires a development team"으로 archive가 실패함]
+            archive
 
       - name: Export IPA
         run: |
