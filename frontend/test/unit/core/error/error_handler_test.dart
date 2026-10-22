@@ -9,6 +9,9 @@ import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/error/error_messages.dart';
+import 'package:teeq/core/logging/app_log_entry.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
@@ -181,5 +184,51 @@ void main() {
     expect(container.read(toastControllerProvider), unknownErrorMessage);
 
     await tester.pump(const Duration(seconds: 4));
+  });
+
+  group('로그 레벨', () {
+    ProviderContainer containerLoggingTo(List<AppLogEntry> entries) {
+      final container = ProviderContainer(
+        overrides: [
+          appLoggerProvider.overrideWithValue(AppLogger(onEntry: entries.add)),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('4xx API 오류는 warning으로 남는다', () {
+      final entries = <AppLogEntry>[];
+      final container = containerLoggingTo(entries);
+
+      container
+          .read(errorHandlerProvider)
+          .handle(_api(ErrorCode.duplicateEmail, status: 409));
+
+      expect(entries.single.level, AppLogLevel.warning);
+      expect(entries.single.name, 'ErrorHandler');
+      expect(entries.single.message, contains(_developerMessage));
+    });
+
+    test('5xx API 오류는 error로 남는다', () {
+      final entries = <AppLogEntry>[];
+      final container = containerLoggingTo(entries);
+
+      container
+          .read(errorHandlerProvider)
+          .handle(_api(ErrorCode.duplicateEmail, status: 503));
+
+      expect(entries.single.level, AppLogLevel.error);
+    });
+
+    test('API 오류가 아닌 예외는 error로 남고 원인을 담는다', () {
+      final entries = <AppLogEntry>[];
+      final container = containerLoggingTo(entries);
+
+      container.read(errorHandlerProvider).handle(StateError('boom'));
+
+      expect(entries.single.level, AppLogLevel.error);
+      expect(entries.single.errorDescription, contains('boom'));
+    });
   });
 }

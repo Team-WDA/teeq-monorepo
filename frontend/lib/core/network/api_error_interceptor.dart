@@ -1,12 +1,16 @@
-import 'dart:developer';
-
 import 'package:dio/dio.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 
 /// dio 오류를 [AppException]으로 바꿔 `DioException.error`에 담는 인터셉터.
 /// 원본 요청·응답 정보는 그대로 유지한다.
 class ApiErrorInterceptor extends Interceptor {
+  ApiErrorInterceptor({required this._logger});
+
+  final AppLogger _logger;
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     if (err.type == DioExceptionType.cancel || err.error is AppException) {
@@ -16,10 +20,13 @@ class ApiErrorInterceptor extends Interceptor {
 
     final exception = _convert(err);
     if (exception is ApiException) {
-      log(
+      final status = exception.httpStatus;
+      final isClientError = status != null && status >= 400 && status < 500;
+      _logger.log(
         'API 오류 ${exception.errorCode.serverName} '
-        '(${exception.httpStatus}): ${exception.developerMessage}',
+        '($status): ${exception.developerMessage}',
         name: 'ApiErrorInterceptor',
+        level: isClientError ? AppLogLevel.warning : AppLogLevel.error,
       );
     }
     // reject가 아니라 next로 넘겨, 뒤에 추가될 인증 갱신·로깅 인터셉터의 onError도 실행되게 한다.

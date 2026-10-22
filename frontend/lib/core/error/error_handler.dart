@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:teeq/core/auth/auth_session.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_presentation.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
@@ -38,13 +39,18 @@ class ErrorHandler {
     }
     final exception = AppException.from(error);
     // developerMessage와 원인은 로그에만 남기고 화면에는 userMessage만 쓴다.
-    log(
-      exception is ApiException
-          ? '$exception developerMessage: ${exception.developerMessage}'
-          : '$exception',
-      name: 'ErrorHandler',
-      error: error,
-    );
+    final status = exception is ApiException ? exception.httpStatus : null;
+    final isClientError = status != null && status >= 400 && status < 500;
+    _ref
+        .read(appLoggerProvider)
+        .log(
+          exception is ApiException
+              ? '$exception developerMessage: ${exception.developerMessage}'
+              : '$exception',
+          name: 'ErrorHandler',
+          level: isClientError ? AppLogLevel.warning : AppLogLevel.error,
+          error: error,
+        );
 
     switch (classify(exception, blocking: blocking)) {
       case ErrorPresentation.toast:

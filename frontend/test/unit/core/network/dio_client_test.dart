@@ -1,4 +1,5 @@
 import 'package:teeq/core/config/app_config.dart';
+import 'package:teeq/core/debug_console/network/network_log_interceptor.dart';
 import 'package:teeq/core/network/api_error_interceptor.dart';
 import 'package:teeq/core/network/auth_interceptor.dart';
 import 'package:teeq/core/network/dio_client.dart';
@@ -57,5 +58,23 @@ void main() {
       hasLength(1),
     );
     expect(plainDio.interceptors.whereType<AuthInterceptor>(), isEmpty);
+  });
+
+  test('both dio instances log network calls before ApiErrorInterceptor', () {
+    final container = _container();
+
+    for (final dio in [
+      container.read(dioProvider),
+      container.read(plainDioProvider),
+    ]) {
+      final logIndex = dio.interceptors.indexWhere(
+        (interceptor) => interceptor is NetworkLogInterceptor,
+      );
+      final apiErrorIndex = dio.interceptors.indexWhere(
+        (interceptor) => interceptor is ApiErrorInterceptor,
+      );
+      expect(logIndex, isNonNegative);
+      expect(logIndex, lessThan(apiErrorIndex));
+    }
   });
 }

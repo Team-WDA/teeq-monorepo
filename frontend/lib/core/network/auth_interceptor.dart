@@ -1,10 +1,10 @@
-import 'dart:developer';
-
 import 'package:dio/dio.dart';
 import 'package:teeq/core/auth/auth_tokens.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/network/token_refresher.dart';
 
 /// 요청에 Authorization을 붙이고, `EXPIRED_TOKEN`이면 토큰을 한 번 갱신해 원 요청을 한 번 재시도한다.
@@ -16,6 +16,7 @@ class AuthInterceptor extends Interceptor {
     required this._tokenStorage,
     required this._tokenRefresher,
     required this._onSessionExpired,
+    required this._logger,
   });
 
   /// 재시도한 요청 표시. 이 표시가 있는 요청은 다시 갱신하지 않는다.
@@ -44,6 +45,7 @@ class AuthInterceptor extends Interceptor {
   final TokenStorage _tokenStorage;
   final TokenRefresher _tokenRefresher;
   final Future<void> Function() _onSessionExpired;
+  final AppLogger _logger;
 
   /// 가장 최근 갱신. 진행 중이면 공유하고, 성공했으면 늦게 도착한 같은 토큰의 요청도 재사용한다.
   _RefreshAttempt? _latestRefresh;
@@ -186,12 +188,20 @@ class AuthInterceptor extends Interceptor {
     try {
       await _tokenStorage.clear();
     } on Object catch (error) {
-      log('토큰 삭제 실패: $error', name: 'AuthInterceptor');
+      _logger.log(
+        '토큰 삭제 실패: $error',
+        name: 'AuthInterceptor',
+        level: AppLogLevel.error,
+      );
     }
     try {
       await _onSessionExpired();
     } on Object catch (error) {
-      log('세션 종료 처리 실패: $error', name: 'AuthInterceptor');
+      _logger.log(
+        '세션 종료 처리 실패: $error',
+        name: 'AuthInterceptor',
+        level: AppLogLevel.error,
+      );
     }
   }
 

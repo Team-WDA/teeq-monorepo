@@ -11,6 +11,7 @@ import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
+import 'package:teeq/core/debug_console/developer_mode_storage.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
@@ -25,6 +26,7 @@ import 'package:teeq/features/my_page/presentation/password_change_completion_sc
 import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 
 import 'fake_auth_repository.dart';
+import 'fake_developer_mode_storage.dart';
 import 'fake_token_storage.dart';
 
 /// 호출 순서를 `events`에 남기는 토큰 저장소. 세션이 지워지는 시점을 알 수 있다.
@@ -103,6 +105,7 @@ class MyPageHarness {
             appVersionProvider.overrideWith((ref) async => '0.15.0'),
         authRepositoryProvider.overrideWithValue(repository),
         tokenStorageProvider.overrideWithValue(tokenStorage),
+        developerModeStorageProvider.overrideWithValue(developerModeStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
         if (profileImagePicker != null)
           profileImagePickerProvider.overrideWithValue(profileImagePicker),
@@ -116,6 +119,8 @@ class MyPageHarness {
   final FakeAuthRepository repository;
   final List<String> events = [];
   final RecordingErrorHandler errorHandler = RecordingErrorHandler();
+  final FakeDeveloperModeStorage developerModeStorage =
+      FakeDeveloperModeStorage();
   late final RecordingTokenStorage tokenStorage;
   late final ProviderContainer container;
 

@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/auth_tokens.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
+import 'package:teeq/core/logging/app_log_entry.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/network/api_error_interceptor.dart';
 import 'package:teeq/core/network/auth_interceptor.dart';
 import 'package:teeq/core/network/token_refresher.dart';
@@ -42,15 +45,19 @@ ScriptedReply _connectionFailure() => ScriptedReply.failure(
 
 /// 실제 구성과 같은 순서(ApiErrorInterceptor → AuthInterceptor)로 묶은 테스트 환경.
 class _Harness {
-  _Harness({AuthTokens? storedTokens})
-    : storage = FakeTokenStorage(storedTokens: storedTokens) {
+  _Harness({AuthTokens? storedTokens, Object? clearError})
+    : storage = FakeTokenStorage(
+        storedTokens: storedTokens,
+        clearError: clearError,
+      ) {
     final plainDio = Dio(BaseOptions(baseUrl: _baseUrl))
       ..httpClientAdapter = adapter
-      ..interceptors.add(ApiErrorInterceptor());
+      ..interceptors.add(ApiErrorInterceptor(logger: logger));
     dio = Dio(BaseOptions(baseUrl: _baseUrl))..httpClientAdapter = adapter;
     dio.interceptors.addAll([
-      ApiErrorInterceptor(),
+      ApiErrorInterceptor(logger: logger),
       AuthInterceptor(
+        logger: logger,
         dio: dio,
         tokenStorage: storage,
         tokenRefresher: DioTokenRefresher(plainDio),
@@ -60,6 +67,8 @@ class _Harness {
   }
 
   final ScriptedHttpClientAdapter adapter = ScriptedHttpClientAdapter();
+  final List<AppLogEntry> logEntries = [];
+  late final AppLogger logger = AppLogger(onEntry: logEntries.add);
   final FakeTokenStorage storage;
   late final Dio dio;
   int sessionExpiredCount = 0;
@@ -200,6 +209,29 @@ void main() {
     expect(harness.adapter.callCount('/api/members/me'), 1);
     expect(harness.storage.storedTokens, _oldTokens);
   });
+
+  test(
+    'tokenStorageClearFailure_isLoggedAsErrorAndSessionStillExpires',
+    () async {
+      final harness = _Harness(
+        storedTokens: _oldTokens,
+        clearError: StateError('삭제 실패'),
+      );
+      harness.adapter
+        ..on('/api/members/me', [_error(401, 'EXPIRED_TOKEN')])
+        ..on(_refreshPath, [_error(401, 'INVALID_REFRESH_TOKEN')]);
+
+      await _captureError(harness.dio.get<dynamic>('/api/members/me'));
+
+      final failureLogs = harness.logEntries.where(
+        (entry) => entry.name == 'AuthInterceptor',
+      );
+      expect(failureLogs, hasLength(1));
+      expect(failureLogs.single.level, AppLogLevel.error);
+      expect(failureLogs.single.message, contains('토큰 삭제 실패'));
+      expect(harness.sessionExpiredCount, 1);
+    },
+  );
 
   test(
     'refreshFailsWithInvalidRefreshToken_clearsStorageAndCallsSessionExpired',
