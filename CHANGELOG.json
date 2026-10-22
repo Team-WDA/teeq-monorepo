@@ -1,14 +1,35 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T04:49:15Z",
-    "currentVersion": "0.23.1",
+    "lastUpdated": "2026-10-22T05:08:36Z",
+    "currentVersion": "0.23.2",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 27
+    "totalReleases": 28
   },
   "releases": [
+    {
+      "version": "0.23.2",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.23.2]\n\n### 🔧 변경사항\n- AppConfig 필수 키 검증 주석 보강\n- iOS 테스트 워크플로우 archive 서명에 DEVELOPMENT_TEAM 지정\n- iOS archive 서명에 DEVELOPMENT_TEAM 지정",
+      "parsed_changes": {
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "AppConfig 필수 키 검증 주석 보강",
+            "iOS 테스트 워크플로우 archive 서명에 DEVELOPMENT_TEAM 지정",
+            "iOS archive 서명에 DEVELOPMENT_TEAM 지정"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.23.1",
       "project_types": [
