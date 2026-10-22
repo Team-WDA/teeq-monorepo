@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 라우팅 구조를 확인하기 위한 자리표시 화면. 실제 가입 완료 화면은 인증 UI 이슈에서 교체한다.
 class SignupCompletionScreen extends StatelessWidget {

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_filter_chip.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/logging/app_log_level.dart';

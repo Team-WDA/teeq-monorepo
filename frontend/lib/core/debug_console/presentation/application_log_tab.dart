@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teeq/core/debug_console/debug_console_filters.dart';
 import 'package:teeq/core/debug_console/debug_console_store.dart';

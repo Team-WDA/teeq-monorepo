@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/ui/button/app_back_button.dart';
