@@ -1,3 +1,4 @@
+import 'package:teeq/core/debug_console/presentation/debug_console_host.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/router/app_router.dart';
@@ -17,7 +18,8 @@ class App extends ConsumerWidget {
       routerConfig: router,
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         maxScaleFactor: AppLayout.maxTextScaleFactor,
-        child: AppToastHost(child: child!),
+        // 토스트가 콘솔 패널 위에도 보이도록 콘솔을 안쪽에 둔다.
+        child: AppToastHost(child: DebugConsoleHost(child: child!)),
       ),
     );
   }
