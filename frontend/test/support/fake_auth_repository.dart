@@ -13,6 +13,7 @@ class FakeAuthRepository implements AuthRepository {
     this.fetchMeError,
     this.logoutError,
     this.deleteAccountError,
+    this.completeSignupError,
     this.changeNicknameError,
     this.changePasswordError,
     this.replaceProfileImageError,
@@ -29,6 +30,9 @@ class FakeAuthRepository implements AuthRepository {
 
   /// 지정하면 [deleteAccount]가 이 오류를 던진다.
   final Object? deleteAccountError;
+
+  /// 지정하면 [completeSignup]이 이 오류를 던진다.
+  final Object? completeSignupError;
 
   /// 지정하면 [changeNickname]이 이 오류를 던진다.
   final Object? changeNicknameError;
@@ -60,9 +64,12 @@ class FakeAuthRepository implements AuthRepository {
   int fetchMeCount = 0;
   int deleteAccountCount = 0;
   int logoutCount = 0;
+  int completeSignupCount = 0;
   int changeNicknameCount = 0;
   int changePasswordCount = 0;
   String? socialLoginCredential;
+  ({String nickname, bool serviceTermsAgreed, bool privacyPolicyAgreed})?
+  completedSignup;
   String? changedNickname;
   ({String currentPassword, String newPassword})? changedPassword;
   ProfileImageFile? replacedProfileImage;
@@ -124,7 +131,19 @@ class FakeAuthRepository implements AuthRepository {
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
-  }) async => member!;
+  }) async {
+    completeSignupCount++;
+    completedSignup = (
+      nickname: nickname,
+      serviceTermsAgreed: serviceTermsAgreed,
+      privacyPolicyAgreed: privacyPolicyAgreed,
+    );
+    final error = completeSignupError;
+    if (error != null) {
+      throw error;
+    }
+    return member!;
+  }
 
   @override
   Future<Member> changeNickname({required String nickname}) async {

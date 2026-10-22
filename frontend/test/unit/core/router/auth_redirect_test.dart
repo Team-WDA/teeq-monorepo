@@ -80,7 +80,6 @@ void main() {
         AppRoutes.welcome,
         AppRoutes.login,
         AppRoutes.signup,
-        AppRoutes.signupNickname,
         AppRoutes.onboarding,
         AppRoutes.home,
       ]) {
@@ -94,6 +93,17 @@ void main() {
           AuthStatus.signedIn,
           _incompleteMember,
           AppRoutes.signupCompletion,
+        ),
+        isNull,
+      );
+    });
+
+    test('signedIn + 미완료 회원은 약관 화면이 push하는 닉네임 위치에서 null', () {
+      expect(
+        authRedirect(
+          AuthStatus.signedIn,
+          _incompleteMember,
+          AppRoutes.signupNickname,
         ),
         isNull,
       );

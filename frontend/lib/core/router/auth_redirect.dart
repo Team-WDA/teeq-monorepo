@@ -4,6 +4,8 @@ import 'package:teeq/core/router/app_routes.dart';
 
 /// 로그인 상태, 회원, 현재 위치로 리다이렉트할 위치를 정한다. 이동이 필요 없으면 null.
 /// 로그인 상태인데 회원이 아직 없으면 가입 완료 회원이며 캐릭터가 있는 회원과 같게 다룬다.
+/// 가입이 끝나지 않은 회원은 약관 화면(`/signup-completion`)과, 그 화면이 push하는 닉네임 화면에서만 머물 수 있고
+/// 나머지 위치에서는 약관 화면으로 보낸다.
 /// 가입을 마쳤지만 캐릭터가 없는 회원은 `/onboarding/**` 밖의 모든 위치에서 온보딩으로 보낸다.
 String? authRedirect(AuthStatus status, Member? member, String location) {
   if (location == AppRoutes.error) {
@@ -16,7 +18,7 @@ String? authRedirect(AuthStatus status, Member? member, String location) {
       return _signedOutLocations.contains(location) ? null : AppRoutes.welcome;
     case AuthStatus.signedIn:
       if (member != null && !member.isSignupCompleted) {
-        return location == AppRoutes.signupCompletion
+        return _signupCompletionLocations.contains(location)
             ? null
             : AppRoutes.signupCompletion;
       }
@@ -40,6 +42,13 @@ const _signedOutLocations = {
   AppRoutes.welcome,
   AppRoutes.login,
   AppRoutes.signup,
+  AppRoutes.signupNickname,
+};
+
+/// 가입이 끝나지 않은 로그인 회원이 머물 수 있는 위치.
+/// 닉네임 화면은 약관 화면에서 push되며, go_router 18은 push된 위치에도 리다이렉트를 평가하므로 허용해야 한다.
+const _signupCompletionLocations = {
+  AppRoutes.signupCompletion,
   AppRoutes.signupNickname,
 };
 

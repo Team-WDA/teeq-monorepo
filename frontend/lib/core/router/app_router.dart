@@ -9,7 +9,7 @@ import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/ui/layout/main_tab_shell_screen.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
-import 'package:teeq/features/auth/presentation/signup_completion_screen.dart';
+import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
@@ -125,7 +125,7 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.signupCompletion,
-        builder: (context, state) => const SignupCompletionScreen(),
+        builder: (context, state) => const SignupCompletionConsentScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

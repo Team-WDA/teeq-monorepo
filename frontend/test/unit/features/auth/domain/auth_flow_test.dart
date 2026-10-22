@@ -13,9 +13,12 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
 import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/auth/token_storage.dart';
+import 'package:teeq/core/error/app_exception.dart';
+import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/features/auth/domain/apple_credential_provider.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/profile_image_file.dart';
+import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 
 import '../../../../support/fake_auth_repository.dart';
 import '../../../../support/fake_token_storage.dart';
@@ -62,6 +65,7 @@ class _Harness {
       readStatus: () => container.read(authStatusControllerProvider),
       reportError: (error, {bool blocking = false}) =>
           reported.add((error: error, blocking: blocking)),
+      isSignupAlreadyCompleted: isSignupAlreadyCompletedError,
     );
   }
 
@@ -187,6 +191,105 @@ void main() {
     );
 
     expect(harness.currentMember, _member);
+  });
+
+  group('completeSignup_recovery', () {
+    const incompleteMember = Member(
+      memberId: 'member-1',
+      hasAiCharacter: false,
+      loginType: LoginType.apple,
+    );
+
+    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
+      final harness = _Harness(repository: repository);
+      await harness.container
+          .read(authSessionProvider)
+          .restored(incompleteMember);
+      return harness;
+    }
+
+    DioException wrapped(ErrorCode errorCode) => DioException(
+      requestOptions: RequestOptions(path: '/api/members/me/signup-completion'),
+      error: ApiException(errorCode: errorCode, httpStatus: 409),
+    );
+
+    test('success_updatesMemberWithAgreements', () async {
+      final repository = FakeAuthRepository(member: _member);
+      final harness = await signedInHarness(repository);
+
+      await harness.flow.completeSignup(
+        nickname: '티큐',
+        serviceTermsAgreed: true,
+        privacyPolicyAgreed: true,
+      );
+
+      expect(harness.currentMember, _member);
+      expect(repository.completedSignup?.nickname, '티큐');
+      expect(repository.completedSignup?.serviceTermsAgreed, isTrue);
+      expect(repository.completedSignup?.privacyPolicyAgreed, isTrue);
+      expect(repository.fetchMeCount, 0);
+    });
+
+    test('alreadyCompleted_refreshesMemberAndDoesNotThrow', () async {
+      final repository = FakeAuthRepository(
+        member: _member,
+        completeSignupError: wrapped(ErrorCode.stateConflict),
+      );
+      final harness = await signedInHarness(repository);
+
+      await harness.flow.completeSignup(
+        nickname: '티큐',
+        serviceTermsAgreed: true,
+        privacyPolicyAgreed: true,
+      );
+
+      expect(repository.fetchMeCount, 1);
+      expect(harness.currentMember, _member);
+    });
+
+    test('otherApiError_propagatesWithoutRefresh', () async {
+      final error = wrapped(ErrorCode.duplicateEmail);
+      final repository = FakeAuthRepository(
+        member: _member,
+        completeSignupError: error,
+      );
+      final harness = await signedInHarness(repository);
+
+      await expectLater(
+        harness.flow.completeSignup(
+          nickname: '티큐',
+          serviceTermsAgreed: true,
+          privacyPolicyAgreed: true,
+        ),
+        throwsA(error),
+      );
+
+      expect(repository.fetchMeCount, 0);
+      expect(harness.currentMember, incompleteMember);
+    });
+
+    test('refreshFailure_propagates', () async {
+      final refreshError = DioException(
+        requestOptions: RequestOptions(path: '/api/members/me'),
+        type: DioExceptionType.connectionError,
+      );
+      final harness = await signedInHarness(
+        FakeAuthRepository(
+          member: _member,
+          completeSignupError: wrapped(ErrorCode.stateConflict),
+          fetchMeError: refreshError,
+        ),
+      );
+
+      await expectLater(
+        harness.flow.completeSignup(
+          nickname: '티큐',
+          serviceTermsAgreed: true,
+          privacyPolicyAgreed: true,
+        ),
+        throwsA(refreshError),
+      );
+    });
   });
 
   test('logout_whenServerFails_stillSignsOut', () async {
