@@ -124,4 +124,16 @@ void main() {
       expect(multiline.height, greaterThan(single.height!));
     });
   }
+
+  test('monospace12Regular는 고정폭 글꼴이고 공통 자간 규칙에서 제외된다', () {
+    const style = AppTextStyles.monospace12Regular;
+
+    expect(style.fontFamily, 'Menlo');
+    expect(style.fontFamilyFallback, ['monospace', 'Courier']);
+    expect(style.fontSize, 12);
+    expect(style.fontWeight, FontWeight.w400);
+    expect(style.height! * 12, closeTo(18, 1e-9));
+    expect(style.letterSpacing, isNull);
+    expect(style.color, AppColors.textPrimary);
+  });
 }

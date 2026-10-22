@@ -256,4 +256,15 @@ abstract final class AppTextStyles {
     letterSpacing: 12 * letterSpacingRatio,
     color: AppColors.textPrimary,
   );
+
+  /// 개발자 콘솔의 로그·본문용 고정폭 글꼴. 글자 폭을 맞추기 위해 Pretendard와
+  /// 공통 자간 규칙(-1.2%)에서 제외한다.
+  static const TextStyle monospace12Regular = TextStyle(
+    fontFamily: 'Menlo',
+    fontFamilyFallback: ['monospace', 'Courier'],
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 18 / 12,
+    color: AppColors.textPrimary,
+  );
 }
