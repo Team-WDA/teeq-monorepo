@@ -14,6 +14,7 @@ public final class SecurityPaths {
         "/api/auth/refresh",
         "/api/auth/social-login",
         "/api/members/nickname-availability",
+        "/api/app-versions/check",
         "/actuator/health",
         "/docs/swagger",
         "/docs/swagger-ui/**",
