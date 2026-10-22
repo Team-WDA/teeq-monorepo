@@ -151,6 +151,10 @@ void main() {
       ),
     );
 
+    // 복원 완료와 리다이렉트가 반영될 프레임을 먼저 돌린 뒤 1.5초 직전까지 진행한다.
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
     await tester.pump(
       splashMinimumDisplayDuration - const Duration(milliseconds: 1),
     );
@@ -193,6 +197,10 @@ void main() {
       ),
     );
 
+    // 복원 완료와 리다이렉트가 반영될 프레임을 먼저 돌린 뒤 1.5초 직전까지 진행한다.
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
     await tester.pump(
       splashMinimumDisplayDuration - const Duration(milliseconds: 1),
     );
