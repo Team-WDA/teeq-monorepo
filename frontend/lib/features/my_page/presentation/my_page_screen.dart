@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
+import 'package:teeq/core/debug_console/developer_mode_controller.dart';
+import 'package:teeq/core/debug_console/tap_sequence_counter.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
@@ -11,6 +15,7 @@ import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/destructive_tonal_button.dart';
+import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/my_page/presentation/account_withdrawal_confirmation_dialog.dart';
 import 'package:teeq/features/my_page/presentation/profile_image_sheet.dart';
@@ -28,6 +33,9 @@ class MyPageScreen extends ConsumerStatefulWidget {
 
 class _MyPageScreenState extends ConsumerState<MyPageScreen> {
   bool _isLogoutInProgress = false;
+
+  /// 서비스 섹션 제목을 연달아 눌러 개발자 모드를 켜는 이스터에그 감지기.
+  final TapSequenceCounter _developerModeTapCounter = TapSequenceCounter();
 
   @override
   void initState() {
@@ -49,6 +57,19 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     } on Object catch (error) {
       errorHandler.handle(error);
     }
+  }
+
+  void _registerDeveloperModeTap() {
+    if (!_developerModeTapCounter.register(DateTime.now())) {
+      return;
+    }
+    final toast = ref.read(toastControllerProvider.notifier);
+    if (ref.read(developerModeControllerProvider)) {
+      toast.show('이미 개발자 모드가 켜져 있습니다');
+      return;
+    }
+    unawaited(ref.read(developerModeControllerProvider.notifier).enable());
+    toast.show('개발자 모드가 켜졌습니다');
   }
 
   /// 로그아웃은 서버 실패와 무관하게 항상 로그아웃 상태로 끝나므로 재진입만 막는다.
@@ -113,6 +134,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
           const SizedBox(height: AppSpacing.space24),
           SettingsSectionCard(
             title: serviceSectionTitle,
+            onTitleTap: _registerDeveloperModeTap,
             rows: [
               SettingsRow(
                 label: '서비스 이용약관',

@@ -13,26 +13,36 @@ class SettingsSectionCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.rows,
+    this.onTitleTap,
   });
 
   final String title;
   final List<SettingsRow> rows;
+
+  /// 제목 줄을 눌렀을 때의 동작. 없으면 제목은 눌러도 반응하지 않는다.
+  final VoidCallback? onTitleTap;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: AppLayout.settingsSectionLabelHeight,
-          ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              title,
-              style: AppTextStyles.body14Medium.copyWith(
-                color: AppColors.textSecondary,
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          // 숨겨진 이스터에그 입구라 보조기술에 버튼으로 알리지 않는다.
+          excludeFromSemantics: true,
+          onTap: onTitleTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppLayout.settingsSectionLabelHeight,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                style: AppTextStyles.body14Medium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ),

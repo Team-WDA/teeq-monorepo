@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
+import 'package:teeq/core/debug_console/developer_mode_controller.dart';
+import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
@@ -201,6 +203,61 @@ void main() {
     await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
     handle.dispose();
+  });
+
+  group('developer mode easter egg', () {
+    const serviceSectionTitle = '서비스 (앱정보 v0.15.0)';
+
+    testWidgets('turns on after seven consecutive taps on the section title', (
+      tester,
+    ) async {
+      final harness = MyPageHarness();
+      await _pumpMyPage(tester, harness);
+
+      for (var tap = 0; tap < 7; tap++) {
+        await tester.tap(find.text(serviceSectionTitle));
+      }
+      await tester.pump();
+
+      expect(harness.container.read(developerModeControllerProvider), isTrue);
+      expect(harness.developerModeStorage.storedEnabled, isTrue);
+      expect(harness.container.read(toastControllerProvider), '개발자 모드가 켜졌습니다');
+      await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('stays off after six taps', (tester) async {
+      final harness = MyPageHarness();
+      await _pumpMyPage(tester, harness);
+
+      for (var tap = 0; tap < 6; tap++) {
+        await tester.tap(find.text(serviceSectionTitle));
+      }
+      await tester.pump();
+
+      expect(harness.container.read(developerModeControllerProvider), isFalse);
+      expect(harness.developerModeStorage.writeCount, 0);
+    });
+
+    testWidgets('tells the user when developer mode is already on', (
+      tester,
+    ) async {
+      final harness = MyPageHarness();
+      await harness.container
+          .read(developerModeControllerProvider.notifier)
+          .enable();
+      await _pumpMyPage(tester, harness);
+
+      for (var tap = 0; tap < 7; tap++) {
+        await tester.tap(find.text(serviceSectionTitle));
+      }
+      await tester.pump();
+
+      expect(
+        harness.container.read(toastControllerProvider),
+        '이미 개발자 모드가 켜져 있습니다',
+      );
+      await tester.pump(const Duration(seconds: 4));
+    });
   });
 
   group('responsive layout', () {
