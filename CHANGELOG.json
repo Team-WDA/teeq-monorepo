@@ -1,14 +1,45 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T05:29:37Z",
-    "currentVersion": "0.23.3",
+    "lastUpdated": "2026-10-22T06:35:20Z",
+    "currentVersion": "0.24.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 29
+    "totalReleases": 30
   },
   "releases": [
+    {
+      "version": "0.24.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-22",
+      "pr_number": null,
+      "raw_summary": "## [0.24.0]\n\n### ✨ 기능\n- AI_서버_미구현_구간_임시_캐릭터_생성기_추가 — 설정으로 켜는 고정 캐릭터 임시 어댑터 추가\n\n### 📝 문서\n- AI 서버 임시 캐릭터 설정 키 안내 추가\n\n### ✅ 테스트\n- 임시 캐릭터 어댑터와 어댑터 선택 조건 테스트 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "AI_서버_미구현_구간_임시_캐릭터_생성기_추가 — 설정으로 켜는 고정 캐릭터 임시 어댑터 추가"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "AI 서버 임시 캐릭터 설정 키 안내 추가"
+          ]
+        },
+        "테스트": {
+          "title": "✅ 테스트",
+          "items": [
+            "임시 캐릭터 어댑터와 어댑터 선택 조건 테스트 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.23.3",
       "project_types": [
