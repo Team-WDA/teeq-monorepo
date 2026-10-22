@@ -8,6 +8,8 @@ import 'package:teeq/core/router/auth_redirect.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/ui/layout/main_tab_shell_screen.dart';
+import 'package:teeq/features/app_update/presentation/app_update_controller.dart';
+import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
@@ -50,6 +52,9 @@ GoRouter appRouter(Ref ref) {
   ref.listen(splashMinimumDisplayControllerProvider, (previous, next) {
     refreshNotifier.value++;
   });
+  ref.listen(appUpdateControllerProvider, (previous, next) {
+    refreshNotifier.value++;
+  });
 
   // 흐름 상태 없이 이름·결과 화면에 들어오면 캐릭터 보유 여부에 따라 시작 화면이나 홈으로 보낸다.
   String redirectWithoutGeneratedCharacter() =>
@@ -75,6 +80,7 @@ GoRouter appRouter(Ref ref) {
       isSplashMinimumDisplayElapsed: ref.read(
         splashMinimumDisplayControllerProvider,
       ),
+      isUpdateRequired: ref.read(appUpdateControllerProvider) != null,
     ),
     routes: [
       GoRoute(
@@ -208,6 +214,10 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => DetailedFeedbackCompletionScreen(
           callSessionId: state.pathParameters['callSessionId']!,
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.updateRequired,
+        builder: (context, state) => const UpdateRequiredScreen(),
       ),
       GoRoute(
         path: AppRoutes.error,

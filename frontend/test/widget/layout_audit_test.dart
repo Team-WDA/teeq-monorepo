@@ -62,11 +62,17 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_contr
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
+import 'package:teeq/features/app_update/domain/app_update_requirement.dart';
+import 'package:teeq/features/app_update/data/url_store_launcher.dart';
+import 'package:teeq/features/app_update/presentation/app_update_controller.dart';
+import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
 
 import '../support/fake_ai_character_repository.dart';
+import '../support/fake_app_update_controller.dart';
 import '../support/fake_feedback_repository.dart';
 import '../support/fake_home_repository.dart';
 import '../support/fake_profile_image_picker.dart';
+import '../support/fake_store_launcher.dart';
 import '../support/viewport_cases.dart';
 
 class _NoopAuthFlow extends Fake implements AuthFlow {
@@ -148,6 +154,7 @@ ProviderContainer _newContainer({
     overrides: [
       errorHandlerProvider.overrideWithValue(_NoopErrorHandler()),
       authFlowProvider.overrideWithValue(authFlow ?? _NoopAuthFlow()),
+      appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
       ...overrides,
     ],
   );
@@ -435,6 +442,25 @@ final Map<String, _ScreenBuilder> _screens = {
     ),
   ),
   '스플래시': () => _hostPlain(_newContainer(), const SplashScreen()),
+  // 기본 컨테이너가 이미 업데이트 컨트롤러를 가짜로 덮어써서, 업데이트 필요 상태는 따로 구성한다.
+  '업데이트 필요': () {
+    final container = ProviderContainer(
+      overrides: [
+        errorHandlerProvider.overrideWithValue(_NoopErrorHandler()),
+        appUpdateControllerProvider.overrideWith(
+          () => FakeAppUpdateController(
+            initialRequirement: const AppUpdateRequirement(
+              minimumVersion: '1.3.0',
+              storeUrl: 'https://store.example.test/teeq',
+            ),
+          ),
+        ),
+        storeLauncherProvider.overrideWithValue(FakeStoreLauncher()),
+      ],
+    );
+    addTearDown(container.dispose);
+    return _hostPlain(container, const UpdateRequiredScreen());
+  },
   '통화 마무리': () => _feedbackScreen(
     const CallClosingScreen(callSessionId: _feedbackCallSessionId),
     path: AppRoutes.feedbackClosingLocation(_feedbackCallSessionId),
@@ -513,6 +539,7 @@ final Map<String, _ScreenFinder> _expectedScreens = {
   '결과(수정)': () => find.byType(CharacterResultScreen),
   '오류 화면': () => find.byType(ErrorScreen),
   '스플래시': () => find.byType(SplashScreen),
+  '업데이트 필요': () => find.byType(UpdateRequiredScreen),
   '수정 팝업': () => find.byType(CharacterEditConfirmationDialog),
   '프로필 사진 시트(기본)': () => find.text('프로필 사진 변경'),
   '프로필 사진 시트(업로드 중)': () => find.text('프로필 사진 변경'),
