@@ -47,6 +47,8 @@ server:
 
 # AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value}
 # 값은 application-{dev,prod}.yml에 둔다
+# 선택 키: ai-server.stub-character-enabled (기본 false). AI 서버가 캐릭터 결정 API를 제공하기 전에만 true로 둔다
+# true면 AI 서버를 호출하지 않고 고정 캐릭터를 반환하는 임시 어댑터(StubAiCharacterGenerationAdapter)가 쓰인다
 # 호출별 타임아웃은 코드 상수이며 설정 키가 아니다: 캐릭터 3초(CharacterRestClientConfig), 통화 5초(CallRestClientConfig), 인사말 3초(GreetingRestClientConfig)
 
 # 미디어 S3 저장소 설정 키: media.s3.{bucket,region,key-prefix}
