@@ -3,7 +3,6 @@ package kr.co.teeq.api.call.application.service;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.request.CallUsageReportRequest;
 import kr.co.teeq.api.call.application.dto.response.CallHistoryResponse;
@@ -29,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CallHistoryService {
 
-    private static final Set<CallStatus> ACTIVE_STATUSES = Set.of(CallStatus.PENDING, CallStatus.IN_PROGRESS);
-
     private final CallHistoryRepository callHistoryRepository;
     private final SettingConfigService settingConfigService;
     private final Clock clock;
@@ -44,7 +41,7 @@ public class CallHistoryService {
         Instant expiryCutoff = now.minusSeconds(maxSecondsPerSession);
         List<CallHistory> expiredCandidates = callHistoryRepository
             .findByMemberIdAndStatusInAndStartedAtLessThanEqualAndDeletedFalse(
-                member.getId(), ACTIVE_STATUSES, expiryCutoff);
+                member.getId(), CallStatus.ACTIVE_STATUSES, expiryCutoff);
         expiredCandidates.forEach(CallHistory::expire);
         // UPDATE가 INSERT보다 먼저 나가야 회원당 활성 1건 partial unique index에 걸리지 않는다
         callHistoryRepository.flush();

@@ -24,6 +24,9 @@ public interface CallBonusRepository extends JpaRepository<CallBonus, UUID> {
     // 취소된 행을 포함한 회원의 전체 부여 내역(관리자 조회용)
     List<CallBonus> findByMemberIdOrderByCreatedAtDesc(UUID memberId);
 
+    // 회원의 취소되지 않은(deleted = false) 보너스 전체(회원 삭제용)
+    List<CallBonus> findByMemberIdAndDeletedFalse(UUID memberId);
+
     Optional<CallBonus> findByIdAndMemberIdAndDeletedFalse(UUID id, UUID memberId);
 
     // bonusDate(KST)가 [fromInclusive, toInclusive]인 취소되지 않은(deleted = false) 보너스 건수(관리자 홈)
