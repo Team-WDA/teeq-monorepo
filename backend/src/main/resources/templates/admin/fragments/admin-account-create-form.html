@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  관리자 계정 생성 폼(일반 POST, CSRF 숨은 필드는 th:action이 넣는다).
+  roles: 선택할 수 있는 권한 목록
+  submittedUsername, submittedName, submittedRole: 실패 시 입력칸에 남길 값(없으면 null). 비밀번호는 남기지 않는다
+-->
+<section class="panel" th:fragment="admin-account-create-form">
+  <div class="panel-head"><h2>관리자 계정 추가</h2></div>
+  <form class="panel-body account-create-form" method="post" th:action="@{/admin/accounts}">
+    <label class="account-field">
+      <span class="account-label">아이디</span>
+      <input class="input input-sm" type="text" name="username" maxlength="30" autocomplete="off"
+             th:value="${submittedUsername}" required>
+    </label>
+    <label class="account-field">
+      <span class="account-label">이름</span>
+      <input class="input input-sm" type="text" name="name" maxlength="30" autocomplete="off"
+             th:value="${submittedName}" required>
+    </label>
+    <label class="account-field">
+      <span class="account-label">초기 비밀번호</span>
+      <input class="input input-sm" type="password" name="password" autocomplete="new-password" required>
+    </label>
+    <label class="account-field">
+      <span class="account-label">권한</span>
+      <select class="select select-sm" name="role" required>
+        <!-- 선택값이 없으면 ADMIN이 기본이라 실수로 SUPER_ADMIN을 만들지 않는다 -->
+        <option th:each="role : ${roles}" th:value="${role}" th:text="${role}"
+                th:selected="${submittedRole != null ? role == submittedRole : role.name() == 'ADMIN'}">ADMIN</option>
+      </select>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">추가</button>
+  </form>
+</section>
+</body>
+</html>

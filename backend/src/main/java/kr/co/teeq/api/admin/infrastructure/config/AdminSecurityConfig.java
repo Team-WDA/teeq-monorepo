@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,10 +31,19 @@ public class AdminSecurityConfig {
     private static final String LOGOUT_PATH = "/admin/logout";
     private static final String HOME_PATH = "/admin";
     private static final String ASSET_PATH = "/admin/assets/**";
+    private static final String ACCOUNTS_PATH = "/admin/accounts/**";
+    private static final String SETTINGS_PATH = "/admin/settings/**";
+    private static final String SETTING_CONFIGS_PATH = "/api/admin/setting-configs/**";
 
     private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
+
+    // SUPER_ADMIN은 ADMIN 권한을 모두 가진다. hasRole 검사에 쓰이는 인가 관리자가 이 빈을 사용한다
+    @Bean
+    public RoleHierarchy adminRoleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy("ROLE_SUPER_ADMIN > ROLE_ADMIN");
+    }
 
     // 제공자·진입점·핸들러는 빈으로 만들지 않고 이 체인에만 넣어 JWT 체인과 섞이지 않게 한다
     @Bean
@@ -47,6 +58,9 @@ public class AdminSecurityConfig {
             .authenticationManager(new ProviderManager(adminAuthenticationProvider))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(LOGIN_PATH, ASSET_PATH).permitAll()
+                .requestMatchers(ACCOUNTS_PATH).hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.POST, SETTINGS_PATH).hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PATCH, SETTING_CONFIGS_PATH).hasRole("SUPER_ADMIN")
                 .anyRequest().hasRole("ADMIN"))
             .formLogin(form -> form
                 .loginPage(LOGIN_PATH)

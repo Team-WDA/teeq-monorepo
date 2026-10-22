@@ -1,6 +1,7 @@
 package kr.co.teeq.api.admin.application.controller;
 
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
+import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
@@ -92,6 +93,28 @@ class AdminHomeControllerTest {
             .andExpect(content().string(containsString("limit-gauge-exceeded")))
             // 막대는 100%에서 멈춘다
             .andExpect(content().string(containsString("--gauge-width: 100%")));
+    }
+
+    @Test
+    void home_asSuperAdmin_showsAccountMenu() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        mockMvc.perform(get("/admin").with(asSuperAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("관리자 계정")))
+            .andExpect(content().string(containsString("href=\"/admin/accounts\"")));
+    }
+
+    @Test
+    void home_asAdmin_hidesAccountMenuButShowsPasswordLink() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        mockMvc.perform(get("/admin").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString("href=\"/admin/accounts\""))))
+            .andExpect(content().string(containsString("href=\"/admin/password\"")));
     }
 
     @Test

@@ -26,6 +26,10 @@ extension ErrorCodeUserMessage on ErrorCode {
     ErrorCode.duplicateNickname => '이미 사용 중인 닉네임이에요.',
     ErrorCode.invalidCurrentPassword => '현재 비밀번호가 올바르지 않아요.',
     ErrorCode.memberNotFound => '회원 정보를 찾을 수 없어요.',
+    ErrorCode.adminNotFound => '관리자를 찾을 수 없어요.',
+    ErrorCode.duplicateAdminUsername => '이미 사용 중인 관리자 아이디예요.',
+    ErrorCode.lastSuperAdminProtected => '마지막 최고 관리자는 바꿀 수 없어요.',
+    ErrorCode.adminSelfChangeForbidden => '본인 계정은 여기서 바꿀 수 없어요.',
     ErrorCode.socialTokenInvalid => '소셜 로그인에 실패했어요. 다시 시도해 주세요.',
     ErrorCode.socialServerUnavailable =>
       '소셜 로그인 서버와 연결할 수 없어요. 잠시 후 다시 시도해 주세요.',

@@ -16,6 +16,8 @@ public final class AdminTestAuthentication {
 
     public static final UUID ADMIN_ID = UUID.fromString("0199f5a0-1c2d-7e3f-8a4b-5c6d7e8f9a0b");
 
+    public static final UUID SUPER_ADMIN_ID = UUID.fromString("0199f5a0-2d3e-7f40-9b5c-6d7e8f9a0b1c");
+
     private AdminTestAuthentication() {
     }
 
@@ -23,6 +25,12 @@ public final class AdminTestAuthentication {
         AuthenticatedAdmin principal = new AuthenticatedAdmin(ADMIN_ID, "operator", "운영자");
         return authentication(UsernamePasswordAuthenticationToken.authenticated(
             principal, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
+    public static RequestPostProcessor asSuperAdmin() {
+        AuthenticatedAdmin principal = new AuthenticatedAdmin(SUPER_ADMIN_ID, "owner", "최고 관리자");
+        return authentication(UsernamePasswordAuthenticationToken.authenticated(
+            principal, null, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"))));
     }
 
 }

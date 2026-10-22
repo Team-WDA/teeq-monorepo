@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <!-- 왼쪽 어두운 사이드바 메뉴. activeMenu와 같은 키의 메뉴를 강조한다 -->
 <nav class="sidebar" aria-label="관리자 메뉴" th:fragment="sidebar-navigation(activeMenu)">
@@ -14,6 +14,8 @@
      th:attr="aria-current=${activeMenu == 'call-bonuses'} ? 'page'">통화 보너스</a>
   <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
+  <a th:href="@{/admin/accounts}" th:classappend="${activeMenu == 'accounts'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'accounts'} ? 'page'" sec:authorize="hasRole('SUPER_ADMIN')">관리자 계정</a>
 </nav>
 </body>
 </html>

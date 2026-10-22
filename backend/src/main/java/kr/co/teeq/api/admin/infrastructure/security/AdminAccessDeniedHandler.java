@@ -11,7 +11,7 @@ import org.springframework.security.web.csrf.MissingCsrfTokenException;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 관리자 체인의 접근 거부 응답. 이 체인은 Admin만 인증하므로 실제로는 CSRF 실패가 대부분이다.
+ * 관리자 체인의 접근 거부 응답. CSRF 실패와 관리자 역할 부족(예: ADMIN이 SUPER_ADMIN 전용 경로 요청)일 때 쓰인다.
  */
 public class AdminAccessDeniedHandler implements AccessDeniedHandler {
 

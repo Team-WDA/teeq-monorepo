@@ -1,9 +1,11 @@
 package kr.co.teeq.api.setting.application.controller;
 
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
+import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,7 +62,7 @@ class SettingConfigAdminControllerSecurityTest {
     @Test
     void patchWithoutCsrf_returns403() throws Exception {
         mockMvc.perform(patch(BASE_PATH + "/ANY_KEY")
-                .with(asAdmin())
+                .with(asSuperAdmin())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":\"1\"}"))
             .andExpect(status().isForbidden())
@@ -68,14 +70,26 @@ class SettingConfigAdminControllerSecurityTest {
     }
 
     @Test
-    void adminSession_patchWithCsrf_returns200() throws Exception {
+    void superAdminSession_patchWithCsrf_returns200() throws Exception {
         mockMvc.perform(patch(BASE_PATH + "/ANY_KEY")
-                .with(asAdmin()).with(csrf())
+                .with(asSuperAdmin()).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"value\":\"1\"}"))
             .andExpect(status().isOk());
 
         verify(settingConfigService).update(eq("ANY_KEY"), any(SettingConfigUpdateRequest.class));
+    }
+
+    @Test
+    void adminSession_patchWithCsrf_returns403() throws Exception {
+        mockMvc.perform(patch(BASE_PATH + "/ANY_KEY")
+                .with(asAdmin()).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"value\":\"1\"}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.errorCode").value("ACCESS_DENIED"));
+
+        verify(settingConfigService, never()).update(any(), any());
     }
 
     @Test

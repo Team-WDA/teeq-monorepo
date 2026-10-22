@@ -2,8 +2,11 @@ package kr.co.teeq.api.member.core.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import kr.co.teeq.api.common.core.entity.BaseEntity;
+import kr.co.teeq.api.member.core.constant.AdminRole;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,11 +28,25 @@ public class Admin extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AdminRole role;
+
     @Builder
-    private Admin(String username, String password, String name) {
+    private Admin(String username, String password, String name, AdminRole role) {
         this.username = username;
         this.password = password;
         this.name = name;
+        this.role = role;
+    }
+
+    public void changeRole(AdminRole role) {
+        this.role = role;
+    }
+
+    // 평문이 아니라 BCrypt 해시를 받는다
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 
 }
