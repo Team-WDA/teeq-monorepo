@@ -35,6 +35,22 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
       !_isRequestInProgress;
 
   @override
+  void initState() {
+    super.initState();
+    // 약관에 동의하지 않은 가입 미완료 회원이 이 화면에 들어오면 약관 화면으로 되돌린다.
+    final member = ref.read(currentMemberControllerProvider);
+    final isIncompleteMember = member != null && !member.isSignupCompleted;
+    if (isIncompleteMember &&
+        !ref.read(signupDraftControllerProvider).isAllRequiredConsentAgreed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go(AppRoutes.signupCompletion);
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _nicknameController.dispose();
     super.dispose();
