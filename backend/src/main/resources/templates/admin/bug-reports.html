@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('버그 제보', ~{::main}, 'bug-reports')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>버그 제보</h1>
+      <p>회원과 개발자 콘솔에서 접수된 버그 제보를 최신순으로 보여 줍니다. 시각은 한국 시간 기준입니다.</p>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/bug-report-filter-form :: bug-report-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/bug-report-table :: bug-report-table}"></section>
+
+  <nav th:replace="~{admin/fragments/bug-report-pagination :: bug-report-pagination}"></nav>
+</main>
+</body>
+</html>

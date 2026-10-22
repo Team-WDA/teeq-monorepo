@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 에러 로그 표. 모든 문자열은 th:text로만 보인다. 매개변수 errorLogs, omittedCount -->
+<section class="panel" th:fragment="bug-report-error-log-table(errorLogs, omittedCount)">
+  <div class="panel-head"><h2>에러 로그</h2></div>
+  <p class="panel-body muted" th:if="${omittedCount > 0}"
+     th:text="|${errorLogs.size() + omittedCount}건 중 ${errorLogs.size()}건만 첨부됨|">4건 중 1건만 첨부됨</p>
+  <p class="panel-body muted" th:if="${#lists.isEmpty(errorLogs)}">첨부된 에러 로그가 없습니다.</p>
+  <div class="table-wrap" th:unless="${#lists.isEmpty(errorLogs)}">
+    <table class="table bug-report-error-log-table">
+      <thead>
+        <tr>
+          <th>시각</th>
+          <th>수준</th>
+          <th>이름</th>
+          <th>내용</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="log : ${errorLogs}">
+          <td class="mono" th:text="${#temporals.format(log.timestamp, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-22 12:00:00</td>
+          <td th:text="${log.level}">SEVERE</td>
+          <td th:text="${log.name}">FlutterError</td>
+          <td>
+            <pre class="mono" th:text="${log.message}">메시지</pre>
+            <details th:if="${log.errorDescription != null}">
+              <summary>에러 설명</summary>
+              <pre class="mono" th:text="${log.errorDescription}">설명</pre>
+            </details>
+            <details th:if="${log.stackTraceText != null}">
+              <summary>스택 트레이스</summary>
+              <pre class="mono" th:text="${log.stackTraceText}">스택</pre>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 처리 상태 배지. 매개변수 status(BugReportStatus) -->
+<span th:fragment="bug-report-status-badge(status)" th:switch="${status.name()}">
+  <span th:case="'RECEIVED'" class="badge badge-ghost badge-sm">접수</span>
+  <span th:case="'IN_PROGRESS'" class="badge badge-warning badge-sm">확인 중</span>
+  <span th:case="'RESOLVED'" class="badge badge-success badge-sm">해결</span>
+</span>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 버그 제보 목록 표. 컨텍스트 변수 result -->
+<section class="panel" th:fragment="bug-report-table">
+  <div class="table-wrap">
+    <table class="table bug-report-table">
+      <thead>
+        <tr>
+          <th>접수 시각</th>
+          <th>출처</th>
+          <th>상태</th>
+          <th>회원</th>
+          <th>본문</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="item : ${result.items}">
+          <td class="mono" th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-22 12:00:00</td>
+          <td><span th:replace="~{admin/fragments/bug-report-source-badge :: bug-report-source-badge(${item.source})}"></span></td>
+          <td><span th:replace="~{admin/fragments/bug-report-status-badge :: bug-report-status-badge(${item.status})}"></span></td>
+          <td>
+            <span th:text="${item.memberEmail}">user@example.com</span>
+            <span th:if="${item.memberDeleted}" class="badge badge-ghost badge-sm">탈퇴</span>
+          </td>
+          <td>
+            <a class="link link-primary" th:href="@{/admin/bug-reports/{bugReportId}(bugReportId=${item.id})}"
+               th:text="${item.contentPreview}">본문 앞부분</a>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(result.items)}">
+          <td class="muted" colspan="5">버그 제보가 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

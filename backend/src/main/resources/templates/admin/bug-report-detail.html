@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('버그 제보 상세', ~{::main}, 'bug-reports')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>버그 제보 상세</h1>
+      <p><a class="link link-primary" th:href="@{/admin/bug-reports}">버그 제보 목록으로</a></p>
+    </div>
+    <form th:replace="~{admin/fragments/bug-report-status-form :: bug-report-status-form}"></form>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head"><h2>제보 내용</h2></div>
+    <dl class="panel-body member-info-list">
+      <div>
+        <dt>출처</dt>
+        <dd><span th:replace="~{admin/fragments/bug-report-source-badge :: bug-report-source-badge(${bugReport.source})}"></span></dd>
+      </div>
+      <div>
+        <dt>접수 시각</dt>
+        <dd class="mono" th:text="${#temporals.format(bugReport.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-22 12:00:00</dd>
+      </div>
+      <div>
+        <dt>회원</dt>
+        <dd>
+          <a th:unless="${bugReport.memberDeleted}" class="link link-primary"
+             th:href="@{/admin/members/{memberId}(memberId=${bugReport.memberId})}"
+             th:text="${bugReport.memberEmail}">user@example.com</a>
+          <span th:if="${bugReport.memberDeleted}" th:text="${bugReport.memberEmail}">user@example.com</span>
+          <span th:if="${bugReport.memberNickname != null}" th:text="|(${bugReport.memberNickname})|">(닉네임)</span>
+          <span th:if="${bugReport.memberDeleted}" class="badge badge-ghost badge-sm">탈퇴</span>
+        </dd>
+      </div>
+      <div>
+        <dt>앱 버전</dt>
+        <dd th:text="${bugReport.appVersion}">1.2.3</dd>
+      </div>
+      <div>
+        <dt>플랫폼</dt>
+        <dd th:text="${bugReport.platform}">ANDROID</dd>
+      </div>
+      <div>
+        <dt>OS 버전</dt>
+        <dd th:text="${bugReport.osVersion}">Android 15</dd>
+      </div>
+      <div>
+        <dt>기기 모델</dt>
+        <dd th:text="${bugReport.deviceModel}">Pixel 9</dd>
+      </div>
+    </dl>
+    <div class="panel-body">
+      <pre class="bug-report-content" th:text="${bugReport.content}">본문</pre>
+    </div>
+  </section>
+
+  <section class="panel" th:unless="${#lists.isEmpty(bugReport.images)}">
+    <div class="panel-head"><h2>첨부 이미지</h2></div>
+    <div class="panel-body bug-report-image-list">
+      <a th:each="image : ${bugReport.images}" th:href="${image.url}" target="_blank" rel="noopener noreferrer">
+        <img class="bug-report-image-thumbnail" th:src="${image.url}" alt="첨부 이미지" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <!-- th:replace가 th:if보다 먼저 처리되므로 조건은 바깥 블록에 둔다 -->
+  <th:block th:if="${bugReport.source.name() == 'DEVELOPER_CONSOLE'}">
+    <section th:replace="~{admin/fragments/bug-report-error-log-table :: bug-report-error-log-table(${bugReport.errorLogs}, ${bugReport.omittedErrorLogCount})}"></section>
+    <section th:replace="~{admin/fragments/bug-report-network-log-table :: bug-report-network-log-table(${bugReport.networkLogs}, ${bugReport.omittedNetworkLogCount})}"></section>
+  </th:block>
+</main>
+</body>
+</html>
