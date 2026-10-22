@@ -10,6 +10,9 @@ public interface DetailedFeedbackRepository extends JpaRepository<DetailedFeedba
 
     boolean existsByCallHistoryIdAndDeletedFalse(UUID callHistoryId);
 
+    // 회원의 통화 기록에 달린 활성(deleted = false) 상세 피드백(회원 삭제용)
+    List<DetailedFeedback> findByCallHistoryMemberIdAndDeletedFalse(UUID memberId);
+
     // 생성 시각이 [createdAtFrom, createdAtTo)인 활성(deleted = false) 상세 피드백 수(관리자 홈)
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndDeletedFalse(Instant createdAtFrom,
         Instant createdAtTo);

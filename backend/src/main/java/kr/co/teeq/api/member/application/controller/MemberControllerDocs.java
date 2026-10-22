@@ -136,4 +136,20 @@ public interface MemberControllerDocs {
     })
     ResponseEntity<Void> deleteProfileImage(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
 
+    @Operation(summary = "회원 탈퇴",
+        description = "회원을 탈퇴시키고 통화 기록, 피드백, 온보딩 답변, AI 캐릭터, 프로필 사진, 리프레시 토큰을 함께 삭제한다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "탈퇴 성공"),
+        @ApiResponse(responseCode = "401",
+            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404",
+            description = "`MEMBER_NOT_FOUND`: 인증 직후 회원이 이미 삭제된 경우(드묾)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409",
+            description = "`MEMBER_HAS_ACTIVE_CALL`: 진행 중인 통화가 있어 탈퇴할 수 없음(통화를 끝낸 뒤 다시 시도)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<Void> deleteMe(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
+
 }

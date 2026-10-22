@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 /**
  * 회원의 AI 캐릭터. 회원당 하나이고, 다시 생성할 때는 같은 행의 캐릭터 유형과 성향 태그를 덮어쓴다.
  * 이름이 확정되기 전에는 name이 null이다.
- * 삭제 경로가 없는 hard delete 전제라 {@code deleted}는 항상 false이며, unique도 전체 행에 걸린다.
+ * 회원 삭제 시 soft delete 한다. 삭제된 회원은 로그인할 수 없어 조회 경로가 없으며, unique는 전체 행에 걸린다.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

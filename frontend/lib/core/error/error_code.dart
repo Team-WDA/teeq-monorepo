@@ -34,6 +34,7 @@ enum ErrorCode {
   callServiceLimitExceeded('CALL_SERVICE_LIMIT_EXCEEDED'),
   callBonusNotFound('CALL_BONUS_NOT_FOUND'),
   callAlreadyInProgress('CALL_ALREADY_IN_PROGRESS'),
+  memberHasActiveCall('MEMBER_HAS_ACTIVE_CALL'),
   aiServerUnavailable('AI_SERVER_UNAVAILABLE'),
   callSessionNotFound('CALL_SESSION_NOT_FOUND'),
 

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 회원의 추가 통화 시간 부여 이력 표(서비스가 돌려준 순서 그대로). 컨텍스트 변수 bonuses, memberId -->
+<!-- 회원의 추가 통화 시간 부여 이력 표(서비스가 돌려준 순서 그대로). 컨텍스트 변수 bonuses, member -->
 <section class="panel" th:fragment="call-bonus-table">
   <div class="table-wrap">
     <table class="table call-bonus-table">
@@ -22,8 +22,7 @@
           <td class="mono" th:text="${#temporals.format(bonus.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</td>
           <td>
             <form th:unless="${bonus.canceled}" method="post"
-                  th:action="@{/admin/call-bonuses/{callBonusId}/cancel(callBonusId=${bonus.id})}">
-              <input type="hidden" name="memberId" th:value="${memberId}">
+                  th:action="@{/admin/members/{memberId}/call-bonuses/{callBonusId}/cancel(memberId=${member.id},callBonusId=${bonus.id})}">
               <button class="btn btn-sm btn-ghost" type="submit">취소</button>
             </form>
             <div th:if="${bonus.canceled}">

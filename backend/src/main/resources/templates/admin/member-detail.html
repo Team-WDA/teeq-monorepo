@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 상세', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>회원 상세</h1>
+      <p><a class="link link-primary" th:href="@{/admin/members}">회원 목록으로</a></p>
+    </div>
+    <div th:replace="~{admin/fragments/member-delete-modal :: member-delete-modal}"></div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head"><h2>기본 정보</h2></div>
+    <dl class="panel-body member-info-list">
+      <div>
+        <dt>회원 ID</dt>
+        <dd class="mono" th:text="${member.id}">회원 ID</dd>
+      </div>
+      <div>
+        <dt>닉네임</dt>
+        <dd>
+          <span th:if="${member.signupCompleted}" th:text="${member.nickname}">닉네임</span>
+          <span th:unless="${member.signupCompleted}" class="badge badge-warning badge-sm">가입 미완료</span>
+        </dd>
+      </div>
+      <div>
+        <dt>이메일</dt>
+        <dd th:text="${member.email}">user@example.com</dd>
+      </div>
+      <div>
+        <dt>로그인 방식</dt>
+        <dd th:text="${member.loginType}">EMAIL</dd>
+      </div>
+      <div>
+        <dt>가입일</dt>
+        <dd class="mono" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</dd>
+      </div>
+    </dl>
+    <div class="panel-body">
+      <a class="btn btn-sm btn-ghost" th:href="@{/admin/call-usages(memberId=${member.id})}">이 회원의 통화 사용량 보기</a>
+    </div>
+  </section>
+
+  <section th:replace="~{admin/fragments/call-bonus-grant-form :: call-bonus-grant-form}"></section>
+  <section th:replace="~{admin/fragments/call-bonus-table :: call-bonus-table}"></section>
+</main>
+</body>
+</html>

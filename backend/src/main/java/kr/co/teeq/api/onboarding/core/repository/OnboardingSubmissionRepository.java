@@ -12,6 +12,9 @@ import org.springframework.data.jpa.repository.Query;
 public interface OnboardingSubmissionRepository
         extends JpaRepository<OnboardingSubmission, UUID>, JpaSpecificationExecutor<OnboardingSubmission> {
 
+    // 회원의 활성(deleted = false) 제출 전체(회원 삭제용)
+    List<OnboardingSubmission> findByMemberIdAndDeletedFalse(UUID memberId);
+
     // 제출 순번 계산용. 회원별 전체 제출을 생성 시각 오름차순(같으면 id 오름차순)으로 가져온다
     List<OnboardingSubmission> findByMemberIdInOrderByCreatedAtAscIdAsc(Collection<UUID> memberIds);
 

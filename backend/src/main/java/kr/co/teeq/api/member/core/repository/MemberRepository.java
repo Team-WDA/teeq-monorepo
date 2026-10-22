@@ -7,8 +7,9 @@ import java.util.UUID;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface MemberRepository extends JpaRepository<Member, UUID> {
+public interface MemberRepository extends JpaRepository<Member, UUID>, JpaSpecificationExecutor<Member> {
 
     Optional<Member> findByIdAndDeletedFalse(UUID id);
 

@@ -23,6 +23,7 @@ import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
+import kr.co.teeq.api.member.application.service.MemberDeletionService;
 import kr.co.teeq.api.member.application.service.MemberService;
 import kr.co.teeq.api.member.application.service.ProfileImageService;
 import kr.co.teeq.api.member.core.constant.LoginType;
@@ -83,6 +84,9 @@ class MemberControllerProfileImageTest {
 
     @MockitoBean
     private ProfileImageService profileImageService;
+
+    @MockitoBean
+    private MemberDeletionService memberDeletionService;
 
     private String bearer() {
         Member member = Member.builder()

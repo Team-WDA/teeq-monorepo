@@ -12,6 +12,9 @@ public enum CallStatus {
     FAILED,
     EXPIRED;
 
+    // 진행 중으로 보는 상태. 회원당 하나만 허용하며 통화 시작과 회원 삭제가 같은 기준을 쓴다
+    public static final Set<CallStatus> ACTIVE_STATUSES = Set.of(PENDING, IN_PROGRESS);
+
     public boolean canTransitionTo(CallStatus target) {
         return allowedTargets().contains(target);
     }

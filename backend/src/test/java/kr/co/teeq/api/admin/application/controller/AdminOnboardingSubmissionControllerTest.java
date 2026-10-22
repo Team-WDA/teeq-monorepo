@@ -303,13 +303,13 @@ class AdminOnboardingSubmissionControllerTest {
     }
 
     @Test
-    void memberIdCell_linksToCallBonusScreen() throws Exception {
+    void memberIdCell_linksToMemberDetailScreen() throws Exception {
         given(onboardingSubmissionQueryService.search(any(), any()))
             .willReturn(pageOf(List.of(submission(true)), 0, 20, 1));
 
         mockMvc.perform(get(PATH).with(asAdmin()))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("href=\"/admin/call-bonuses?memberId=" + MEMBER_ID + "\"")));
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "\"")));
     }
 
     @Test

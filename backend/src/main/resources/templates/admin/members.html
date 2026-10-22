@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 관리', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>회원 관리</h1>
+      <p>가입한 회원을 최근 가입순으로 보여 줍니다. 회원을 선택하면 기본 정보와 통화 보너스를 관리할 수 있습니다. 날짜는 한국 시간 기준입니다.</p>
+    </div>
+  </div>
+
+  <p class="member-deleted-notice" role="status" th:if="${deletedNotice}">회원을 삭제했습니다.</p>
+
+  <section th:replace="~{admin/fragments/member-filter-form :: member-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/member-table :: member-table}"></section>
+
+  <nav th:replace="~{admin/fragments/member-pagination :: member-pagination}"></nav>
+</main>
+</body>
+</html>

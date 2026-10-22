@@ -19,6 +19,13 @@ void main() {
       expect(ErrorCode.fromServerName('EXPIRED_TOKEN'), ErrorCode.expiredToken);
     });
 
+    test('MEMBER_HAS_ACTIVE_CALL은 진행 중 통화 삭제 거부 코드로 바꾼다', () {
+      final code = ErrorCode.fromServerName('MEMBER_HAS_ACTIVE_CALL');
+
+      expect(code, ErrorCode.memberHasActiveCall);
+      expect(code.userMessage, isNotEmpty);
+    });
+
     test('null이거나 모르는 이름은 unknown이다', () {
       expect(ErrorCode.fromServerName(null), ErrorCode.unknown);
       expect(ErrorCode.fromServerName('NOT_EXISTING'), ErrorCode.unknown);
@@ -38,7 +45,7 @@ void main() {
         .where((name) => name != 'UNKNOWN')
         .toSet();
 
-    expect(backendNames, hasLength(43));
+    expect(backendNames, hasLength(44));
     expect(dartNames, backendNames);
   }, skip: File(_backendErrorCodePath).existsSync() ? false : 'BE 파일 없음');
 }
