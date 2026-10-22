@@ -116,6 +116,19 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .setting-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .setting-state-cell { width: 160px; }
 .setting-updated-at { margin-top: 6px; }
+/* ADMIN에게 보이는 읽기 전용 설정 값 */
+.setting-readonly { display: flex; flex-direction: column; gap: 8px; }
+.setting-readonly-value { margin: 0; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 6px; background: var(--admin-page-background); white-space: pre-wrap; word-break: break-all; }
+
+/* 관리자 계정: 생성 폼, 비밀번호 변경 폼, 행별 관리 폼 */
+.account-create-form, .account-password-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.account-field { display: flex; flex-direction: column; gap: 4px; }
+.account-label { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
+.account-form-errors { flex-basis: 100%; margin: 0 0 16px; padding: 10px 12px 10px 28px; border-radius: 6px; background: var(--admin-danger-soft); color: var(--admin-danger); }
+.account-create-form .account-form-errors, .account-password-form .account-form-errors { margin: 0; }
+.account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.account-inline-form { display: flex; align-items: center; gap: 6px; }
+.account-deactivate-button { color: var(--admin-danger); }
 
 /* 통화 사용량: 필터 폼, 숫자 열 오른쪽 정렬, 합계 행 */
 .call-usage-filter-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }

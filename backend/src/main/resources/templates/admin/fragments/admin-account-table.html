@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  관리자 계정 목록 표. 본인 행에는 권한 변경·비활성화·비밀번호 재설정 폼을 보이지 않는다.
+  accounts: AdminAccountResponse 목록, roles: 선택할 수 있는 권한 목록, currentAdminId: 로그인한 관리자 id
+-->
+<section class="panel" th:fragment="admin-account-table">
+  <div class="table-wrap">
+    <table class="table account-table">
+      <thead>
+        <tr>
+          <th>아이디</th>
+          <th>이름</th>
+          <th>권한</th>
+          <th>생성 시각</th>
+          <th>관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="account : ${accounts}">
+          <td class="mono" th:text="${account.username}">operator</td>
+          <td th:text="${account.name}">운영자</td>
+          <td>
+            <span class="badge badge-sm"
+                  th:classappend="${account.role.name() == 'SUPER_ADMIN'} ? 'badge-primary badge-soft' : 'badge-ghost'"
+                  th:text="${account.role}">ADMIN</span>
+          </td>
+          <td class="mono" th:text="${#temporals.format(account.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</td>
+          <td>
+            <span class="muted" th:if="${account.id == currentAdminId}">본인 계정</span>
+            <div class="account-actions" th:unless="${account.id == currentAdminId}">
+              <form class="account-inline-form" method="post"
+                    th:action="@{/admin/accounts/{adminId}/role(adminId=${account.id})}">
+                <select class="select select-sm" name="role" th:attr="aria-label=|${account.username} 권한|">
+                  <option th:each="role : ${roles}" th:value="${role}" th:text="${role}"
+                          th:selected="${role == account.role}">ADMIN</option>
+                </select>
+                <button class="btn btn-sm btn-ghost" type="submit">권한 변경</button>
+              </form>
+              <form class="account-inline-form" method="post"
+                    th:action="@{/admin/accounts/{adminId}/password(adminId=${account.id})}">
+                <input class="input input-sm" type="password" name="newPassword" autocomplete="new-password"
+                       placeholder="새 비밀번호" th:attr="aria-label=|${account.username} 새 비밀번호|" required>
+                <button class="btn btn-sm btn-ghost" type="submit">비밀번호 재설정</button>
+              </form>
+              <form class="account-inline-form" method="post"
+                    th:action="@{/admin/accounts/{adminId}/deactivate(adminId=${account.id})}">
+                <button class="btn btn-sm btn-ghost account-deactivate-button" type="submit">비활성화</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(accounts)}">
+          <td class="muted" colspan="5">관리자 계정이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

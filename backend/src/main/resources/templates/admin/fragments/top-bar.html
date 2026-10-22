@@ -6,6 +6,7 @@
   <div class="top-bar-location" th:text="${pageTitle}">화면 이름</div>
   <div class="top-bar-account" sec:authorize="isAuthenticated()">
     <span class="top-bar-admin-name" sec:authentication="principal.name">관리자</span>
+    <a class="btn btn-sm btn-ghost" th:href="@{/admin/password}">비밀번호 변경</a>
     <form method="post" th:action="@{/admin/logout}">
       <button class="btn btn-sm btn-ghost" type="submit">로그아웃</button>
     </form>
