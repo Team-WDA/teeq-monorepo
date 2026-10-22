@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
@@ -21,6 +22,7 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../support/fake_home_repository.dart';
 import '../../../support/fake_token_storage.dart';
 
@@ -40,6 +42,9 @@ Future<ProviderContainer> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        splashMinimumDisplayControllerProvider.overrideWith(
+          () => FakeSplashMinimumDisplayController(true),
+        ),
         tokenStorageProvider.overrideWithValue(
           tokenStorage ?? FakeTokenStorage(),
         ),

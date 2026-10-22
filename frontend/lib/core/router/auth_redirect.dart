@@ -7,8 +7,18 @@ import 'package:teeq/core/router/app_routes.dart';
 /// 가입이 끝나지 않은 회원은 약관 화면(`/signup-completion`)과, 그 화면이 push하는 닉네임 화면에서만 머물 수 있고
 /// 나머지 위치에서는 약관 화면으로 보낸다.
 /// 가입을 마쳤지만 캐릭터가 없는 회원은 `/onboarding/**` 밖의 모든 위치에서 온보딩으로 보낸다.
-String? authRedirect(AuthStatus status, Member? member, String location) {
+/// 스플래시 최소 노출 시간이 지나기 전에는 로그인 상태와 무관하게 `/splash`에 머문다.
+/// 복원이 더 오래 걸려 이미 지난 뒤라면 영향이 없다.
+String? authRedirect(
+  AuthStatus status,
+  Member? member,
+  String location, {
+  required bool isSplashMinimumDisplayElapsed,
+}) {
   if (location == AppRoutes.error) {
+    return null;
+  }
+  if (location == AppRoutes.splash && !isSplashMinimumDisplayElapsed) {
     return null;
   }
   switch (status) {

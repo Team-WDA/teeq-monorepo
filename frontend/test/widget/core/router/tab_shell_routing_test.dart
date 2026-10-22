@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
+import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/auth/member.dart';
@@ -27,6 +28,7 @@ import 'package:teeq/features/onboarding/presentation/onboarding_introduction_sc
 
 import '../../../support/fake_auth_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../support/fake_home_repository.dart';
 import '../../../support/fake_token_storage.dart';
 import '../../../support/my_page_harness.dart';
@@ -73,6 +75,9 @@ Future<ProviderContainer> _pumpApp(
     // 실패 응답이 재시도되지 않도록 한다.
     retry: (retryCount, error) => null,
     overrides: [
+      splashMinimumDisplayControllerProvider.overrideWith(
+        () => FakeSplashMinimumDisplayController(true),
+      ),
       appVersionProvider.overrideWith((ref) async => '0.15.0'),
       authStatusControllerProvider.overrideWith(
         () => FakeAuthStatusController(AuthStatus.signedIn),

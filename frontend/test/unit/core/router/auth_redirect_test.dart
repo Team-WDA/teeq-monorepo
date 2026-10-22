@@ -35,21 +35,47 @@ void main() {
           _memberWithCharacter,
           _incompleteMember,
         ]) {
-          expect(authRedirect(status, member, AppRoutes.error), isNull);
+          expect(
+            authRedirect(
+              status,
+              member,
+              AppRoutes.error,
+              isSplashMinimumDisplayElapsed: true,
+            ),
+            isNull,
+          );
         }
       }
     });
 
     test('unknown은 splash로, 이미 splash면 null', () {
       expect(
-        authRedirect(AuthStatus.unknown, null, AppRoutes.home),
+        authRedirect(
+          AuthStatus.unknown,
+          null,
+          AppRoutes.home,
+          isSplashMinimumDisplayElapsed: true,
+        ),
         AppRoutes.splash,
       );
       expect(
-        authRedirect(AuthStatus.unknown, null, AppRoutes.login),
+        authRedirect(
+          AuthStatus.unknown,
+          null,
+          AppRoutes.login,
+          isSplashMinimumDisplayElapsed: true,
+        ),
         AppRoutes.splash,
       );
-      expect(authRedirect(AuthStatus.unknown, null, AppRoutes.splash), isNull);
+      expect(
+        authRedirect(
+          AuthStatus.unknown,
+          null,
+          AppRoutes.splash,
+          isSplashMinimumDisplayElapsed: true,
+        ),
+        isNull,
+      );
     });
 
     test('signedOut은 welcome으로 보내고 허용 위치에서는 null', () {
@@ -60,7 +86,12 @@ void main() {
         AppRoutes.onboarding,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedOut, null, location),
+          authRedirect(
+            AuthStatus.signedOut,
+            null,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           AppRoutes.welcome,
         );
       }
@@ -70,7 +101,15 @@ void main() {
         AppRoutes.signup,
         AppRoutes.signupNickname,
       ]) {
-        expect(authRedirect(AuthStatus.signedOut, null, location), isNull);
+        expect(
+          authRedirect(
+            AuthStatus.signedOut,
+            null,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
+          isNull,
+        );
       }
     });
 
@@ -84,7 +123,12 @@ void main() {
         AppRoutes.home,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _incompleteMember, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _incompleteMember,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           AppRoutes.signupCompletion,
         );
       }
@@ -93,6 +137,7 @@ void main() {
           AuthStatus.signedIn,
           _incompleteMember,
           AppRoutes.signupCompletion,
+          isSplashMinimumDisplayElapsed: true,
         ),
         isNull,
       );
@@ -104,6 +149,7 @@ void main() {
           AuthStatus.signedIn,
           _incompleteMember,
           AppRoutes.signupNickname,
+          isSplashMinimumDisplayElapsed: true,
         ),
         isNull,
       );
@@ -120,7 +166,12 @@ void main() {
         AppRoutes.home,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _memberWithoutCharacter, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithoutCharacter,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           AppRoutes.onboarding,
         );
       }
@@ -135,7 +186,12 @@ void main() {
         AppRoutes.characterResult,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _memberWithoutCharacter, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithoutCharacter,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           isNull,
         );
       }
@@ -147,6 +203,7 @@ void main() {
           AuthStatus.signedIn,
           _memberWithCharacter,
           AppRoutes.onboarding,
+          isSplashMinimumDisplayElapsed: true,
         ),
         AppRoutes.home,
       );
@@ -160,7 +217,12 @@ void main() {
         AppRoutes.characterResult,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _memberWithCharacter, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithCharacter,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           isNull,
         );
       }
@@ -175,13 +237,23 @@ void main() {
         AppRoutes.signupCompletion,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _memberWithCharacter, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithCharacter,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           AppRoutes.home,
         );
       }
       for (final location in [AppRoutes.signupNickname, AppRoutes.home]) {
         expect(
-          authRedirect(AuthStatus.signedIn, _memberWithCharacter, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithCharacter,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           isNull,
         );
       }
@@ -189,13 +261,99 @@ void main() {
 
     test('null member behaves like member with character', () {
       expect(
-        authRedirect(AuthStatus.signedIn, null, AppRoutes.onboarding),
+        authRedirect(
+          AuthStatus.signedIn,
+          null,
+          AppRoutes.onboarding,
+          isSplashMinimumDisplayElapsed: true,
+        ),
         AppRoutes.home,
       );
       expect(
-        authRedirect(AuthStatus.signedIn, null, AppRoutes.characterResult),
+        authRedirect(
+          AuthStatus.signedIn,
+          null,
+          AppRoutes.characterResult,
+          isSplashMinimumDisplayElapsed: true,
+        ),
         isNull,
       );
+    });
+
+    group('최소 노출 시간 전', () {
+      const members = [
+        null,
+        _memberWithoutCharacter,
+        _memberWithCharacter,
+        _incompleteMember,
+      ];
+
+      test('splash는 모든 상태에서 null', () {
+        for (final status in AuthStatus.values) {
+          for (final member in members) {
+            expect(
+              authRedirect(
+                status,
+                member,
+                AppRoutes.splash,
+                isSplashMinimumDisplayElapsed: false,
+              ),
+              isNull,
+            );
+          }
+        }
+      });
+
+      test('error 위치는 붙잡지 않고 null', () {
+        for (final status in AuthStatus.values) {
+          for (final member in members) {
+            expect(
+              authRedirect(
+                status,
+                member,
+                AppRoutes.error,
+                isSplashMinimumDisplayElapsed: false,
+              ),
+              isNull,
+            );
+          }
+        }
+      });
+
+      test('unknown이 splash가 아닌 위치에 있으면 splash로 보낸다', () {
+        for (final location in [AppRoutes.home, AppRoutes.login]) {
+          expect(
+            authRedirect(
+              AuthStatus.unknown,
+              null,
+              location,
+              isSplashMinimumDisplayElapsed: false,
+            ),
+            AppRoutes.splash,
+          );
+        }
+      });
+
+      test('splash가 아닌 위치에서는 기존 분기를 따른다', () {
+        expect(
+          authRedirect(
+            AuthStatus.signedOut,
+            null,
+            AppRoutes.home,
+            isSplashMinimumDisplayElapsed: false,
+          ),
+          AppRoutes.welcome,
+        );
+        expect(
+          authRedirect(
+            AuthStatus.signedIn,
+            _memberWithCharacter,
+            AppRoutes.onboarding,
+            isSplashMinimumDisplayElapsed: false,
+          ),
+          AppRoutes.home,
+        );
+      });
     });
 
     test('signedIn + 회원 null은 완료와 같게 다룬다', () {
@@ -207,11 +365,24 @@ void main() {
         AppRoutes.signupCompletion,
       ]) {
         expect(
-          authRedirect(AuthStatus.signedIn, null, location),
+          authRedirect(
+            AuthStatus.signedIn,
+            null,
+            location,
+            isSplashMinimumDisplayElapsed: true,
+          ),
           AppRoutes.home,
         );
       }
-      expect(authRedirect(AuthStatus.signedIn, null, AppRoutes.home), isNull);
+      expect(
+        authRedirect(
+          AuthStatus.signedIn,
+          null,
+          AppRoutes.home,
+          isSplashMinimumDisplayElapsed: true,
+        ),
+        isNull,
+      );
     });
   });
 }
