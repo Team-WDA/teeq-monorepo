@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:teeq/core/debug_console/presentation/application_information_tab.dart';
 import 'package:teeq/core/debug_console/presentation/application_log_tab.dart';
+import 'package:teeq/core/debug_console/presentation/debug_console_bug_report_button.dart';
+import 'package:teeq/core/debug_console/presentation/debug_console_bug_report_sheet.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_icon_action_button.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_panel_controller.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_tab.dart';
@@ -22,46 +24,64 @@ class DebugConsolePanel extends ConsumerStatefulWidget {
 
 class _DebugConsolePanelState extends ConsumerState<DebugConsolePanel> {
   DebugConsoleTab _selectedTab = DebugConsoleTab.network;
+  bool _isBugReportSheetOpen = false;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.background,
-      child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.space16),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text('개발자 콘솔', style: AppTextStyles.heading20Bold),
+      child: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.space16),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          '개발자 콘솔',
+                          style: AppTextStyles.heading20Bold,
+                        ),
+                      ),
+                      DebugConsoleBugReportButton(
+                        onOpenSheet: () =>
+                            setState(() => _isBugReportSheetOpen = true),
+                      ),
+                      DebugConsoleIconActionButton(
+                        icon: Icons.close,
+                        tooltip: '닫기',
+                        onPressed: () async => ref
+                            .read(debugConsolePanelControllerProvider.notifier)
+                            .close(),
+                      ),
+                    ],
                   ),
-                  DebugConsoleIconActionButton(
-                    icon: Icons.close,
-                    tooltip: '닫기',
-                    onPressed: () async => ref
-                        .read(debugConsolePanelControllerProvider.notifier)
-                        .close(),
-                  ),
-                ],
+                ),
+                DebugConsoleTabBar(
+                  selectedTab: _selectedTab,
+                  onSelected: (tab) => setState(() => _selectedTab = tab),
+                ),
+                Expanded(
+                  child: switch (_selectedTab) {
+                    DebugConsoleTab.network => const NetworkLogTab(),
+                    DebugConsoleTab.applicationLog => const ApplicationLogTab(),
+                    DebugConsoleTab.error => const ErrorLogTab(),
+                    DebugConsoleTab.applicationInformation =>
+                      const ApplicationInformationTab(),
+                  },
+                ),
+              ],
+            ),
+          ),
+          if (_isBugReportSheetOpen)
+            Positioned.fill(
+              child: DebugConsoleBugReportSheet(
+                onClose: () => setState(() => _isBugReportSheetOpen = false),
               ),
             ),
-            DebugConsoleTabBar(
-              selectedTab: _selectedTab,
-              onSelected: (tab) => setState(() => _selectedTab = tab),
-            ),
-            Expanded(
-              child: switch (_selectedTab) {
-                DebugConsoleTab.network => const NetworkLogTab(),
-                DebugConsoleTab.applicationLog => const ApplicationLogTab(),
-                DebugConsoleTab.error => const ErrorLogTab(),
-                DebugConsoleTab.applicationInformation =>
-                  const ApplicationInformationTab(),
-              },
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
