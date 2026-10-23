@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Optional;
 import kr.co.teeq.api.admin.application.dto.response.AdminSettingRowResponse;
@@ -36,6 +37,7 @@ public class AdminSettingController {
 
     private final SettingConfigService settingConfigService;
 
+    @LogMonitoring
     @GetMapping
     public String settings(Model model) {
         model.addAttribute("settings", settingConfigService.getAll().stream()
@@ -45,12 +47,14 @@ public class AdminSettingController {
     }
 
     // 빈 값도 서비스 검증에 맡겨 해당 행에 오류로 보여 준다
+    @LogMonitoring
     @PostMapping("/{key}")
     public ModelAndView save(@PathVariable String key, @RequestParam(defaultValue = "") String value) {
         return saveRow(key, value);
     }
 
     // 요청 DTO의 값은 비울 수 없으므로 되돌리기는 키의 기본값을 저장하는 것으로 처리한다
+    @LogMonitoring
     @PostMapping("/{key}/reset")
     public ModelAndView reset(@PathVariable String key) {
         String defaultValue = SettingKey.find(key)

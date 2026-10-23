@@ -48,24 +48,9 @@ server:
       cookie:
         same-site: lax # 관리자 세션 쿠키. HttpOnly는 Tomcat 기본값
 
-# AI 서버 호출 설정 키: ai-server.{base-url,auth-header-name,auth-header-value}
-# 값은 application-{dev,prod}.yml에 둔다
-# 선택 키: ai-server.stub-character-enabled (기본 false). AI 서버가 캐릭터 결정 API를 제공하기 전에만 true로 둔다
-# true면 AI 서버를 호출하지 않고 고정 캐릭터를 반환하는 임시 어댑터(StubAiCharacterGenerationAdapter)가 쓰인다
-# 호출별 타임아웃은 코드 상수이며 설정 키가 아니다: 캐릭터 3초(CharacterRestClientConfig), 통화 5초(CallRestClientConfig), 인사말 3초(GreetingRestClientConfig)
+# 컨트롤러 메서드 로깅(@LogMonitoring) 설정. 시크릿 값도 마스킹 없이 출력한다(프로젝트 결정)
+chuseok22:
+  logging:
+    enabled: true
+    mask-sensitive: false
 
-# 미디어 S3 저장소 설정 키: media.s3.{bucket,region,key-prefix}
-# 값은 application-{dev,prod}.yml에 둔다. 한 버킷을 환경이 함께 쓰므로 key-prefix(dev/, prod/)로 구분한다
-# 자격 증명은 설정에 두지 않고 SDK 기본 자격 증명 체인(EC2 role)을 쓴다
-
-# 버그 제보 Discord 알림 설정 키(둘 다 필수, 비면 기동 실패): bug-report.discord.webhook-url, bug-report.admin-base-url
-# 값은 application-{dev,prod}.yml에 둔다. 웹훅 URL은 시크릿이다. admin-base-url은 알림 메시지의 관리자 상세 링크 접두사다
-# 웹훅 호출 타임아웃은 코드 상수이며 설정 키가 아니다: 연결 1초, 읽기 2초(BugReportRestClientConfig)
-
-# 관리자 부트스트랩 설정 키(선택): admin.bootstrap-account.{username,password,name}
-# 활성 SUPER_ADMIN이 0명일 때만 생성한다. 값은 application-{dev,prod}.yml에 둔다
-
-# Firebase Admin SDK 설정 키: firebase.service-account-location (기본 classpath:firebase-service-account.json)
-# 서비스 계정 JSON은 시크릿이므로 커밋하지 않는다(gitignore). 로컬은 backend/src/main/resources/firebase-service-account.json에 두고,
-# 배포는 CI가 GitHub Secret FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON으로 같은 경로에 생성한다. 파일이 없으면 기동 실패
-# 프로젝트 ID는 JSON에서 읽는다. dev/prod가 Firebase 프로젝트 하나를 함께 쓴다

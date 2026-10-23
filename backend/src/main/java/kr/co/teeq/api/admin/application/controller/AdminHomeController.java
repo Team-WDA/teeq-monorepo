@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import kr.co.teeq.api.admin.application.service.AdminDashboardService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class AdminHomeController {
 
     private final AdminDashboardService adminDashboardService;
 
+    @LogMonitoring
     @GetMapping("/admin")
     public String home(Model model) {
         model.addAttribute("dashboard", adminDashboardService.getDashboard());

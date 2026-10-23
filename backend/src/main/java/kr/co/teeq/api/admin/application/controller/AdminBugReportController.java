@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.UUID;
 import kr.co.teeq.api.support.application.dto.response.BugReportDetailResponse;
@@ -39,6 +40,7 @@ public class AdminBugReportController {
     private final BugReportQueryService bugReportQueryService;
     private final BugReportCommandService bugReportCommandService;
 
+    @LogMonitoring
     @GetMapping
     public String bugReports(
         @RequestParam(required = false) BugReportStatus status,
@@ -64,6 +66,7 @@ public class AdminBugReportController {
         return BUG_REPORTS_VIEW;
     }
 
+    @LogMonitoring
     @GetMapping("/{bug-report-id}")
     public String detail(@PathVariable("bug-report-id") UUID bugReportId, Model model) {
         BugReportDetailResponse bugReport = bugReportQueryService.getDetail(bugReportId);
@@ -75,6 +78,7 @@ public class AdminBugReportController {
     }
 
     // 같은 상태로 바꾸면 서비스가 STATE_CONFLICT를 던지고 공통 오류 처리가 알림으로 보인다
+    @LogMonitoring
     @PostMapping("/{bug-report-id}/status")
     public ModelAndView changeStatus(
         @PathVariable("bug-report-id") UUID bugReportId,

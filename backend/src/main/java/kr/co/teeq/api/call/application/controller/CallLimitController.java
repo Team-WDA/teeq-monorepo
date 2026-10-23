@@ -1,5 +1,6 @@
 package kr.co.teeq.api.call.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import kr.co.teeq.api.call.application.dto.response.CallLimitStatusResponse;
 import kr.co.teeq.api.call.application.service.CallLimitService;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
@@ -17,6 +18,7 @@ public class CallLimitController implements CallLimitControllerDocs {
 
     private final CallLimitService callLimitService;
 
+    @LogMonitoring
     @GetMapping("/today")
     public ResponseEntity<CallLimitStatusResponse> getTodayStatus(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember) {

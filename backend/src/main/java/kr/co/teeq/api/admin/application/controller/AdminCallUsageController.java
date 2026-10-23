@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -34,6 +35,7 @@ public class AdminCallUsageController {
     private final Clock clock;
     private final ZoneId koreaZoneId;
 
+    @LogMonitoring
     @GetMapping
     public String callUsages(
         @RequestParam(defaultValue = "DAY") CallUsageUnit unit,

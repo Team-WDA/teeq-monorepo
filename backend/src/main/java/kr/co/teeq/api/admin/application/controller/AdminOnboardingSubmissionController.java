@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class AdminOnboardingSubmissionController {
 
     private final OnboardingSubmissionQueryService onboardingSubmissionQueryService;
 
+    @LogMonitoring
     @GetMapping
     public String search(
         @RequestParam(required = false) UUID memberId,

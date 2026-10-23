@@ -1,5 +1,6 @@
 package kr.co.teeq.api.onboarding.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
@@ -17,6 +18,7 @@ public class OnboardingController implements OnboardingControllerDocs {
 
     private final OnboardingAnswerService onboardingAnswerService;
 
+    @LogMonitoring
     @GetMapping("/answers")
     public ResponseEntity<OnboardingAnswersResponse> getAnswers(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember) {

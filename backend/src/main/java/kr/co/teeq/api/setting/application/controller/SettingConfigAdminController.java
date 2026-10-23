@@ -1,5 +1,6 @@
 package kr.co.teeq.api.setting.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import java.util.List;
 import kr.co.teeq.api.setting.application.dto.request.SettingConfigUpdateRequest;
@@ -21,11 +22,13 @@ public class SettingConfigAdminController implements SettingConfigAdminControlle
 
     private final SettingConfigService settingConfigService;
 
+    @LogMonitoring
     @GetMapping
     public ResponseEntity<List<SettingConfigResponse>> getAll() {
         return ResponseEntity.ok(settingConfigService.getAll());
     }
 
+    @LogMonitoring
     @PatchMapping("/{key}")
     public ResponseEntity<SettingConfigResponse> update(
         @PathVariable String key,

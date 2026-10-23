@@ -1,5 +1,6 @@
 package kr.co.teeq.api.support.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import java.util.List;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
@@ -24,6 +25,7 @@ public class BugReportController implements BugReportControllerDocs {
 
     private final BugReportService bugReportService;
 
+    @LogMonitoring
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BugReportCreateResponse> create(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,

@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -36,12 +37,14 @@ public class AdminOwnPasswordController {
     private final AdminAccountService adminAccountService;
     private final Validator validator;
 
+    @LogMonitoring
     @GetMapping
     public String ownPassword(@RequestParam(required = false) String changed, Model model) {
         model.addAttribute("changed", changed != null);
         return OWN_PASSWORD_VIEW;
     }
 
+    @LogMonitoring
     @PostMapping
     public ModelAndView change(
         @AuthenticationPrincipal AuthenticatedAdmin admin,

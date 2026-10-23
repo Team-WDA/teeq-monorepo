@@ -1,5 +1,6 @@
 package kr.co.teeq.api.call.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import kr.co.teeq.api.call.application.dto.request.CallUsageReportRequest;
 import kr.co.teeq.api.call.application.dto.response.CallHistoryResponse;
@@ -19,6 +20,7 @@ public class AiServerCallController implements AiServerCallControllerDocs {
 
     private final CallHistoryService callHistoryService;
 
+    @LogMonitoring
     @PostMapping("/{call-session-id}/usage")
     public ResponseEntity<CallHistoryResponse> reportUsage(
         @PathVariable("call-session-id") String callSessionId,

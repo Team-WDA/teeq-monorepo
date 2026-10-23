@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -50,6 +51,7 @@ public class AdminMemberController {
     private final CallBonusService callBonusService;
     private final Validator validator;
 
+    @LogMonitoring
     @GetMapping
     public String members(
         @RequestParam(required = false) String keyword,
@@ -77,6 +79,7 @@ public class AdminMemberController {
         return MEMBERS_VIEW;
     }
 
+    @LogMonitoring
     @GetMapping("/{member-id}")
     public String detail(@PathVariable("member-id") UUID memberId, Model model) {
         addDetailAttributes(model, memberId);
@@ -84,6 +87,7 @@ public class AdminMemberController {
     }
 
     // bonusDate는 비우면 서비스가 오늘(KST)로 처리한다. 입력 오류는 서비스를 부르지 않고 폼에 한국어 문구로 보인다
+    @LogMonitoring
     @PostMapping("/{member-id}/call-bonuses/grant")
     public ModelAndView grantBonus(
         @AuthenticationPrincipal AuthenticatedAdmin admin,
@@ -112,6 +116,7 @@ public class AdminMemberController {
         return new ModelAndView(MEMBER_DETAIL_REDIRECT_PREFIX + memberId);
     }
 
+    @LogMonitoring
     @PostMapping("/{member-id}/call-bonuses/{call-bonus-id}/cancel")
     public String cancelBonus(
         @AuthenticationPrincipal AuthenticatedAdmin admin,
@@ -121,6 +126,7 @@ public class AdminMemberController {
         return MEMBER_DETAIL_REDIRECT_PREFIX + memberId;
     }
 
+    @LogMonitoring
     @PostMapping("/{member-id}/delete")
     public String delete(@PathVariable("member-id") UUID memberId) {
         memberDeletionService.delete(memberId);

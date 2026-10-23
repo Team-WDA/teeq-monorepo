@@ -1,5 +1,6 @@
 package kr.co.teeq.api.onboarding.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import java.time.LocalDate;
 import java.util.UUID;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingSubmissionSearchRequest;
@@ -22,6 +23,7 @@ public class OnboardingSubmissionAdminController implements OnboardingSubmission
 
     private final OnboardingSubmissionQueryService onboardingSubmissionQueryService;
 
+    @LogMonitoring
     @GetMapping
     public ResponseEntity<OnboardingSubmissionPageResponse> search(
         @RequestParam(value = "memberId", required = false) UUID memberId,

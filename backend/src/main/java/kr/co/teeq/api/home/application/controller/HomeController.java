@@ -1,5 +1,6 @@
 package kr.co.teeq.api.home.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import kr.co.teeq.api.home.application.dto.response.HomeResponse;
 import kr.co.teeq.api.home.application.service.HomeService;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
@@ -17,6 +18,7 @@ public class HomeController implements HomeControllerDocs {
 
     private final HomeService homeService;
 
+    @LogMonitoring
     @GetMapping
     public ResponseEntity<HomeResponse> getHome(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         return ResponseEntity.ok(homeService.getHome(authenticatedMember.member()));

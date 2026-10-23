@@ -1,5 +1,6 @@
 package kr.co.teeq.api.member.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
@@ -34,6 +35,7 @@ public class MemberController implements MemberControllerDocs {
     private final ProfileImageService profileImageService;
     private final MemberDeletionService memberDeletionService;
 
+    @LogMonitoring
     @GetMapping("/nickname-availability")
     public ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
         @RequestParam
@@ -42,11 +44,13 @@ public class MemberController implements MemberControllerDocs {
         return ResponseEntity.ok(memberService.checkNicknameAvailability(nickname));
     }
 
+    @LogMonitoring
     @GetMapping("/me")
     public ResponseEntity<MemberResponse> getMe(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         return ResponseEntity.ok(memberService.getMe(authenticatedMember.member()));
     }
 
+    @LogMonitoring
     @PatchMapping("/me/nickname")
     public ResponseEntity<MemberResponse> changeNickname(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -54,6 +58,7 @@ public class MemberController implements MemberControllerDocs {
         return ResponseEntity.ok(memberService.changeNickname(authenticatedMember.member(), request));
     }
 
+    @LogMonitoring
     @PutMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MemberResponse> replaceProfileImage(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -62,12 +67,14 @@ public class MemberController implements MemberControllerDocs {
         return ResponseEntity.ok(memberService.getMe(authenticatedMember.member()));
     }
 
+    @LogMonitoring
     @DeleteMapping("/me/profile-image")
     public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         profileImageService.delete(authenticatedMember.member());
         return ResponseEntity.noContent().build();
     }
 
+    @LogMonitoring
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteMe(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         memberDeletionService.delete(authenticatedMember.member().getId());

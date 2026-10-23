@@ -1,5 +1,6 @@
 package kr.co.teeq.api.admin.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -38,12 +39,14 @@ public class AdminAccountController {
     private final AdminAccountService adminAccountService;
     private final Validator validator;
 
+    @LogMonitoring
     @GetMapping
     public String accounts(@AuthenticationPrincipal AuthenticatedAdmin admin, Model model) {
         addScreenAttributes(model, admin);
         return ACCOUNTS_VIEW;
     }
 
+    @LogMonitoring
     @PostMapping
     public ModelAndView create(
         @AuthenticationPrincipal AuthenticatedAdmin admin,
@@ -66,6 +69,7 @@ public class AdminAccountController {
         return new ModelAndView(ACCOUNTS_REDIRECT);
     }
 
+    @LogMonitoring
     @PostMapping("/{admin-id}/role")
     public String changeRole(
         @AuthenticationPrincipal AuthenticatedAdmin admin,
@@ -75,6 +79,7 @@ public class AdminAccountController {
         return ACCOUNTS_REDIRECT;
     }
 
+    @LogMonitoring
     @PostMapping("/{admin-id}/deactivate")
     public String deactivate(
         @AuthenticationPrincipal AuthenticatedAdmin admin,
@@ -83,6 +88,7 @@ public class AdminAccountController {
         return ACCOUNTS_REDIRECT;
     }
 
+    @LogMonitoring
     @PostMapping("/{admin-id}/password")
     public ModelAndView resetPassword(
         @AuthenticationPrincipal AuthenticatedAdmin admin,

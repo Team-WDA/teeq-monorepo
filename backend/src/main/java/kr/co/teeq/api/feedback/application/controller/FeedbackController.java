@@ -1,5 +1,6 @@
 package kr.co.teeq.api.feedback.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import kr.co.teeq.api.feedback.application.dto.request.DetailedFeedbackRequest;
 import kr.co.teeq.api.feedback.application.dto.request.RequiredFeedbackRequest;
@@ -25,6 +26,7 @@ public class FeedbackController implements FeedbackControllerDocs {
 
     private final CallFeedbackService callFeedbackService;
 
+    @LogMonitoring
     @GetMapping("/feedback-status")
     public ResponseEntity<FeedbackStatusResponse> getFeedbackStatus(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -33,6 +35,7 @@ public class FeedbackController implements FeedbackControllerDocs {
             callFeedbackService.getStatus(authenticatedMember.member(), callSessionId));
     }
 
+    @LogMonitoring
     @PostMapping("/required-feedback")
     public ResponseEntity<RequiredFeedbackResponse> submitRequiredFeedback(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -42,6 +45,7 @@ public class FeedbackController implements FeedbackControllerDocs {
             callFeedbackService.submitRequired(authenticatedMember.member(), callSessionId, request));
     }
 
+    @LogMonitoring
     @PostMapping("/detailed-feedback")
     public ResponseEntity<Void> submitDetailedFeedback(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,

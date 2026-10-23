@@ -1,5 +1,6 @@
 package kr.co.teeq.api.call.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class CallUsageAdminController implements CallUsageAdminControllerDocs {
 
     private final CallUsageService callUsageService;
 
+    @LogMonitoring
     @GetMapping
     public ResponseEntity<List<CallUsageResponse>> getUsages(
         @RequestParam("unit") CallUsageUnit unit,

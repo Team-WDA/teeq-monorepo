@@ -1,5 +1,6 @@
 package kr.co.teeq.api.call.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,7 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
 
     private final CallBonusService callBonusService;
 
+    @LogMonitoring
     @PostMapping
     public ResponseEntity<CallBonusResponse> grant(
         @AuthenticationPrincipal AuthenticatedAdmin authenticatedAdmin,
@@ -35,11 +37,13 @@ public class CallBonusAdminController implements CallBonusAdminControllerDocs {
             callBonusService.grant(authenticatedAdmin.adminId(), memberId, request));
     }
 
+    @LogMonitoring
     @GetMapping
     public ResponseEntity<List<CallBonusResponse>> getAll(@PathVariable("member-id") UUID memberId) {
         return ResponseEntity.ok(callBonusService.getAll(memberId));
     }
 
+    @LogMonitoring
     @DeleteMapping("/{call-bonus-id}")
     public ResponseEntity<Void> cancel(
         @AuthenticationPrincipal AuthenticatedAdmin authenticatedAdmin,

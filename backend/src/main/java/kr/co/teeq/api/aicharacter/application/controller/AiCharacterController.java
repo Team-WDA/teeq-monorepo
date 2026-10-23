@@ -1,5 +1,6 @@
 package kr.co.teeq.api.aicharacter.application.controller;
 
+import com.chuseok22.logging.annotation.LogMonitoring;
 import jakarta.validation.Valid;
 import kr.co.teeq.api.aicharacter.application.dto.request.GenerateAiCharacterRequest;
 import kr.co.teeq.api.aicharacter.application.dto.request.RenameAiCharacterRequest;
@@ -25,6 +26,7 @@ public class AiCharacterController implements AiCharacterControllerDocs {
 
     private final AiCharacterService aiCharacterService;
 
+    @LogMonitoring
     @PutMapping("/me")
     public ResponseEntity<AiCharacterResponse> generate(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -34,6 +36,7 @@ public class AiCharacterController implements AiCharacterControllerDocs {
         return ResponseEntity.status(status).body(result.response());
     }
 
+    @LogMonitoring
     @PatchMapping("/me/name")
     public ResponseEntity<AiCharacterResponse> rename(
         @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
@@ -41,6 +44,7 @@ public class AiCharacterController implements AiCharacterControllerDocs {
         return ResponseEntity.ok(aiCharacterService.rename(authenticatedMember.member(), request));
     }
 
+    @LogMonitoring
     @GetMapping("/me")
     public ResponseEntity<AiCharacterResponse> get(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         return ResponseEntity.ok(aiCharacterService.get(authenticatedMember.member()));
