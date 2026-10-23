@@ -22,7 +22,7 @@ public class SettingConfigService {
 
     private final SettingConfigRepository settingConfigRepository;
 
-    // 캐시 없이 매번 DB에서 읽고, 행이 없는 키는 enum 기본값을 돌려준다
+    // 캐시 없이 매번 DB에서 읽으며, 행이 없는 키는 enum 기본값을 돌려준다
     @Transactional(readOnly = true)
     public List<SettingConfigResponse> getAll() {
         Map<String, SettingConfig> storedByKey = settingConfigRepository.findAllByDeletedFalse().stream()
