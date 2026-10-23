@@ -61,7 +61,7 @@ class FeedbackMemberDeletionHandlerTest {
     }
 
     private CallHistory callHistory() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         return CallHistory.pending(member, "persona-id", LimitKind.PER_CALL, NOW);
     }
 

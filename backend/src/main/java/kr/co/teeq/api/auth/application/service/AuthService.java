@@ -2,11 +2,11 @@ package kr.co.teeq.api.auth.application.service;
 
 import java.util.UUID;
 import kr.co.teeq.api.auth.application.dto.request.RefreshRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialLoginRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialSignUpRequest;
+import kr.co.teeq.api.auth.application.dto.request.LoginRequest;
+import kr.co.teeq.api.auth.application.dto.request.SignUpRequest;
 import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
-import kr.co.teeq.api.auth.core.port.SocialIdentity;
-import kr.co.teeq.api.auth.core.port.SocialIdentityVerifier;
+import kr.co.teeq.api.auth.core.port.VerifiedIdentity;
+import kr.co.teeq.api.auth.core.port.IdentityVerifier;
 import kr.co.teeq.api.auth.core.port.TokenProvider;
 import kr.co.teeq.api.auth.core.repository.RefreshTokenRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -25,18 +25,18 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenProvider tokenProvider;
     private final AuthTokenIssuer authTokenIssuer;
-    private final SocialLoginCommandService socialLoginCommandService;
-    private final SocialIdentityVerifier socialIdentityVerifier;
+    private final AuthCommandService authCommandService;
+    private final IdentityVerifier identityVerifier;
 
     // Firebase 검증(외부 호출)은 DB 트랜잭션 밖에서 끝낸다. 그래서 이 메서드에는 트랜잭션을 걸지 않는다
-    public AuthResponse socialLogin(SocialLoginRequest request) {
-        SocialIdentity identity = socialIdentityVerifier.verify(request.credential());
-        return socialLoginCommandService.login(identity);
+    public AuthResponse login(LoginRequest request) {
+        VerifiedIdentity identity = identityVerifier.verify(request.credential());
+        return authCommandService.login(identity);
     }
 
-    public AuthResponse socialSignUp(SocialSignUpRequest request) {
-        SocialIdentity identity = socialIdentityVerifier.verify(request.credential());
-        return socialLoginCommandService.signUp(identity, request.nickname());
+    public AuthResponse signUp(SignUpRequest request) {
+        VerifiedIdentity identity = identityVerifier.verify(request.credential());
+        return authCommandService.signUp(identity, request.nickname());
     }
 
     @Transactional

@@ -45,7 +45,7 @@ class MemberQueryServiceTest {
     private MemberQueryService memberQueryService;
 
     private Member member(String nickname) {
-        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         ReflectionTestUtils.setField(member, "createdAt", CREATED_AT);
         return member;

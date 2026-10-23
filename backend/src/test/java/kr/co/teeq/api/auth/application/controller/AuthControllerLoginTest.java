@@ -53,12 +53,12 @@ import org.springframework.test.web.servlet.MockMvc;
     JwtAccessDeniedHandler.class,
     GlobalExceptionHandler.class,
     AuthController.class,
-    AuthControllerSocialLoginTest.FixedClockConfig.class
+    AuthControllerLoginTest.FixedClockConfig.class
 })
-class AuthControllerSocialLoginTest {
+class AuthControllerLoginTest {
 
     private static final Instant NOW = Instant.parse("2026-10-17T00:00:00Z");
-    private static final String PATH = "/api/auth/social-login";
+    private static final String PATH = "/api/auth/login";
     private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
 
     @Autowired
@@ -70,7 +70,7 @@ class AuthControllerSocialLoginTest {
     @MockitoBean
     private AuthService authService;
 
-    private static final String SIGNUP_PATH = "/api/auth/social-signup";
+    private static final String SIGNUP_PATH = "/api/auth/signup";
     private static final String LOGIN_BODY = "{\"credential\":\"token\"}";
     private static final String SIGNUP_BODY = "{\"credential\":\"token\",\"nickname\":\"소연\","
         + "\"serviceTermsAgreed\":true,\"privacyPolicyAgreed\":true}";
@@ -87,8 +87,8 @@ class AuthControllerSocialLoginTest {
     }
 
     @Test
-    void socialLogin_existingMember_returns200WithoutAuthentication() throws Exception {
-        given(authService.socialLogin(any())).willReturn(response());
+    void login_existingMember_returns200WithoutAuthentication() throws Exception {
+        given(authService.login(any())).willReturn(response());
 
         mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
             .andExpect(status().isOk())
@@ -98,33 +98,33 @@ class AuthControllerSocialLoginTest {
     }
 
     @Test
-    void socialLogin_signupRequired_returns404() throws Exception {
-        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.SOCIAL_SIGNUP_REQUIRED));
+    void login_signupRequired_returns404() throws Exception {
+        given(authService.login(any())).willThrow(new CustomException(ErrorCode.AUTH_SIGNUP_REQUIRED));
 
         mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
             .andExpect(status().isNotFound())
-            .andExpect(jsonPath("$.errorCode").value("SOCIAL_SIGNUP_REQUIRED"));
+            .andExpect(jsonPath("$.errorCode").value("AUTH_SIGNUP_REQUIRED"));
     }
 
     @Test
-    void socialLogin_invalidToken_returns401() throws Exception {
-        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID));
+    void login_invalidToken_returns401() throws Exception {
+        given(authService.login(any())).willThrow(new CustomException(ErrorCode.AUTH_TOKEN_INVALID));
 
         mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
             .andExpect(status().isUnauthorized())
-            .andExpect(jsonPath("$.errorCode").value("SOCIAL_TOKEN_INVALID"));
+            .andExpect(jsonPath("$.errorCode").value("AUTH_TOKEN_INVALID"));
     }
 
     @Test
-    void socialLogin_blankOrTooLongCredential_returns400() throws Exception {
+    void login_blankOrTooLongCredential_returns400() throws Exception {
         assertInvalidRequest(PATH, "{\"credential\":\" \"}");
         assertInvalidRequest(PATH, "{}");
         assertInvalidRequest(PATH, "{\"credential\":\"" + "a".repeat(4097) + "\"}");
     }
 
     @Test
-    void socialSignUp_returns201WithoutAuthentication() throws Exception {
-        given(authService.socialSignUp(any())).willReturn(response());
+    void signUp_returns201WithoutAuthentication() throws Exception {
+        given(authService.signUp(any())).willReturn(response());
 
         mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
             .andExpect(status().isCreated())
@@ -132,8 +132,8 @@ class AuthControllerSocialLoginTest {
     }
 
     @Test
-    void socialSignUp_alreadyRegistered_returns409StateConflict() throws Exception {
-        given(authService.socialSignUp(any())).willThrow(new CustomException(ErrorCode.STATE_CONFLICT));
+    void signUp_alreadyRegistered_returns409StateConflict() throws Exception {
+        given(authService.signUp(any())).willThrow(new CustomException(ErrorCode.STATE_CONFLICT));
 
         mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
             .andExpect(status().isConflict())
@@ -141,8 +141,8 @@ class AuthControllerSocialLoginTest {
     }
 
     @Test
-    void socialSignUp_duplicateNickname_returns409() throws Exception {
-        given(authService.socialSignUp(any())).willThrow(new CustomException(ErrorCode.DUPLICATE_NICKNAME));
+    void signUp_duplicateNickname_returns409() throws Exception {
+        given(authService.signUp(any())).willThrow(new CustomException(ErrorCode.DUPLICATE_NICKNAME));
 
         mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
             .andExpect(status().isConflict())
@@ -150,7 +150,7 @@ class AuthControllerSocialLoginTest {
     }
 
     @Test
-    void socialSignUp_invalidInput_returns400() throws Exception {
+    void signUp_invalidInput_returns400() throws Exception {
         assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("\"token\"", "\" \""));
         assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("소연", "abc"));
         assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("\"serviceTermsAgreed\":true", "\"serviceTermsAgreed\":false"));

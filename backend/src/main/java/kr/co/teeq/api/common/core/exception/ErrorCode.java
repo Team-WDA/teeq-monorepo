@@ -27,9 +27,9 @@ public enum ErrorCode {
     DUPLICATE_ADMIN_USERNAME(409, "이미 사용 중인 관리자 아이디입니다."),
     LAST_SUPER_ADMIN_PROTECTED(409, "마지막 SUPER_ADMIN은 비활성화하거나 ADMIN으로 바꿀 수 없습니다."),
     ADMIN_SELF_CHANGE_FORBIDDEN(409, "본인 계정은 이 화면에서 비활성화하거나 권한을 바꿀 수 없습니다."),
-    SOCIAL_TOKEN_INVALID(401, "소셜 로그인 인증 정보가 올바르지 않습니다."),
-    SOCIAL_SERVER_UNAVAILABLE(502, "소셜 로그인 서버와 통신할 수 없습니다."),
-    SOCIAL_SIGNUP_REQUIRED(404, "가입이 필요한 소셜 계정입니다."),
+    AUTH_TOKEN_INVALID(401, "로그인 인증 정보가 올바르지 않습니다."),
+    AUTH_SERVER_UNAVAILABLE(502, "로그인 서버와 통신할 수 없습니다."),
+    AUTH_SIGNUP_REQUIRED(404, "가입이 필요한 계정입니다."),
 
     // 통화
     CALL_LIMIT_INSUFFICIENT(403, "오늘 사용할 수 있는 통화 시간이 부족합니다."),

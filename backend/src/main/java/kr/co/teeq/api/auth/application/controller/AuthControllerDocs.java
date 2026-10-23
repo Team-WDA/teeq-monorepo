@@ -10,24 +10,25 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.co.teeq.api.auth.application.dto.request.RefreshRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialLoginRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialSignUpRequest;
+import kr.co.teeq.api.auth.application.dto.request.LoginRequest;
+import kr.co.teeq.api.auth.application.dto.request.SignUpRequest;
 import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.co.teeq.api.common.application.exception.ErrorResponse;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "인증", description = "소셜 로그인, 소셜 가입, 토큰 재발급, 로그아웃")
+@Tag(name = "인증", description = "로그인, 가입, 토큰 재발급, 로그아웃")
 public interface AuthControllerDocs {
 
-    @Operation(summary = "소셜 로그인",
+    @Operation(summary = "로그인",
         description = """
-            Firebase ID token(Apple 또는 Google 로그인으로 얻음)을 서버에서 검증해 로그인하고
+            Firebase ID token(Apple, Google 또는 이메일/비밀번호 로그인으로 얻음)을 서버에서 검증해 로그인하고
             Access Token(1일)과 Refresh Token(30일)을 발급한다. 새 로그인은 기존 Refresh Token을 대체한다(다기기 로그인 없음).
-            회원 식별 키는 Firebase uid이고, 로그인 방식은 토큰의 `firebase.sign_in_provider`(`apple.com`, `google.com`)로 정한다.
-            이 API는 회원을 만들지 않는다. 처음 보는 계정이면 404 `SOCIAL_SIGNUP_REQUIRED`로 응답하며,
-            앱은 약관 동의와 닉네임 입력을 받은 뒤 `POST /api/auth/social-signup`으로 가입한다.
-            탈퇴한 계정도 처음 보는 계정과 같이 404 `SOCIAL_SIGNUP_REQUIRED`로 응답하며 다시 가입할 수 있다.""")
+            회원 식별 키는 Firebase uid이고, 로그인 방식은 토큰의 `firebase.sign_in_provider`(`apple.com`→APPLE, `google.com`→GOOGLE, `password`→EMAIL)로 정한다.
+            비밀번호는 서버가 받지도 저장하지도 않는다. 같은 uid인데 저장된 로그인 방식과 토큰의 제공자가 다르면 401 `AUTH_TOKEN_INVALID`다.
+            이 API는 회원을 만들지 않는다. 처음 보는 계정이면 404 `AUTH_SIGNUP_REQUIRED`로 응답하며,
+            앱은 약관 동의와 닉네임 입력을 받은 뒤 `POST /api/auth/signup`으로 가입한다.
+            탈퇴한 계정도 처음 보는 계정과 같이 404 `AUTH_SIGNUP_REQUIRED`로 응답하며 다시 가입할 수 있다.""")
     @SecurityRequirements
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "로그인 성공"),
@@ -35,22 +36,22 @@ public interface AuthControllerDocs {
             description = "`INVALID_REQUEST`: 인증 정보가 비어 있거나 4096자 초과(`errorMessage`에 사유). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`SOCIAL_TOKEN_INVALID`: 토큰이 위조·만료되었거나 지원하지 않는 로그인 제공자이거나 토큰에 이메일이 없음",
+            description = "`AUTH_TOKEN_INVALID`: 토큰이 위조·만료되었거나 지원하지 않는 로그인 제공자이거나 토큰에 이메일이 없거나 폐기된 토큰이거나 저장된 로그인 방식과 제공자가 다름",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "404",
-            description = "`SOCIAL_SIGNUP_REQUIRED`: 가입되지 않은 계정. 약관 동의와 닉네임을 받아 `social-signup`을 호출한다",
+            description = "`AUTH_SIGNUP_REQUIRED`: 가입되지 않은 계정. 약관 동의와 닉네임을 받아 `signup`을 호출한다",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "502",
-            description = "`SOCIAL_SERVER_UNAVAILABLE`: Firebase 공개키를 조회할 수 없음. 잠시 후 다시 시도한다",
+            description = "`AUTH_SERVER_UNAVAILABLE`: Firebase 공개키를 조회할 수 없음. 잠시 후 다시 시도한다",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<AuthResponse> socialLogin(@Valid SocialLoginRequest request);
+    ResponseEntity<AuthResponse> login(@Valid LoginRequest request);
 
-    @Operation(summary = "소셜 가입",
+    @Operation(summary = "가입",
         description = """
             Firebase ID token을 검증하고, 닉네임과 필수 약관 동의를 받아 회원을 만든 뒤
-            Access Token(1일)과 Refresh Token(30일)을 발급한다. `social-login`이 404 `SOCIAL_SIGNUP_REQUIRED`로 응답한 뒤에 호출한다.
-            토큰은 `social-login`과 같은 규칙으로 검증한다.""")
+            Access Token(1일)과 Refresh Token(30일)을 발급한다. `login`이 404 `AUTH_SIGNUP_REQUIRED`로 응답한 뒤에 호출한다.
+            토큰은 `login`과 같은 규칙으로 검증한다(폐기 여부 포함).""")
     @SecurityRequirements
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "가입 후 로그인 성공"),
@@ -58,16 +59,16 @@ public interface AuthControllerDocs {
             description = "`INVALID_REQUEST`: 인증 정보가 비었거나 4096자 초과, 닉네임이 비었거나 규칙 위반, 필수 약관에 동의하지 않음(`errorMessage`에 사유). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "401",
-            description = "`SOCIAL_TOKEN_INVALID`: 토큰이 위조·만료되었거나 지원하지 않는 로그인 제공자이거나 토큰에 이메일이 없음",
+            description = "`AUTH_TOKEN_INVALID`: 토큰이 위조·만료되었거나 지원하지 않는 로그인 제공자이거나 토큰에 이메일이 없거나 폐기된 토큰이거나 저장된 로그인 방식과 제공자가 다름",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
-            description = "`STATE_CONFLICT`: 이미 가입된 계정(앱은 `social-login`으로 로그인한다). `DUPLICATE_NICKNAME`: 다른 회원이 이미 사용 중인 닉네임",
+            description = "`STATE_CONFLICT`: 이미 가입된 계정(앱은 `login`으로 로그인한다). `DUPLICATE_NICKNAME`: 다른 회원이 이미 사용 중인 닉네임",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "502",
-            description = "`SOCIAL_SERVER_UNAVAILABLE`: Firebase 공개키를 조회할 수 없음. 잠시 후 다시 시도한다",
+            description = "`AUTH_SERVER_UNAVAILABLE`: Firebase 공개키를 조회할 수 없음. 잠시 후 다시 시도한다",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<AuthResponse> socialSignUp(@Valid SocialSignUpRequest request);
+    ResponseEntity<AuthResponse> signUp(@Valid SignUpRequest request);
 
     @Operation(summary = "토큰 재발급",
         description = """

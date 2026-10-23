@@ -26,9 +26,9 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private LoginType loginType;
 
-    // 소셜 제공자가 부여한 사용자 식별값(Firebase uid)
+    // Firebase uid. 제공자(Apple, Google, 이메일)와 무관한 회원 조회 키
     @Column(nullable = false)
-    private String socialUserId;
+    private String firebaseUid;
 
     @Column(nullable = false)
     private String nickname;
@@ -47,12 +47,12 @@ public class Member extends BaseEntity {
     @Column
     private Instant lastGreetedAt;
 
-    // 소셜 로그인 가입은 닉네임과 필수 약관 동의를 받은 뒤에만 회원을 만든다. 가입 계정은 항상 USER다
-    public static Member createSocialMember(LoginType loginType, String socialUserId, String email, String nickname) {
+    // 가입은 닉네임과 필수 약관 동의를 받은 뒤에만 회원을 만든다. 가입 계정은 항상 USER다
+    public static Member createMember(LoginType loginType, String firebaseUid, String email, String nickname) {
         Member member = new Member();
         member.email = email;
         member.loginType = loginType;
-        member.socialUserId = socialUserId;
+        member.firebaseUid = firebaseUid;
         member.nickname = nickname;
         member.role = Role.USER;
         member.serviceTermsAgreed = true;

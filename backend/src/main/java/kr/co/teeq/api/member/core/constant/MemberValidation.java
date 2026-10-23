@@ -1,7 +1,7 @@
 package kr.co.teeq.api.member.core.constant;
 
 /**
- * 비밀번호와 닉네임 입력 규칙. 비밀번호 규칙은 관리자 계정 DTO가, 닉네임 규칙은 소셜 가입, 닉네임 변경과 중복 확인 요청이 쓴다.
+ * 비밀번호와 닉네임 입력 규칙. 비밀번호 규칙은 관리자 계정 DTO가, 닉네임 규칙은 가입, 닉네임 변경과 중복 확인 요청이 쓴다.
  */
 public final class MemberValidation {
 

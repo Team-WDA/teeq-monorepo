@@ -83,7 +83,7 @@ class MemberControllerWithdrawalTest {
     private MemberDeletionService memberDeletionService;
 
     private String bearer() {
-        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
         return "Bearer " + jwtProvider.issueAccessToken(MEMBER_ID);

@@ -38,7 +38,7 @@ class ProfileImageMemberDeletionHandlerTest {
 
     @Test
     void handle_softDeletesActiveProfileImage() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         ProfileImage profileImage = ProfileImage.of(member, "storage-key", "image/png", 1024L);
         given(profileImageRepository.findByMemberIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(profileImage));
 

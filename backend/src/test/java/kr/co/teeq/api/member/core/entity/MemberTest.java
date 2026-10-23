@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 class MemberTest {
 
     @Test
-    void createSocialMember_createsMemberWithNicknameAndAgreements() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
+    void createMember_createsMemberWithNicknameAndAgreements() {
+        Member member = Member.createMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
 
         assertThat(member.getNickname()).isEqualTo("소연");
         assertThat(member.getEmail()).isEqualTo("soyeon@teeq.com");
-        assertThat(member.getSocialUserId()).isEqualTo("apple-subject");
+        assertThat(member.getFirebaseUid()).isEqualTo("apple-subject");
         assertThat(member.isServiceTermsAgreed()).isTrue();
         assertThat(member.isPrivacyPolicyAgreed()).isTrue();
         assertThat(member.getLoginType()).isEqualTo(LoginType.APPLE);
@@ -24,7 +24,7 @@ class MemberTest {
 
     @Test
     void changeNickname_replacesNickname() {
-        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
 
         member.changeNickname("민준");
 
@@ -33,7 +33,7 @@ class MemberTest {
 
     @Test
     void markGreeted_recordsLastGreetedAt() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
         Instant greetedAt = Instant.parse("2026-10-21T01:00:00Z");
 
         assertThat(member.getLastGreetedAt()).isNull();

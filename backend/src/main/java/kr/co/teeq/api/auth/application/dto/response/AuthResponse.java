@@ -21,7 +21,7 @@ public record AuthResponse(
     @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")
     boolean hasAiCharacter,
 
-    @Schema(description = "로그인 방식(APPLE, GOOGLE)", example = "GOOGLE")
+    @Schema(description = "로그인 방식(APPLE, GOOGLE, EMAIL)", example = "GOOGLE")
     LoginType loginType,
 
     @Schema(description = "프로필 사진 절대 URL. 사진이 없으면 null",

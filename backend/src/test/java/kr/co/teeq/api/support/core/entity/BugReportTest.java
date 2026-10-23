@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class BugReportTest {
 
     private BugReport newBugReport() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-user-id", "member@teeq.co.kr", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "social-user-id", "member@teeq.co.kr", "소연");
         BugReportEnvironment environment =
             new BugReportEnvironment("1.0.0", BugReportPlatform.ANDROID, "Android 15", "Pixel 9");
         return BugReport.of(member, BugReportSource.USER, "통화가 끊깁니다", environment, "[]", "[]", 2, 3);

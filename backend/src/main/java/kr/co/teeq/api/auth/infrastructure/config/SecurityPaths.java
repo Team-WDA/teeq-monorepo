@@ -6,8 +6,8 @@ public final class SecurityPaths {
     // 열지 않으면 Boot의 500 응답 본문 대신 401로 바뀐다
     public static final String[] PUBLIC_PATHS = {
         "/api/auth/refresh",
-        "/api/auth/social-login",
-        "/api/auth/social-signup",
+        "/api/auth/login",
+        "/api/auth/signup",
         "/api/members/nickname-availability",
         "/api/app-versions/check",
         "/actuator/health",

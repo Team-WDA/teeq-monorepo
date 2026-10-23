@@ -55,7 +55,7 @@ class MemberServiceTest {
     }
 
     private Member member(UUID id, String nickname) {
-        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
         ReflectionTestUtils.setField(member, "id", id);
         return member;
     }

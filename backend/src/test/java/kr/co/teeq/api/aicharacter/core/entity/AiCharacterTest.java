@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class AiCharacterTest {
 
-    private final Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
+    private final Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     @Test
     void 생성하면_이름이_없는_캐릭터를_만든다() {

@@ -20,6 +20,10 @@ import org.springframework.core.io.ResourceLoader;
 @RequiredArgsConstructor
 public class FirebaseConfig {
 
+    // Admin SDK의 HTTP 연결·읽기 제한 시간(ms). 응답 지연이 요청 스레드를 오래 붙잡지 않게 한다
+    private static final int CONNECT_TIMEOUT_MILLIS = 3_000;
+    private static final int READ_TIMEOUT_MILLIS = 5_000;
+
     private final FirebaseProperties firebaseProperties;
     private final ResourceLoader resourceLoader;
 
@@ -34,6 +38,8 @@ public class FirebaseConfig {
         try (InputStream inputStream = serviceAccount.getInputStream()) {
             FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(inputStream))
+                .setConnectTimeout(CONNECT_TIMEOUT_MILLIS)
+                .setReadTimeout(READ_TIMEOUT_MILLIS)
                 .build();
             return FirebaseApp.initializeApp(options);
         } catch (IOException exception) {

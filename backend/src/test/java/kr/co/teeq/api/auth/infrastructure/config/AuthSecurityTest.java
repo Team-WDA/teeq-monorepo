@@ -82,7 +82,7 @@ class AuthSecurityTest {
     private MemberRepository memberRepository;
 
     private Member member(Role role) {
-        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         ReflectionTestUtils.setField(member, "role", role);
         return member;
@@ -165,8 +165,8 @@ class AuthSecurityTest {
     void publicPaths_areNotBlockedByAuthentication() throws Exception {
         for (var request : new org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder[] {
             post("/api/auth/refresh"),
-            post("/api/auth/social-login"),
-            post("/api/auth/social-signup"),
+            post("/api/auth/login"),
+            post("/api/auth/signup"),
             get("/api/members/nickname-availability")
         }) {
             int httpStatus = mockMvc.perform(request).andReturn().getResponse().getStatus();
@@ -175,8 +175,10 @@ class AuthSecurityTest {
     }
 
     @Test
-    void removedEmailAuthPaths_areProtected() throws Exception {
-        mockMvc.perform(post("/api/auth/login"))
+    void removedAuthPaths_areProtected() throws Exception {
+        mockMvc.perform(post("/api/auth/social-login"))
+            .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/auth/social-signup"))
             .andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/members"))
             .andExpect(status().isUnauthorized())
@@ -185,7 +187,7 @@ class AuthSecurityTest {
 
     @Test
     void invalidTokenOnPublicPath_isNotRejectedByFilter() throws Exception {
-        int httpStatus = mockMvc.perform(post("/api/auth/social-login").header(HttpHeaders.AUTHORIZATION, bearer("not-a-jwt")))
+        int httpStatus = mockMvc.perform(post("/api/auth/login").header(HttpHeaders.AUTHORIZATION, bearer("not-a-jwt")))
             .andReturn().getResponse().getStatus();
 
         assertThat(httpStatus).isNotIn(401, 403);

@@ -71,7 +71,7 @@ class BugReportQueryServiceTest {
     private MediaService mediaService;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
-    private final Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
+    private final Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     private BugReportQueryService bugReportQueryService;
 

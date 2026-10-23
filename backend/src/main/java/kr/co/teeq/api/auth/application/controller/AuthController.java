@@ -2,8 +2,8 @@ package kr.co.teeq.api.auth.application.controller;
 
 import jakarta.validation.Valid;
 import kr.co.teeq.api.auth.application.dto.request.RefreshRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialLoginRequest;
-import kr.co.teeq.api.auth.application.dto.request.SocialSignUpRequest;
+import kr.co.teeq.api.auth.application.dto.request.LoginRequest;
+import kr.co.teeq.api.auth.application.dto.request.SignUpRequest;
 import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.co.teeq.api.auth.application.service.AuthService;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
@@ -23,14 +23,14 @@ public class AuthController implements AuthControllerDocs {
 
     private final AuthService authService;
 
-    @PostMapping("/social-login")
-    public ResponseEntity<AuthResponse> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
-        return ResponseEntity.ok(authService.socialLogin(request));
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
-    @PostMapping("/social-signup")
-    public ResponseEntity<AuthResponse> socialSignUp(@Valid @RequestBody SocialSignUpRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.socialSignUp(request));
+    @PostMapping("/signup")
+    public ResponseEntity<AuthResponse> signUp(@Valid @RequestBody SignUpRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signUp(request));
     }
 
     @PostMapping("/refresh")

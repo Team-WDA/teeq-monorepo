@@ -60,12 +60,12 @@ class CallMemberDeletionHandlerTest {
     }
 
     private CallHistory callHistory(Instant startedAt) {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         return CallHistory.pending(member, "persona-id", LimitKind.PER_CALL, startedAt);
     }
 
     private CallBonus callBonus() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         return CallBonus.grant(member, LocalDate.of(2026, 10, 22), 600, "보상", null);
     }
 

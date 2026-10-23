@@ -49,7 +49,7 @@ class CallFeedbackTargetServiceTest {
     }
 
     private static Member memberOf(UUID id) {
-        Member owner = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
+        Member owner = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(owner, "id", id);
         return owner;
     }

@@ -93,7 +93,7 @@ class AiServerSecurityTest {
 
     @Test
     void userJwtOnly_returns401OnAiServerPath() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
         String token = jwtProvider.issueAccessToken(MEMBER_ID);
 
         mockMvc.perform(get("/api/ai-server/probe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
@@ -110,7 +110,7 @@ class AiServerSecurityTest {
 
     @Test
     void validUserJwt_stillAllowsOtherPath() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
         String token = jwtProvider.issueAccessToken(MEMBER_ID);
 
         mockMvc.perform(get("/api/probe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))

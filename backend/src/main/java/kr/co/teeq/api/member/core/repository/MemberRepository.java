@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -13,7 +12,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, JpaSpecif
 
     Optional<Member> findByIdAndDeletedFalse(UUID id);
 
-    Optional<Member> findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType loginType, String socialUserId);
+    Optional<Member> findByFirebaseUidAndDeletedFalse(String firebaseUid);
 
     Optional<Member> findByNicknameIgnoreCaseAndDeletedFalse(String nickname);
 

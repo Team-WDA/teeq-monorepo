@@ -45,7 +45,7 @@ class BugReportCommandServiceTest {
     @InjectMocks
     private BugReportCommandService bugReportCommandService;
 
-    private final Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
+    private final Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     private BugReportCreateRequest request() {
         return new BugReportCreateRequest(BugReportSource.USER, "앱이 멈춰요",
