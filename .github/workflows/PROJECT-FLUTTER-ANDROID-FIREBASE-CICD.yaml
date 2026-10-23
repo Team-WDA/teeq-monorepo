@@ -24,7 +24,7 @@
 #
 # 📝 환경 설정 (선택):
 # ENV_FILE 또는 ENV: .env 파일 내용 (둘 중 하나, ENV_FILE 우선)
-# GOOGLE_SERVICES_JSON: Firebase google-services.json
+# GOOGLE_SERVICES_JSON: Firebase google-services.json (필수) [teeq]
 #
 # 🪄 빠른 설정: .github/util/flutter/firebase-wizard/firebase-wizard.html을
 #    브라우저에서 열어 5단계 마법사로 Firebase 배포를 자동 설정할 수 있습니다.
@@ -267,13 +267,18 @@ jobs:
           echo "✅ key.properties 생성 완료"
           # [teeq: disabled - cat android/key.properties가 서명 비밀번호를 로그에 남김]
 
-      # [teeq: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
-      # - name: Create Google-services.json
-      #   run: |
-      #     cat << 'EOF' > android/app/google-services.json
-      #     ${{ secrets.GOOGLE_SERVICES_JSON }}
-      #     EOF
-      #     echo "✅ Google-services.json 생성 완료"
+      # [teeq: GOOGLE_SERVICES_JSON secret -> frontend/android/app/google-services.json. 비어 있으면 google-services 플러그인이 예외를 던지므로 즉시 실패]
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret is not set"
+            exit 1
+          fi
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          python3 -m json.tool android/app/google-services.json > /dev/null
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
