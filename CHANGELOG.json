@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-23T11:08:23Z",
-    "currentVersion": "0.33.1",
+    "lastUpdated": "2026-10-23T11:19:48Z",
+    "currentVersion": "0.33.2",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 43
+    "totalReleases": 44
   },
   "releases": [
+    {
+      "version": "0.33.2",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.33.2]\n\n### 🐛 수정\n- iOS Swift 패키지 충돌 해소를 위해 firebase_core 4.15.1, firebase_auth 6.7.1로 조정",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "iOS Swift 패키지 충돌 해소를 위해 firebase_core 4.15.1, firebase_auth 6.7.1로 조정"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.33.1",
       "project_types": [
