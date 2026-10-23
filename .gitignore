@@ -42,6 +42,7 @@ HELP.md
 ### Backend secrets (application-*.yml 은 profile 별 실제 값이므로 추적하지 않는다) ###
 application-dev.yml
 application-prod.yml
+backend/src/main/resources/firebase-service-account.json
 
 ### Frontend (Flutter / Dart) ###
 frontend/.dart_tool/

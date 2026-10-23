@@ -22,13 +22,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class SocialLoginCommandServiceTest {
 
     private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
     private static final AuthResponse RESPONSE =
-        new AuthResponse("access", "refresh", MEMBER_ID, null, false, LoginType.APPLE, null);
+        new AuthResponse("access", "refresh", MEMBER_ID, "소연", false, LoginType.GOOGLE, null);
+    private static final SocialIdentity IDENTITY = new SocialIdentity(LoginType.GOOGLE, "uid-1", "soyeon@teeq.com");
+    private static final String NICKNAME = "소연";
 
     @Mock
     private MemberRepository memberRepository;
@@ -39,84 +42,109 @@ class SocialLoginCommandServiceTest {
     @InjectMocks
     private SocialLoginCommandService socialLoginCommandService;
 
-    private SocialIdentity identity(String email) {
-        return new SocialIdentity(LoginType.APPLE, "apple-subject", email);
-    }
-
     private void stubNoExistingMember() {
-        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.GOOGLE, "uid-1"))
             .willReturn(Optional.empty());
     }
 
-    @Test
-    void loginOrSignUp_existingMember_issuesTokensWithoutCreating() {
-        Member existing = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
-        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
-            .willReturn(Optional.of(existing));
-        given(authTokenIssuer.issue(existing)).willReturn(RESPONSE);
-
-        SocialLoginResult result = socialLoginCommandService.loginOrSignUp(identity("soyeon@teeq.com"));
-
-        assertThat(result.created()).isFalse();
-        assertThat(result.response()).isEqualTo(RESPONSE);
-        verify(memberRepository, never()).saveAndFlush(any());
+    private void assertErrorCode(Throwable thrown, ErrorCode expected) {
+        assertThat(thrown).isInstanceOfSatisfying(CustomException.class,
+            exception -> assertThat(exception.getErrorCode()).isEqualTo(expected));
     }
 
     @Test
-    void loginOrSignUp_existingMemberWithoutEmail_succeeds() {
-        Member existing = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
-        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.APPLE, "apple-subject"))
+    void login_existingMember_issuesTokens() {
+        Member existing = Member.createSocialMember(LoginType.GOOGLE, "uid-1", "soyeon@teeq.com", NICKNAME);
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.GOOGLE, "uid-1"))
             .willReturn(Optional.of(existing));
         given(authTokenIssuer.issue(existing)).willReturn(RESPONSE);
 
-        SocialLoginResult result = socialLoginCommandService.loginOrSignUp(identity(null));
-
-        assertThat(result.created()).isFalse();
-        verify(memberRepository, never()).saveAndFlush(any());
+        assertThat(socialLoginCommandService.login(IDENTITY)).isEqualTo(RESPONSE);
     }
 
     @Test
-    void loginOrSignUp_newMember_savesIncompleteMemberAndIssuesTokens() {
+    void login_unknownUid_throwsSignupRequiredWithoutCreating() {
         stubNoExistingMember();
-        given(memberRepository.existsByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(false);
+
+        assertThatThrownBy(() -> socialLoginCommandService.login(IDENTITY))
+            .satisfies(thrown -> assertErrorCode(thrown, ErrorCode.SOCIAL_SIGNUP_REQUIRED));
+        verify(memberRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void signUp_newMember_savesMemberWithAgreedTermsAndIssuesTokens() {
+        stubNoExistingMember();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(NICKNAME)).willReturn(Optional.empty());
         given(memberRepository.saveAndFlush(any(Member.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(authTokenIssuer.issue(any(Member.class))).willReturn(RESPONSE);
 
-        SocialLoginResult result = socialLoginCommandService.loginOrSignUp(identity(" Soyeon@Teeq.com "));
+        AuthResponse response = socialLoginCommandService.signUp(IDENTITY, NICKNAME);
 
         ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
         verify(memberRepository).saveAndFlush(captor.capture());
         Member saved = captor.getValue();
-        assertThat(saved.getNickname()).isNull();
-        assertThat(saved.isServiceTermsAgreed()).isFalse();
-        assertThat(saved.isPrivacyPolicyAgreed()).isFalse();
-        assertThat(saved.getLoginType()).isEqualTo(LoginType.APPLE);
-        assertThat(saved.getSocialUserId()).isEqualTo("apple-subject");
+        assertThat(saved.getNickname()).isEqualTo(NICKNAME);
+        assertThat(saved.getLoginType()).isEqualTo(LoginType.GOOGLE);
+        assertThat(saved.getSocialUserId()).isEqualTo("uid-1");
         assertThat(saved.getEmail()).isEqualTo("soyeon@teeq.com");
-        assertThat(saved.getPassword()).isNull();
-        assertThat(result.created()).isTrue();
-        assertThat(result.response()).isEqualTo(RESPONSE);
+        assertThat(saved.isServiceTermsAgreed()).isTrue();
+        assertThat(saved.isPrivacyPolicyAgreed()).isTrue();
+        assertThat(response).isEqualTo(RESPONSE);
     }
 
     @Test
-    void loginOrSignUp_newMemberWithoutEmail_throwsTokenInvalid() {
-        stubNoExistingMember();
+    void signUp_existingUid_throwsStateConflict() {
+        Member existing = Member.createSocialMember(LoginType.GOOGLE, "uid-1", "soyeon@teeq.com", NICKNAME);
+        given(memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(LoginType.GOOGLE, "uid-1"))
+            .willReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> socialLoginCommandService.loginOrSignUp(identity(null)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.SOCIAL_TOKEN_INVALID));
+        assertThatThrownBy(() -> socialLoginCommandService.signUp(IDENTITY, "다른닉"))
+            .satisfies(thrown -> assertErrorCode(thrown, ErrorCode.STATE_CONFLICT));
         verify(memberRepository, never()).saveAndFlush(any());
     }
 
     @Test
-    void loginOrSignUp_newMemberWithExistingEmail_throwsDuplicateEmail() {
+    void signUp_takenNickname_throwsDuplicateNickname() {
         stubNoExistingMember();
-        given(memberRepository.existsByEmailAndDeletedFalse("soyeon@teeq.com")).willReturn(true);
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(NICKNAME))
+            .willReturn(Optional.of(Member.createSocialMember(LoginType.APPLE, "uid-9", "other@teeq.com", NICKNAME)));
 
-        assertThatThrownBy(() -> socialLoginCommandService.loginOrSignUp(identity("soyeon@teeq.com")))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_EMAIL));
+        assertThatThrownBy(() -> socialLoginCommandService.signUp(IDENTITY, NICKNAME))
+            .satisfies(thrown -> assertErrorCode(thrown, ErrorCode.DUPLICATE_NICKNAME));
         verify(memberRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void signUp_concurrentSameUid_convertsSocialIndexViolationToStateConflict() {
+        stubNoExistingMember();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(NICKNAME)).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
+            "violation", new RuntimeException("duplicate key value violates unique constraint \"uq_member_social_active\"")));
+
+        assertThatThrownBy(() -> socialLoginCommandService.signUp(IDENTITY, NICKNAME))
+            .satisfies(thrown -> assertErrorCode(thrown, ErrorCode.STATE_CONFLICT));
+    }
+
+    @Test
+    void signUp_concurrentSameNickname_convertsNicknameIndexViolationToDuplicateNickname() {
+        stubNoExistingMember();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(NICKNAME)).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
+            "violation", new RuntimeException("duplicate key value violates unique constraint \"uq_member_nickname_active\"")));
+
+        assertThatThrownBy(() -> socialLoginCommandService.signUp(IDENTITY, NICKNAME))
+            .satisfies(thrown -> assertErrorCode(thrown, ErrorCode.DUPLICATE_NICKNAME));
+    }
+
+    @Test
+    void signUp_unknownIntegrityViolation_isRethrown() {
+        stubNoExistingMember();
+        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(NICKNAME)).willReturn(Optional.empty());
+        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
+            "violation", new RuntimeException("null value in column")));
+
+        assertThatThrownBy(() -> socialLoginCommandService.signUp(IDENTITY, NICKNAME))
+            .isInstanceOf(DataIntegrityViolationException.class);
     }
 
 }

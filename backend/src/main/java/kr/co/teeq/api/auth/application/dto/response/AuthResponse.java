@@ -15,13 +15,13 @@ public record AuthResponse(
     @Schema(description = "회원 id(UUID)", example = "0192f3a4-5b6c-7d8e-9f01-23456789abcd")
     UUID memberId,
 
-    @Schema(description = "닉네임. NULL이면 가입 완료 화면으로 보낸다", example = "티큐", nullable = true)
+    @Schema(description = "닉네임", example = "티큐")
     String nickname,
 
     @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")
     boolean hasAiCharacter,
 
-    @Schema(description = "로그인 방식(EMAIL, APPLE)", example = "EMAIL")
+    @Schema(description = "로그인 방식(APPLE, GOOGLE)", example = "GOOGLE")
     LoginType loginType,
 
     @Schema(description = "프로필 사진 절대 URL. 사진이 없으면 null",

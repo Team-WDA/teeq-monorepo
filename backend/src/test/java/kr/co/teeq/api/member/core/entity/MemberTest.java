@@ -10,45 +10,30 @@ import org.junit.jupiter.api.Test;
 class MemberTest {
 
     @Test
-    void createSocialMember_createsIncompleteMember() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
+    void createSocialMember_createsMemberWithNicknameAndAgreements() {
+        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
 
-        assertThat(member.getNickname()).isNull();
-        assertThat(member.isServiceTermsAgreed()).isFalse();
-        assertThat(member.isPrivacyPolicyAgreed()).isFalse();
-        assertThat(member.isSignupCompleted()).isFalse();
+        assertThat(member.getNickname()).isEqualTo("소연");
+        assertThat(member.getEmail()).isEqualTo("soyeon@teeq.com");
+        assertThat(member.getSocialUserId()).isEqualTo("apple-subject");
+        assertThat(member.isServiceTermsAgreed()).isTrue();
+        assertThat(member.isPrivacyPolicyAgreed()).isTrue();
         assertThat(member.getLoginType()).isEqualTo(LoginType.APPLE);
         assertThat(member.getRole()).isEqualTo(Role.USER);
     }
 
     @Test
-    void completeSignup_setsNicknameAndAgreements() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
+    void changeNickname_replacesNickname() {
+        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
 
-        member.completeSignup("소연");
+        member.changeNickname("민준");
 
-        assertThat(member.getNickname()).isEqualTo("소연");
-        assertThat(member.isSignupCompleted()).isTrue();
-        assertThat(member.isServiceTermsAgreed()).isTrue();
-        assertThat(member.isPrivacyPolicyAgreed()).isTrue();
-    }
-
-    @Test
-    void builder_emailMember_isSignupCompleted() {
-        Member member = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
-
-        assertThat(member.isSignupCompleted()).isTrue();
+        assertThat(member.getNickname()).isEqualTo("민준");
     }
 
     @Test
     void markGreeted_recordsLastGreetedAt() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
+        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
         Instant greetedAt = Instant.parse("2026-10-21T01:00:00Z");
 
         assertThat(member.getLastGreetedAt()).isNull();

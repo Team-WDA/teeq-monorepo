@@ -12,6 +12,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.common.infrastructure.config.AiServerPropertiesConfig;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
@@ -92,13 +93,7 @@ class AiServerSecurityTest {
 
     @Test
     void userJwtOnly_returns401OnAiServerPath() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build()));
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
         String token = jwtProvider.issueAccessToken(MEMBER_ID);
 
         mockMvc.perform(get("/api/ai-server/probe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
@@ -115,13 +110,7 @@ class AiServerSecurityTest {
 
     @Test
     void validUserJwt_stillAllowsOtherPath() throws Exception {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build()));
+        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연")));
         String token = jwtProvider.issueAccessToken(MEMBER_ID);
 
         mockMvc.perform(get("/api/probe").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))

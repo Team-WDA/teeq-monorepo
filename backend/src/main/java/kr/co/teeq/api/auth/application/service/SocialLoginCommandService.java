@@ -1,43 +1,70 @@
 package kr.co.teeq.api.auth.application.service;
 
+import java.util.Optional;
+import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.co.teeq.api.auth.core.port.SocialIdentity;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * 검증이 끝난 소셜 사용자 정보로 로그인 또는 가입을 처리한다. 제공자 서버 호출 중에는 DB 트랜잭션을 열지 않으므로
+ * 검증이 끝난 소셜 사용자 정보로 로그인 또는 가입을 처리한다. 검증 서버 호출 중에는 DB 트랜잭션을 열지 않으므로
  * 호출은 이 트랜잭션 밖({@link AuthService})에서 끝낸다.
  */
 @Service
 @RequiredArgsConstructor
 public class SocialLoginCommandService {
 
+    // 마이그레이션의 partial unique index 이름과 같아야 한다. 동시 가입으로 인덱스가 먼저 걸린 경우 409로 바꾼다
+    private static final String NICKNAME_INDEX_NAME = "uq_member_nickname_active";
+    private static final String SOCIAL_INDEX_NAME = "uq_member_social_active";
+
     private final MemberRepository memberRepository;
     private final AuthTokenIssuer authTokenIssuer;
 
-    // 유니크 인덱스 위반(DataIntegrityViolationException)은 호출한 쪽이 처리한다. 같은 트랜잭션에서는 재조회할 수 없다
     @Transactional
-    public SocialLoginResult loginOrSignUp(SocialIdentity identity) {
-        return memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(identity.loginType(), identity.subject())
-            .map(member -> new SocialLoginResult(authTokenIssuer.issue(member), false))
-            .orElseGet(() -> new SocialLoginResult(authTokenIssuer.issue(signUp(identity)), true));
+    public AuthResponse login(SocialIdentity identity) {
+        Member member = findActiveMember(identity)
+            .orElseThrow(() -> new CustomException(ErrorCode.SOCIAL_SIGNUP_REQUIRED));
+        return authTokenIssuer.issue(member);
     }
 
-    // 신규 회원은 닉네임·약관 동의 없이 만들고, 앱이 가입 완료 API로 채우게 한다
-    private Member signUp(SocialIdentity identity) {
-        if (identity.email() == null) {
-            throw new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID);
+    // 약관 동의는 요청 검증에서 true로 보장되므로 동의한 상태로 저장한다
+    @Transactional
+    public AuthResponse signUp(SocialIdentity identity, String nickname) {
+        if (findActiveMember(identity).isPresent()) {
+            throw new CustomException(ErrorCode.STATE_CONFLICT);
         }
-        if (memberRepository.existsByEmailAndDeletedFalse(identity.email())) {
-            throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
+        if (memberRepository.findByNicknameIgnoreCaseAndDeletedFalse(nickname).isPresent()) {
+            throw new CustomException(ErrorCode.DUPLICATE_NICKNAME);
         }
-        Member member = Member.createSocialMember(identity.loginType(), identity.subject(), identity.email());
-        return memberRepository.saveAndFlush(member);
+        Member member = Member.createSocialMember(identity.loginType(), identity.subject(), identity.email(), nickname);
+        try {
+            member = memberRepository.saveAndFlush(member);
+        } catch (DataIntegrityViolationException exception) {
+            throw toConflictException(exception);
+        }
+        return authTokenIssuer.issue(member);
+    }
+
+    private Optional<Member> findActiveMember(SocialIdentity identity) {
+        return memberRepository.findByLoginTypeAndSocialUserIdAndDeletedFalse(identity.loginType(), identity.subject());
+    }
+
+    private RuntimeException toConflictException(DataIntegrityViolationException exception) {
+        String message = String.valueOf(exception.getMostSpecificCause().getMessage());
+        if (message.contains(SOCIAL_INDEX_NAME)) {
+            return new CustomException(ErrorCode.STATE_CONFLICT, exception);
+        }
+        if (message.contains(NICKNAME_INDEX_NAME)) {
+            return new CustomException(ErrorCode.DUPLICATE_NICKNAME, exception);
+        }
+        return exception;
     }
 
 }

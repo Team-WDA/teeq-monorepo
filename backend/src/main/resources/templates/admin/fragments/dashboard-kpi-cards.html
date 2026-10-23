@@ -12,8 +12,7 @@
     <h2 class="dashboard-kpi-label">총 회원</h2>
     <p class="dashboard-kpi-value" th:text="${#numbers.formatInteger(dashboard.totalMembers, 1, 'COMMA')}">0</p>
     <p class="dashboard-kpi-caption">
-      오늘 가입 <span th:text="${#numbers.formatInteger(dashboard.todayJoinedMembers, 1, 'COMMA')}">0</span>명 ·
-      가입 완료 여부와 무관
+      오늘 가입 <span th:text="${#numbers.formatInteger(dashboard.todayJoinedMembers, 1, 'COMMA')}">0</span>명
     </p>
   </article>
   <article class="dashboard-kpi-card">
@@ -24,7 +23,7 @@
   <article class="dashboard-kpi-card">
     <h2 class="dashboard-kpi-label">온보딩 완료율</h2>
     <p class="dashboard-kpi-value" th:text="|${dashboard.onboardingCompletionPercent()}%|">0%</p>
-    <p class="dashboard-kpi-caption">가입 완료(닉네임 있음) 회원 중 활성 온보딩 제출이 있는 비율</p>
+    <p class="dashboard-kpi-caption">전체 활성 회원 중 활성 온보딩 제출이 있는 비율</p>
   </article>
   <article class="dashboard-kpi-card">
     <h2 class="dashboard-kpi-label">최근 7일 피드백</h2>

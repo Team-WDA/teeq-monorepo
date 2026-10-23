@@ -1,12 +1,11 @@
 package kr.co.teeq.api.auth.application.controller;
 
 import jakarta.validation.Valid;
-import kr.co.teeq.api.auth.application.dto.request.LoginRequest;
 import kr.co.teeq.api.auth.application.dto.request.RefreshRequest;
 import kr.co.teeq.api.auth.application.dto.request.SocialLoginRequest;
+import kr.co.teeq.api.auth.application.dto.request.SocialSignUpRequest;
 import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.co.teeq.api.auth.application.service.AuthService;
-import kr.co.teeq.api.auth.application.service.SocialLoginResult;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,16 +23,14 @@ public class AuthController implements AuthControllerDocs {
 
     private final AuthService authService;
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
-    }
-
     @PostMapping("/social-login")
     public ResponseEntity<AuthResponse> socialLogin(@Valid @RequestBody SocialLoginRequest request) {
-        SocialLoginResult result = authService.socialLogin(request);
-        HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
-        return ResponseEntity.status(status).body(result.response());
+        return ResponseEntity.ok(authService.socialLogin(request));
+    }
+
+    @PostMapping("/social-signup")
+    public ResponseEntity<AuthResponse> socialSignUp(@Valid @RequestBody SocialSignUpRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.socialSignUp(request));
     }
 
     @PostMapping("/refresh")

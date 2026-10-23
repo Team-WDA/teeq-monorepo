@@ -7,8 +7,7 @@ import kr.co.teeq.api.member.core.constant.LoginType;
  */
 public record MemberSearchRequest(
     String keyword,
-    LoginType loginType,
-    Boolean signupCompleted
+    LoginType loginType
 ) {
 
 }

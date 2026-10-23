@@ -5,12 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
 import org.junit.jupiter.api.Test;
 
 class AiCharacterTest {
 
-    private final Member member = Member.builder().build();
+    private final Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     @Test
     void 생성하면_이름이_없는_캐릭터를_만든다() {

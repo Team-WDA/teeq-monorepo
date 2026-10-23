@@ -38,6 +38,9 @@ springdoc:
   swagger-ui:
     path: /docs/swagger
 
+firebase:
+  service-account-location: classpath:firebase-service-account.json
+
 server:
   forward-headers-strategy: framework
   servlet:
@@ -61,3 +64,8 @@ server:
 
 # 관리자 부트스트랩 설정 키(선택): admin.bootstrap-account.{username,password,name}
 # 활성 SUPER_ADMIN이 0명일 때만 생성한다. 값은 application-{dev,prod}.yml에 둔다
+
+# Firebase Admin SDK 설정 키: firebase.service-account-location (기본 classpath:firebase-service-account.json)
+# 서비스 계정 JSON은 시크릿이므로 커밋하지 않는다(gitignore). 로컬은 backend/src/main/resources/firebase-service-account.json에 두고,
+# 배포는 CI가 GitHub Secret FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON으로 같은 경로에 생성한다. 파일이 없으면 기동 실패
+# 프로젝트 ID는 JSON에서 읽는다. dev/prod가 Firebase 프로젝트 하나를 함께 쓴다

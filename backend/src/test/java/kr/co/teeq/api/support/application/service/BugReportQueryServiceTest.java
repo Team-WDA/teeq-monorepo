@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.media.application.service.MediaService;
 import kr.co.teeq.api.media.core.constant.MediaCategory;
@@ -70,7 +71,7 @@ class BugReportQueryServiceTest {
     private MediaService mediaService;
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
-    private final Member member = Member.builder().email("a@teeq.com").password("x").nickname("소연").build();
+    private final Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     private BugReportQueryService bugReportQueryService;
 

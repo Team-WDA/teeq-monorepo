@@ -40,7 +40,7 @@ class AiCharacterMemberDeletionHandlerTest {
 
     @Test
     void handle_softDeletesCharacter() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c");
+        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         AiCharacter aiCharacter = AiCharacter.of(member, CharacterType.CHARACTER_1, List.of("태그1", "태그2", "태그3"));
         given(aiCharacterRepository.findByMemberId(MEMBER_ID)).willReturn(Optional.of(aiCharacter));
 

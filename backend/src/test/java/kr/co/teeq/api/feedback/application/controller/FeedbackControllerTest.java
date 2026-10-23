@@ -17,6 +17,7 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.auth.infrastructure.config.JwtAccessDeniedHandler;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.auth.infrastructure.config.JwtAuthenticationEntryPoint;
 import kr.co.teeq.api.auth.infrastructure.config.JwtProvider;
 import kr.co.teeq.api.auth.infrastructure.config.SecurityConfig;
@@ -87,13 +88,7 @@ class FeedbackControllerTest {
     private CallFeedbackService callFeedbackService;
 
     private String bearer() {
-        Member member = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
+        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
         return "Bearer " + jwtProvider.issueAccessToken(MEMBER_ID);

@@ -13,7 +13,6 @@ import java.time.ZoneOffset;
 import java.util.UUID;
 import kr.co.teeq.api.auth.application.dto.response.AuthResponse;
 import kr.co.teeq.api.auth.application.service.AuthService;
-import kr.co.teeq.api.auth.application.service.SocialLoginResult;
 import kr.co.teeq.api.auth.infrastructure.config.JwtAccessDeniedHandler;
 import kr.co.teeq.api.auth.infrastructure.config.JwtAuthenticationEntryPoint;
 import kr.co.teeq.api.auth.infrastructure.config.JwtProvider;
@@ -71,65 +70,91 @@ class AuthControllerSocialLoginTest {
     @MockitoBean
     private AuthService authService;
 
-    private SocialLoginResult result(boolean created) {
-        return new SocialLoginResult(
-            new AuthResponse("access", "refresh", MEMBER_ID, null, false, LoginType.APPLE, null), created);
+    private static final String SIGNUP_PATH = "/api/auth/social-signup";
+    private static final String LOGIN_BODY = "{\"credential\":\"token\"}";
+    private static final String SIGNUP_BODY = "{\"credential\":\"token\",\"nickname\":\"소연\","
+        + "\"serviceTermsAgreed\":true,\"privacyPolicyAgreed\":true}";
+
+    private AuthResponse response() {
+        return new AuthResponse("access", "refresh", MEMBER_ID, "소연", false, LoginType.GOOGLE, null);
     }
 
-    private void assertInvalidRequest(String body) throws Exception {
-        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(body))
+    private void assertInvalidRequest(String path, String body) throws Exception {
+        mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.errorCode").value("INVALID_REQUEST"));
         verifyNoInteractions(authService);
     }
 
     @Test
-    void newMember_returns201WithoutAuthentication() throws Exception {
-        given(authService.socialLogin(any())).willReturn(result(true));
+    void socialLogin_existingMember_returns200WithoutAuthentication() throws Exception {
+        given(authService.socialLogin(any())).willReturn(response());
 
-        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"socialType\":\"APPLE\",\"credential\":\"token\"}"))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.loginType").value("APPLE"))
+        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.loginType").value("GOOGLE"))
+            .andExpect(jsonPath("$.nickname").value("소연"))
             .andExpect(jsonPath("$.profileImageUrl").doesNotExist());
     }
 
     @Test
-    void existingMember_returns200() throws Exception {
-        given(authService.socialLogin(any())).willReturn(result(false));
+    void socialLogin_signupRequired_returns404() throws Exception {
+        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.SOCIAL_SIGNUP_REQUIRED));
 
-        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"socialType\":\"APPLE\",\"credential\":\"token\"}"))
-            .andExpect(status().isOk());
+        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.errorCode").value("SOCIAL_SIGNUP_REQUIRED"));
     }
 
     @Test
-    void serviceError_isConvertedToErrorResponse() throws Exception {
-        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.DUPLICATE_EMAIL));
+    void socialLogin_invalidToken_returns401() throws Exception {
+        given(authService.socialLogin(any())).willThrow(new CustomException(ErrorCode.SOCIAL_TOKEN_INVALID));
 
-        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"socialType\":\"APPLE\",\"credential\":\"token\"}"))
+        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON).content(LOGIN_BODY))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.errorCode").value("SOCIAL_TOKEN_INVALID"));
+    }
+
+    @Test
+    void socialLogin_blankOrTooLongCredential_returns400() throws Exception {
+        assertInvalidRequest(PATH, "{\"credential\":\" \"}");
+        assertInvalidRequest(PATH, "{}");
+        assertInvalidRequest(PATH, "{\"credential\":\"" + "a".repeat(4097) + "\"}");
+    }
+
+    @Test
+    void socialSignUp_returns201WithoutAuthentication() throws Exception {
+        given(authService.socialSignUp(any())).willReturn(response());
+
+        mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.loginType").value("GOOGLE"));
+    }
+
+    @Test
+    void socialSignUp_alreadyRegistered_returns409StateConflict() throws Exception {
+        given(authService.socialSignUp(any())).willThrow(new CustomException(ErrorCode.STATE_CONFLICT));
+
+        mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
             .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.errorCode").value("DUPLICATE_EMAIL"));
+            .andExpect(jsonPath("$.errorCode").value("STATE_CONFLICT"));
     }
 
     @Test
-    void missingSocialTypeOrBlankCredential_returns400() throws Exception {
-        assertInvalidRequest("{\"credential\":\"token\"}");
-        assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\" \"}");
+    void socialSignUp_duplicateNickname_returns409() throws Exception {
+        given(authService.socialSignUp(any())).willThrow(new CustomException(ErrorCode.DUPLICATE_NICKNAME));
+
+        mockMvc.perform(post(SIGNUP_PATH).contentType(MediaType.APPLICATION_JSON).content(SIGNUP_BODY))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.errorCode").value("DUPLICATE_NICKNAME"));
     }
 
     @Test
-    void tooLongCredential_returns400() throws Exception {
-        assertInvalidRequest("{\"socialType\":\"APPLE\",\"credential\":\"" + "a".repeat(4097) + "\"}");
-    }
-
-    @Test
-    void unknownSocialType_returns400MalformedBody() throws Exception {
-        mockMvc.perform(post(PATH).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"socialType\":\"KAKAO\",\"credential\":\"token\"}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.errorCode").value("MALFORMED_REQUEST_BODY"));
+    void socialSignUp_invalidInput_returns400() throws Exception {
+        assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("\"token\"", "\" \""));
+        assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("소연", "abc"));
+        assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("\"serviceTermsAgreed\":true", "\"serviceTermsAgreed\":false"));
+        assertInvalidRequest(SIGNUP_PATH, SIGNUP_BODY.replace("\"privacyPolicyAgreed\":true", "\"privacyPolicyAgreed\":false"));
     }
 
     @TestConfiguration(proxyBeanMethods = false)

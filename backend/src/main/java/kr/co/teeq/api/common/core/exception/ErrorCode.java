@@ -18,11 +18,8 @@ public enum ErrorCode {
     // 인증과 계정
     UNAUTHENTICATED(401, "인증이 필요합니다."),
     EXPIRED_TOKEN(401, "토큰이 만료되었습니다."),
-    INVALID_CREDENTIALS(401, "이메일 또는 비밀번호가 올바르지 않습니다."),
     INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
     ACCESS_DENIED(403, "접근 권한이 없습니다."),
-    SIGNUP_NOT_COMPLETED(403, "가입을 완료해야 이용할 수 있습니다."),
-    DUPLICATE_EMAIL(409, "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(409, "이미 사용 중인 닉네임입니다."),
     INVALID_CURRENT_PASSWORD(400, "현재 비밀번호가 올바르지 않습니다."),
     MEMBER_NOT_FOUND(404, "회원을 찾을 수 없습니다."),
@@ -32,7 +29,7 @@ public enum ErrorCode {
     ADMIN_SELF_CHANGE_FORBIDDEN(409, "본인 계정은 이 화면에서 비활성화하거나 권한을 바꿀 수 없습니다."),
     SOCIAL_TOKEN_INVALID(401, "소셜 로그인 인증 정보가 올바르지 않습니다."),
     SOCIAL_SERVER_UNAVAILABLE(502, "소셜 로그인 서버와 통신할 수 없습니다."),
-    LOGIN_METHOD_MISMATCH(401, "가입한 로그인 방식이 다릅니다."),
+    SOCIAL_SIGNUP_REQUIRED(404, "가입이 필요한 소셜 계정입니다."),
 
     // 통화
     CALL_LIMIT_INSUFFICIENT(403, "오늘 사용할 수 있는 통화 시간이 부족합니다."),

@@ -54,17 +54,15 @@ public class AdminMemberController {
     public String members(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) LoginType loginType,
-        @RequestParam(required = false) Boolean signupCompleted,
         @RequestParam(required = false) Boolean deleted,
         Pageable pageable,
         Model model) {
-        MemberSearchRequest request = new MemberSearchRequest(keyword, loginType, signupCompleted);
+        MemberSearchRequest request = new MemberSearchRequest(keyword, loginType);
         MemberPageResponse result = memberQueryService.search(request, clampPage(pageable));
 
         long totalPages = (result.totalElements() + result.size() - 1) / result.size();
         model.addAttribute("keyword", keyword);
         model.addAttribute("loginType", loginType);
-        model.addAttribute("signupCompletedFilter", signupCompleted);
         model.addAttribute("loginTypes", LoginType.values());
         model.addAttribute("deletedNotice", Boolean.TRUE.equals(deleted));
         model.addAttribute("result", result);
@@ -148,9 +146,6 @@ public class AdminMemberController {
         }
         if (request.loginType() != null) {
             builder.queryParam("loginType", request.loginType().name());
-        }
-        if (request.signupCompleted() != null) {
-            builder.queryParam("signupCompleted", request.signupCompleted());
         }
         return builder.queryParam("page", page).queryParam("size", size).build().encode().toUriString();
     }

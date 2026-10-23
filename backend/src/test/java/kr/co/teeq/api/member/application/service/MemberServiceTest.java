@@ -13,7 +13,6 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.media.application.service.MediaService;
 import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
-import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -56,13 +55,7 @@ class MemberServiceTest {
     }
 
     private Member member(UUID id, String nickname) {
-        Member member = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname(nickname)
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
+        Member member = Member.createSocialMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
         ReflectionTestUtils.setField(member, "id", id);
         return member;
     }
@@ -105,76 +98,6 @@ class MemberServiceTest {
         assertThatThrownBy(() -> memberService.changeNickname(me, new ChangeNicknameRequest("새닉네임")))
             .isInstanceOfSatisfying(CustomException.class,
                 exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_NICKNAME));
-    }
-
-    private Member incompleteSocialMember() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@privaterelay.appleid.com");
-        ReflectionTestUtils.setField(member, "id", MEMBER_ID);
-        return member;
-    }
-
-    @Test
-    void completeSignup_incompleteMember_setsNicknameAndReturnsResponse() {
-        Member me = incompleteSocialMember();
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(me));
-        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("소연")).willReturn(Optional.empty());
-        given(memberRepository.saveAndFlush(any(Member.class))).willAnswer(invocation -> invocation.getArgument(0));
-
-        MemberResponse response = memberService.completeSignup(me, new SignupCompletionRequest("소연", true, true));
-
-        assertThat(me.isSignupCompleted()).isTrue();
-        assertThat(me.isServiceTermsAgreed()).isTrue();
-        assertThat(me.isPrivacyPolicyAgreed()).isTrue();
-        assertThat(response.nickname()).isEqualTo("소연");
-        assertThat(response.loginType()).isEqualTo(LoginType.APPLE);
-    }
-
-    @Test
-    void completeSignup_alreadyCompleted_throwsStateConflict() {
-        Member me = member(MEMBER_ID, "soyeon");
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(me));
-
-        assertThatThrownBy(() -> memberService.completeSignup(me, new SignupCompletionRequest("새닉네임", true, true)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.STATE_CONFLICT));
-        assertThat(me.getNickname()).isEqualTo("soyeon");
-    }
-
-    @Test
-    void completeSignup_duplicateNickname_throwsDuplicateNickname() {
-        Member me = incompleteSocialMember();
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(me));
-        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("MinJun"))
-            .willReturn(Optional.of(member(OTHER_MEMBER_ID, "minjun")));
-
-        assertThatThrownBy(() -> memberService.completeSignup(me, new SignupCompletionRequest("MinJun", true, true)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_NICKNAME));
-        assertThat(me.isSignupCompleted()).isFalse();
-    }
-
-    @Test
-    void completeSignup_uniqueIndexViolation_throwsDuplicateNickname() {
-        Member me = incompleteSocialMember();
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(me));
-        given(memberRepository.findByNicknameIgnoreCaseAndDeletedFalse("새닉네임")).willReturn(Optional.empty());
-        given(memberRepository.saveAndFlush(any(Member.class))).willThrow(new DataIntegrityViolationException(
-            "constraint",
-            new RuntimeException("duplicate key value violates unique constraint \"uq_member_nickname_active\"")));
-
-        assertThatThrownBy(() -> memberService.completeSignup(me, new SignupCompletionRequest("새닉네임", true, true)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.DUPLICATE_NICKNAME));
-    }
-
-    @Test
-    void completeSignup_memberDeletedAfterAuthentication_throwsMemberNotFound() {
-        Member me = incompleteSocialMember();
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> memberService.completeSignup(me, new SignupCompletionRequest("소연", true, true)))
-            .isInstanceOfSatisfying(CustomException.class,
-                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     @Test

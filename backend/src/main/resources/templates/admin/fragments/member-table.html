@@ -11,27 +11,21 @@
           <th>이메일</th>
           <th>로그인 방식</th>
           <th>가입일</th>
-          <th>가입 완료 여부</th>
         </tr>
       </thead>
       <tbody>
         <tr th:each="member : ${result.members}">
           <td>
             <a class="link link-primary" th:href="@{/admin/members/{memberId}(memberId=${member.id})}">
-              <span th:if="${member.signupCompleted}" th:text="${member.nickname}">닉네임</span>
-              <span th:unless="${member.signupCompleted}" class="badge badge-warning badge-sm">가입 미완료</span>
+              <span th:text="${member.nickname}">닉네임</span>
             </a>
           </td>
           <td th:text="${member.email}">user@example.com</td>
-          <td th:text="${member.loginType}">EMAIL</td>
+          <td th:text="${member.loginType}">APPLE</td>
           <td class="mono" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</td>
-          <td>
-            <span th:if="${member.signupCompleted}" class="badge badge-success badge-sm">가입 완료</span>
-            <span th:unless="${member.signupCompleted}" class="badge badge-ghost badge-sm">가입 미완료</span>
-          </td>
         </tr>
         <tr th:if="${#lists.isEmpty(result.members)}">
-          <td class="muted" colspan="5">회원이 없습니다.</td>
+          <td class="muted" colspan="4">회원이 없습니다.</td>
         </tr>
       </tbody>
     </table>
