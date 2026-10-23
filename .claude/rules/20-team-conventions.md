@@ -15,7 +15,7 @@
 - API 계약(BE↔AI↔FE, teeq-ai #39): 필드와 query parameter는 camelCase, path variable은 kebab-case, enum 값은 `UPPER_SNAKE_CASE` 문자열, 시각은 `Z`가 붙은 ISO-8601 UTC 문자열, ID는 UUID 문자열이다.
 - 시간: `Clock` 주입 + `Instant`(저장은 `timestamptz`, API는 ISO-8601 UTC). `Instant.now()`, `LocalDateTime.now()` 직접 호출 금지. 한국 시간 규칙은 `ZoneId`(`Asia/Seoul`) 빈을 쓴다.
 - 에러: 중앙 `ErrorCode` enum + `CustomException`, 응답은 `{ "errorCode", "errorMessage" }` 두 필드. 도메인별 예외 클래스를 만들지 않는다. 예외를 삼키지 않고 내부 정보(스택, SQL)를 노출하지 않는다.
-- 로그: `@Slf4j`. 예상된 4xx는 WARN(스택 없음), 5xx는 ERROR와 스택. `System.out`·`printStackTrace`·시크릿 값 로깅 금지.
+- 로그: `@Slf4j`. 예상된 4xx는 WARN(스택 없음), 5xx는 ERROR와 스택. `System.out`·`printStackTrace` 금지. 컨트롤러 메서드는 `@LogMonitoring`을 붙이며 요청·응답 값(시크릿 포함)을 마스킹 없이 로깅한다.
 - DB: 스키마는 Flyway로만 바꾼다(`ddl-auto: validate`). 파일명 `V{yyyyMMdd}_{HHmmss}__{snake_case}.sql`, 적용된 마이그레이션은 수정하지 않는다.
 - 설정: `@Value`가 아니라 `@ConfigurationProperties`(도메인 `infrastructure/properties`)로 바인딩하고 필수 값이 비면 기동 시 실패시킨다. `application.yml`은 공통 설정만(값 없음), 실제 값은 `application-{dev,prod}.yml`(gitignore).
 - FE: `flutter_lints`와 `dart format`, `print` 금지, 모델은 freezed + json_serializable(생성 코드 `*.g.dart`·`*.freezed.dart`는 커밋하지 않음), 환경값은 `--dart-define-from-file`로 주입하고 키 정의는 `AppConfig` 한 곳에 둔다.
