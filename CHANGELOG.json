@@ -1,14 +1,56 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-23T04:45:22Z",
-    "currentVersion": "0.32.1",
+    "lastUpdated": "2026-10-23T10:52:28Z",
+    "currentVersion": "0.33.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 41
+    "totalReleases": 42
   },
   "releases": [
+    {
+      "version": "0.33.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.33.0]\n\n### ✨ 기능\n- 이메일 로그인·가입·비밀번호 변경을 Firebase로 복원\n- Firebase 이메일/비밀번호 로그인 지원과 로그인·가입 API 일반화\n- Firebase 소셜 로그인(Apple, Google) 앱 전환과 이메일 로그인 제거\n- Firebase 소셜 로그인과 가입 API 추가, 이메일 로그인 제거\n\n### 🐛 수정\n- iOS Google 로그인 설정값(GIDClientID, URL scheme)을 Info.plist에 반영\n- Apple 로그인 버튼 높이를 Google 버튼과 같은 56으로 맞춤\n- Spring 배포 헬스체크 대기 시간을 약 120초로 연장\n\n### 📝 문서\n- Firebase 로그인 설정 안내에 이메일/비밀번호 제공자 추가\n\n### 🔧 변경사항\n- Firebase 설정 파일 생성 단계 추가",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "이메일 로그인·가입·비밀번호 변경을 Firebase로 복원",
+            "Firebase 이메일/비밀번호 로그인 지원과 로그인·가입 API 일반화",
+            "Firebase 소셜 로그인(Apple, Google) 앱 전환과 이메일 로그인 제거",
+            "Firebase 소셜 로그인과 가입 API 추가, 이메일 로그인 제거"
+          ]
+        },
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "iOS Google 로그인 설정값(GIDClientID, URL scheme)을 Info.plist에 반영",
+            "Apple 로그인 버튼 높이를 Google 버튼과 같은 56으로 맞춤",
+            "Spring 배포 헬스체크 대기 시간을 약 120초로 연장"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "Firebase 로그인 설정 안내에 이메일/비밀번호 제공자 추가"
+          ]
+        },
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "Firebase 설정 파일 생성 단계 추가"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.32.1",
       "project_types": [
