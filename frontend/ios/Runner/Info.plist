@@ -66,7 +66,7 @@
 	</array>
 	<key>GIDClientID</key>
 	<!-- TODO(사용자): GoogleService-Info.plist의 CLIENT_ID 값으로 바꾼다. 바꾸기 전에는 Google 로그인이 동작하지 않는다. -->
-	<string>REPLACE_WITH_CLIENT_ID_FROM_GoogleService-Info.plist</string>
+	<string>152720764995-os5om4a54uuthmfuajqrdgellk1vra92.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -75,7 +75,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<!-- TODO(사용자): GoogleService-Info.plist의 REVERSED_CLIENT_ID 값으로 바꾼다. -->
-				<string>REPLACE-WITH-REVERSED-CLIENT-ID</string>
+				<string>com.googleusercontent.apps.152720764995-os5om4a54uuthmfuajqrdgellk1vra92</string>
 			</array>
 		</dict>
 	</array>
