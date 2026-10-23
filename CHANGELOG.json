@@ -1,14 +1,39 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-23T11:19:48Z",
-    "currentVersion": "0.33.2",
+    "lastUpdated": "2026-10-23T12:09:09Z",
+    "currentVersion": "0.34.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 44
+    "totalReleases": 45
   },
   "releases": [
+    {
+      "version": "0.34.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.34.0]\n\n### ✨ 기능\n- 컨트롤러 메서드에 LogMonitoring 로깅 적용\n\n### 📝 문서\n- 컨트롤러 로깅 규칙에서 시크릿 로깅 금지 제거",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "컨트롤러 메서드에 LogMonitoring 로깅 적용"
+          ]
+        },
+        "문서": {
+          "title": "📝 문서",
+          "items": [
+            "컨트롤러 로깅 규칙에서 시크릿 로깅 금지 제거"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.33.2",
       "project_types": [
