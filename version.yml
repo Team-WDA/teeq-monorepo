@@ -25,14 +25,14 @@
 # - basic: version.yml only
 # ===
 
-version: "0.32.0"
-version_code: 41  # app build number
+version: "0.32.1"
+version_code: 42  # app build number
 project_types: ["spring", "flutter"] # first entry is primary
 project_paths: # 타입별 프로젝트 폴더 (레포 루트 기준 상대경로)
   spring: "backend" # backend/build.gradle
   flutter: "frontend" # frontend/pubspec.yaml
 metadata:
-  last_updated: "2026-10-22"
+  last_updated: "2026-10-23"
   last_updated_by: "Chuseok22"
   default_branch: "(unknown)"
   integration_date: "2026-09-21"

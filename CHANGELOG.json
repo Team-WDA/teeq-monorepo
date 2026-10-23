@@ -1,14 +1,39 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-22T17:51:02Z",
-    "currentVersion": "0.32.0",
+    "lastUpdated": "2026-10-23T04:45:22Z",
+    "currentVersion": "0.32.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 40
+    "totalReleases": 41
   },
   "releases": [
+    {
+      "version": "0.32.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.32.1]\n\n### 🐛 수정\n- iOS TestFlight 배포 워크플로의 Xcode 버전을 26.6으로 상향\n\n### 🔧 변경사항\n- 설정 서비스·재시도 정책 주석 문구 정리",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "iOS TestFlight 배포 워크플로의 Xcode 버전을 26.6으로 상향"
+          ]
+        },
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "설정 서비스·재시도 정책 주석 문구 정리"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.32.0",
       "project_types": [
