@@ -78,7 +78,7 @@ on:
 env:
   FLUTTER_PROJECT_DIR: "frontend"
   FLUTTER_VERSION: "3.47.5"  # [teeq]
-  XCODE_VERSION: "26.0"
+  XCODE_VERSION: "26.6"
   PROJECT_TYPE: "flutter"
 
   # ============================================
