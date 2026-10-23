@@ -26,7 +26,7 @@ class AppleSignInButton extends StatelessWidget {
         onTap: onPressed,
         child: Container(
           constraints: const BoxConstraints(
-            minHeight: AppLayout.actionButtonHeight,
+            minHeight: AppLayout.socialSignInButtonHeight,
           ),
           alignment: Alignment.center,
           decoration: const BoxDecoration(
