@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-23T10:52:28Z",
-    "currentVersion": "0.33.0",
+    "lastUpdated": "2026-10-23T11:08:23Z",
+    "currentVersion": "0.33.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 42
+    "totalReleases": 43
   },
   "releases": [
+    {
+      "version": "0.33.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.33.1]\n\n### 🐛 수정\n- 미디어 기본 URL을 CloudFront prod 경로로 변경",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "미디어 기본 URL을 CloudFront prod 경로로 변경"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.33.0",
       "project_types": [
