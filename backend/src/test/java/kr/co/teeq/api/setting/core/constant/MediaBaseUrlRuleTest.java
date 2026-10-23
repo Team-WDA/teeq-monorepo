@@ -32,7 +32,7 @@ class MediaBaseUrlRuleTest {
     @Test
     void settingKey_mediaBaseUrl_usesRule() {
         assertThat(SettingKey.MEDIA_BASE_URL.valueType()).isEqualTo(SettingValueType.STRING);
-        assertThat(SettingKey.MEDIA_BASE_URL.defaultValue()).isEqualTo("https://api.teeq.co.kr");
+        assertThat(SettingKey.MEDIA_BASE_URL.defaultValue()).isEqualTo("https://d1cia1w3bdi058.cloudfront.net/prod");
         assertThatCode(() -> SettingKey.MEDIA_BASE_URL.validate(SettingKey.MEDIA_BASE_URL.defaultValue()))
             .doesNotThrowAnyException();
         assertThatThrownBy(() -> SettingKey.MEDIA_BASE_URL.validate("api.teeq.co.kr"))

@@ -19,7 +19,7 @@ public enum SettingKey {
     GREETING_DEFAULT_MESSAGE_POLITE(SettingValueType.STRING, "{호칭},\n오늘 하루 어땠어요?\n무슨 일 있었는지 궁금해요.",
         "존댓말 온보딩 답변 회원에게 쓰는 기본 오늘의 한마디. {호칭} 자리에 호칭이 들어간다",
         GreetingMessageRule::validateTemplate),
-    MEDIA_BASE_URL(SettingValueType.STRING, "https://api.teeq.co.kr", "미디어(프로필 사진 등) 절대 URL의 앞부분. 끝의 /는 무시한다",
+    MEDIA_BASE_URL(SettingValueType.STRING, "https://d1cia1w3bdi058.cloudfront.net/prod","미디어(프로필 사진 등) 절대 URL의 앞부분. 끝의 /는 무시한다",
         MediaBaseUrlRule::validate),
     APP_MIN_VERSION_ANDROID(SettingValueType.STRING, "0.0.0",
         "Android 앱 최소 지원 버전(x.y.z). 이보다 낮으면 업데이트를 강제한다", AppMinimumVersionRule::validate),
