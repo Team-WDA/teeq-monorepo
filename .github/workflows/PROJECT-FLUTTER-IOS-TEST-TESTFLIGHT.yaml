@@ -42,6 +42,7 @@
 # 📝 환경 설정 (선택):
 # ENV_FILE (선택): .env 파일 내용
 # SECRETS_XCCONFIG (선택): ios/Flutter/Secrets.xcconfig 내용
+# GOOGLE_SERVICE_INFO_PLIST: Firebase GoogleService-Info.plist 내용 (필수) [teeq]
 #
 # ===================================================================
 
@@ -587,6 +588,18 @@ jobs:
           fi
           printf '%s' "$FRONTEND_CONFIG_JSON" > config/prod.json
           python3 -m json.tool config/prod.json > /dev/null
+
+      # [teeq: GOOGLE_SERVICE_INFO_PLIST secret -> frontend/ios/Runner/GoogleService-Info.plist. 비어 있으면 즉시 실패]
+      - name: Create GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_INFO_PLIST" ]; then
+            echo "::error::GOOGLE_SERVICE_INFO_PLIST secret is not set"
+            exit 1
+          fi
+          mkdir -p ios/Runner
+          printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > ios/Runner/GoogleService-Info.plist
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

@@ -5,7 +5,6 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.media.application.service.MediaService;
 import kr.co.teeq.api.media.core.constant.MediaCategory;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
-import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -46,19 +45,6 @@ public class MemberService {
         Member member = findActiveMember(authenticatedMember);
         validateNicknameNotTaken(member, request.nickname());
         member.changeNickname(request.nickname());
-        flushNicknameChange(member);
-        return toResponse(member);
-    }
-
-    // 소셜 첫 로그인으로 만들어진 닉네임 NULL 회원만 완료할 수 있다. 약관 동의는 요청 검증에서 true로 보장된다
-    @Transactional
-    public MemberResponse completeSignup(Member authenticatedMember, SignupCompletionRequest request) {
-        Member member = findActiveMember(authenticatedMember);
-        if (member.isSignupCompleted()) {
-            throw new CustomException(ErrorCode.STATE_CONFLICT);
-        }
-        validateNicknameNotTaken(member, request.nickname());
-        member.completeSignup(request.nickname());
         flushNicknameChange(member);
         return toResponse(member);
     }

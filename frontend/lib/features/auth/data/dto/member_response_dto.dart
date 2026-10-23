@@ -5,7 +5,7 @@ import 'package:teeq/features/auth/data/dto/login_type_json.dart';
 
 part 'member_response_dto.g.dart';
 
-/// 회원 조회·가입 완료 응답(`MemberResponse`).
+/// 회원 조회 응답(`MemberResponse`).
 @JsonSerializable(createToJson: false)
 class MemberResponseDto {
   const MemberResponseDto({
@@ -22,7 +22,7 @@ class MemberResponseDto {
 
   final String memberId;
   final String? email;
-  final String? nickname;
+  final String nickname;
   final bool hasAiCharacter;
   @JsonKey(fromJson: loginTypeFromJson)
   final LoginType loginType;

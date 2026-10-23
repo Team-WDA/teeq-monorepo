@@ -20,8 +20,7 @@
       <div>
         <dt>닉네임</dt>
         <dd>
-          <span th:if="${member.signupCompleted}" th:text="${member.nickname}">닉네임</span>
-          <span th:unless="${member.signupCompleted}" class="badge badge-warning badge-sm">가입 미완료</span>
+          <span th:text="${member.nickname}">닉네임</span>
         </dd>
       </div>
       <div>
@@ -30,7 +29,7 @@
       </div>
       <div>
         <dt>로그인 방식</dt>
-        <dd th:text="${member.loginType}">EMAIL</dd>
+        <dd th:text="${member.loginType}">APPLE</dd>
       </div>
       <div>
         <dt>가입일</dt>

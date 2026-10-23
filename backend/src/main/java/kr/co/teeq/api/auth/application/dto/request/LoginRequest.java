@@ -2,15 +2,13 @@ package kr.co.teeq.api.auth.application.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public record LoginRequest(
-    @NotBlank(message = "이메일을 입력해 주세요.")
-    @Schema(description = "로그인 이메일. 앞뒤 공백은 제거하고 소문자로 바꿔 비교한다.", example = "user@example.com")
-    String email,
-
-    @NotBlank(message = "비밀번호를 입력해 주세요.")
-    @Schema(description = "비밀번호", example = "Teeq1234!")
-    String password
+    @NotBlank(message = "인증 정보를 입력해 주세요.")
+    @Size(max = 4096, message = "인증 정보는 4096자 이하로 입력해 주세요.")
+    @Schema(description = "Firebase ID token", example = "eyJhbGciOiJSUzI1NiIs...")
+    String credential
 ) {
 
 }

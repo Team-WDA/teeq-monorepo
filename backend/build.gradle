@@ -41,6 +41,10 @@ dependencies {
         exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
     }
     implementation 'org.flywaydb:flyway-database-postgresql'
+    // 인증 검증에 쓰지 않는 Firestore SDK는 제외한다. Storage는 FirebaseAuth 로딩에 필요한 gax 클래스를 함께 가져와 제외하지 않는다
+    implementation('com.google.firebase:firebase-admin:9.11.0') {
+        exclude group: 'com.google.cloud', module: 'google-cloud-firestore'
+    }
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'

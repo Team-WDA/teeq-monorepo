@@ -45,13 +45,7 @@ class MemberQueryServiceTest {
     private MemberQueryService memberQueryService;
 
     private Member member(String nickname) {
-        Member member = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname(nickname)
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", nickname);
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         ReflectionTestUtils.setField(member, "createdAt", CREATED_AT);
         return member;
@@ -65,7 +59,7 @@ class MemberQueryServiceTest {
         given(memberRepository.findAll(any(Specification.class), any(Pageable.class))).willReturn(page);
 
         MemberPageResponse response =
-            memberQueryService.search(new MemberSearchRequest(" soyeon ", LoginType.EMAIL, true), requested);
+            memberQueryService.search(new MemberSearchRequest(" soyeon ", LoginType.GOOGLE), requested);
 
         assertThat(response.page()).isEqualTo(2);
         assertThat(response.size()).isEqualTo(10);
@@ -91,14 +85,6 @@ class MemberQueryServiceTest {
         assertThat(response.nickname()).isEqualTo("소연");
         assertThat(response.email()).isEqualTo("soyeon@teeq.com");
         assertThat(response.createdAt()).isEqualTo(CREATED_AT);
-        assertThat(response.signupCompleted()).isTrue();
-    }
-
-    @Test
-    void getSummary_withoutNickname_isSignupIncomplete() {
-        given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member(null)));
-
-        assertThat(memberQueryService.getSummary(MEMBER_ID).signupCompleted()).isFalse();
     }
 
     @Test

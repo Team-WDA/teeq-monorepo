@@ -5,6 +5,7 @@ import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/auth/data/dto/auth_response_dto.dart';
 import 'package:teeq/features/auth/data/dto/member_response_dto.dart';
+import 'package:teeq/features/auth/data/dto/nickname_availability_response_dto.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
 import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
@@ -17,30 +18,25 @@ final class AuthRepositoryImpl implements AuthRepository {
   final Dio _dio;
 
   @override
-  Future<SignInResult> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<SignInResult> login({required String credential}) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/auth/login',
-      data: {'email': email, 'password': password},
+      data: {'credential': credential},
     );
     return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
 
   @override
   Future<SignInResult> signUp({
-    required String email,
-    required String password,
+    required String credential,
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/members',
+      '/api/auth/signup',
       data: {
-        'email': email,
-        'password': password,
+        'credential': credential,
         'nickname': nickname,
         'serviceTermsAgreed': serviceTermsAgreed,
         'privacyPolicyAgreed': privacyPolicyAgreed,
@@ -50,12 +46,12 @@ final class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<SignInResult> socialLogin({required String credential}) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/social-login',
-      data: {'socialType': 'APPLE', 'credential': credential},
+  Future<bool> checkNicknameAvailability({required String nickname}) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/members/nickname-availability',
+      queryParameters: {'nickname': nickname},
     );
-    return AuthResponseDto.fromJson(response.data!).toSignInResult();
+    return NicknameAvailabilityResponseDto.fromJson(response.data!).available;
   }
 
   @override
@@ -75,41 +71,12 @@ final class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Member> completeSignup({
-    required String nickname,
-    required bool serviceTermsAgreed,
-    required bool privacyPolicyAgreed,
-  }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/api/members/me/signup-completion',
-      data: {
-        'nickname': nickname,
-        'serviceTermsAgreed': serviceTermsAgreed,
-        'privacyPolicyAgreed': privacyPolicyAgreed,
-      },
-    );
-    return MemberResponseDto.fromJson(response.data!).toMember();
-  }
-
-  @override
   Future<Member> changeNickname({required String nickname}) async {
     final response = await _dio.patch<Map<String, dynamic>>(
       '/api/members/me/nickname',
       data: {'nickname': nickname},
     );
     return MemberResponseDto.fromJson(response.data!).toMember();
-  }
-
-  @override
-  Future<SignInResult> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    final response = await _dio.patch<Map<String, dynamic>>(
-      '/api/members/me/password',
-      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
-    );
-    return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
 
   @override

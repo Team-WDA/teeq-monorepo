@@ -39,7 +39,7 @@ class LastGreetedAtCommandServiceTest {
 
     @Test
     void record_다시_조회한_회원에_현재_시각을_기록한다() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com");
+        Member member = Member.createMember(LoginType.APPLE, "apple-subject", "soyeon@teeq.com", "소연");
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
 
         lastGreetedAtCommandService.record(MEMBER_ID);

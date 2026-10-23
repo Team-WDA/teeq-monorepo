@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 회원 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 keyword, loginType, signupCompletedFilter, loginTypes -->
+<!-- 회원 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 keyword, loginType, loginTypes -->
 <section class="panel" th:fragment="member-filter-form">
   <form class="panel-body member-filter-form" method="get" th:action="@{/admin/members}">
     <label class="member-filter-field member-filter-keyword">
@@ -13,15 +13,7 @@
       <select class="select select-sm" name="loginType">
         <option value="" th:selected="${loginType == null}">전체</option>
         <option th:each="type : ${loginTypes}" th:value="${type.name()}" th:text="${type.name()}"
-                th:selected="${loginType != null and loginType == type}">EMAIL</option>
-      </select>
-    </label>
-    <label class="member-filter-field">
-      <span class="member-filter-label">가입 완료 여부</span>
-      <select class="select select-sm" name="signupCompleted">
-        <option value="" th:selected="${signupCompletedFilter == null}">전체</option>
-        <option value="true" th:selected="${signupCompletedFilter != null and signupCompletedFilter}">가입 완료</option>
-        <option value="false" th:selected="${signupCompletedFilter != null and !signupCompletedFilter}">가입 미완료</option>
+                th:selected="${loginType != null and loginType == type}">APPLE</option>
       </select>
     </label>
     <button class="btn btn-sm btn-primary" type="submit">조회</button>

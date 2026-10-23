@@ -3,7 +3,6 @@ package kr.co.teeq.api.member.application.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
-import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.co.teeq.api.member.application.service.MemberDeletionService;
@@ -18,7 +17,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,13 +45,6 @@ public class MemberController implements MemberControllerDocs {
     @GetMapping("/me")
     public ResponseEntity<MemberResponse> getMe(@AuthenticationPrincipal AuthenticatedMember authenticatedMember) {
         return ResponseEntity.ok(memberService.getMe(authenticatedMember.member()));
-    }
-
-    @PostMapping("/me/signup-completion")
-    public ResponseEntity<MemberResponse> completeSignup(
-        @AuthenticationPrincipal AuthenticatedMember authenticatedMember,
-        @Valid @RequestBody SignupCompletionRequest request) {
-        return ResponseEntity.ok(memberService.completeSignup(authenticatedMember.member(), request));
     }
 
     @PatchMapping("/me/nickname")

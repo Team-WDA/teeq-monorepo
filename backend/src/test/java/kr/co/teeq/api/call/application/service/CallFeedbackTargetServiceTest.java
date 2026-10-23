@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.FeedbackTargetCall;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.call.application.dto.response.LatestFeedbackableCall;
 import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.call.core.constant.LimitKind;
@@ -48,13 +49,7 @@ class CallFeedbackTargetServiceTest {
     }
 
     private static Member memberOf(UUID id) {
-        Member owner = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
+        Member owner = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(owner, "id", id);
         return owner;
     }

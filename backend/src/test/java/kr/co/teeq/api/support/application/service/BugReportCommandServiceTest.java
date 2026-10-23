@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
+import kr.co.teeq.api.member.core.constant.LoginType;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.media.core.model.StoredMedia;
 import kr.co.teeq.api.member.core.entity.Member;
@@ -44,7 +45,7 @@ class BugReportCommandServiceTest {
     @InjectMocks
     private BugReportCommandService bugReportCommandService;
 
-    private final Member member = Member.builder().email("a@teeq.com").password("x").nickname("소연").build();
+    private final Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "a@teeq.com", "소연");
 
     private BugReportCreateRequest request() {
         return new BugReportCreateRequest(BugReportSource.USER, "앱이 멈춰요",

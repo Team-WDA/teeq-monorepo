@@ -40,7 +40,7 @@ const _memberWithoutCharacter = Member(
   memberId: 'member-1',
   nickname: '티큐',
   hasAiCharacter: false,
-  loginType: LoginType.email,
+  loginType: LoginType.google,
 );
 
 final _memberWithCharacter = _memberWithoutCharacter.copyWith(

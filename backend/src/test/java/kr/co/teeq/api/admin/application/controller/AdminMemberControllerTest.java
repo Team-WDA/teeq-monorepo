@@ -66,7 +66,7 @@ class AdminMemberControllerTest {
 
     private static final String PATH = "/admin/members";
     private static final UUID MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b");
-    private static final UUID INCOMPLETE_MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c");
+    private static final UUID OTHER_MEMBER_ID = UUID.fromString("0198a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5c");
     private static final UUID ACTIVE_BONUS_ID = UUID.fromString("0199aaaa-0000-7000-8000-000000000001");
     private static final UUID CANCELED_BONUS_ID = UUID.fromString("0199aaaa-0000-7000-8000-000000000002");
     private static final UUID CANCELING_ADMIN_ID = UUID.fromString("0199bbbb-0000-7000-8000-000000000003");
@@ -89,7 +89,7 @@ class AdminMemberControllerTest {
 
     @Test
     void members_defaultRequest_rendersFirstPageOf20() throws Exception {
-        given(memberQueryService.search(any(), any())).willReturn(pageOf(List.of(completeMember(), incompleteMember()),
+        given(memberQueryService.search(any(), any())).willReturn(pageOf(List.of(completeMember(), otherMember()),
             0, 20, 2));
 
         mockMvc.perform(get(PATH).with(asAdmin()))
@@ -98,14 +98,13 @@ class AdminMemberControllerTest {
             .andExpect(model().attributeExists("result"))
             .andExpect(content().string(containsString("foo@example.com")))
             .andExpect(content().string(containsString("테스터")))
-            // 닉네임이 없는 회원은 가입 미완료 배지로 보인다
-            .andExpect(content().string(containsString("가입 미완료")))
+            .andExpect(content().string(containsString("bar@example.com")))
             .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "\"")))
             // 사이드바의 회원 관리 메뉴가 강조된다
             .andExpect(content().string(containsString("class=\"active\"")));
 
         ArgumentCaptor<Pageable> pageable = forClass(Pageable.class);
-        verify(memberQueryService).search(eq(new MemberSearchRequest(null, null, null)), pageable.capture());
+        verify(memberQueryService).search(eq(new MemberSearchRequest(null, null)), pageable.capture());
         assertThat(pageable.getValue().getPageNumber()).isZero();
         assertThat(pageable.getValue().getPageSize()).isEqualTo(20);
     }
@@ -115,12 +114,12 @@ class AdminMemberControllerTest {
         given(memberQueryService.search(any(), any())).willReturn(pageOf(List.of(), 0, 20, 0));
 
         mockMvc.perform(get(PATH).with(asAdmin())
-                .param("keyword", "foo").param("loginType", "APPLE").param("signupCompleted", "false"))
+                .param("keyword", "foo").param("loginType", "APPLE"))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("value=\"foo\"")))
             .andExpect(content().string(containsString("회원이 없습니다.")));
 
-        verify(memberQueryService).search(eq(new MemberSearchRequest("foo", LoginType.APPLE, false)), any());
+        verify(memberQueryService).search(eq(new MemberSearchRequest("foo", LoginType.APPLE)), any());
     }
 
     @Test
@@ -174,17 +173,6 @@ class AdminMemberControllerTest {
             .andExpect(content().string(containsString("취소됨")))
             .andExpect(content().string(containsString(CANCELING_ADMIN_ID.toString())))
             .andExpect(content().string(containsString("2026-10-20 12:00:00")));
-    }
-
-    @Test
-    void detail_incompleteMember_showsIncompleteBadge() throws Exception {
-        given(memberQueryService.getSummary(INCOMPLETE_MEMBER_ID)).willReturn(incompleteMember());
-        given(callBonusService.getAll(INCOMPLETE_MEMBER_ID)).willReturn(List.of());
-
-        mockMvc.perform(get(PATH + "/{memberId}", INCOMPLETE_MEMBER_ID).with(asAdmin()))
-            .andExpect(status().isOk())
-            .andExpect(content().string(containsString("가입 미완료")))
-            .andExpect(content().string(containsString("부여 이력이 없습니다.")));
     }
 
     @Test
@@ -384,13 +372,13 @@ class AdminMemberControllerTest {
     }
 
     private MemberSummaryResponse completeMember() {
-        return new MemberSummaryResponse(MEMBER_ID, "테스터", "foo@example.com", LoginType.EMAIL,
-            Instant.parse("2026-10-20T03:00:00Z"), true);
+        return new MemberSummaryResponse(MEMBER_ID, "테스터", "foo@example.com", LoginType.GOOGLE,
+            Instant.parse("2026-10-20T03:00:00Z"));
     }
 
-    private MemberSummaryResponse incompleteMember() {
-        return new MemberSummaryResponse(INCOMPLETE_MEMBER_ID, null, "bar@example.com", LoginType.APPLE,
-            Instant.parse("2026-10-21T03:00:00Z"), false);
+    private MemberSummaryResponse otherMember() {
+        return new MemberSummaryResponse(OTHER_MEMBER_ID, "다른회원", "bar@example.com", LoginType.APPLE,
+            Instant.parse("2026-10-21T03:00:00Z"));
     }
 
     private CallBonusResponse activeBonus() {

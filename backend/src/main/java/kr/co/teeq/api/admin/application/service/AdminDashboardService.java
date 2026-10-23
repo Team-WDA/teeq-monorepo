@@ -82,7 +82,7 @@ public class AdminDashboardService {
             todayUsage.callCount(),
             todayUsage.usedSeconds(),
             ratio(onboardingSubmissionRepository.countSignedUpMembersWithActiveSubmission(),
-                memberRepository.countByNicknameIsNotNullAndDeletedFalse()),
+                memberRepository.countByDeletedFalse()),
             requiredFeedbackRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndDeletedFalse(
                 weekStart, tomorrowStart),
             detailedFeedbackRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThanAndDeletedFalse(

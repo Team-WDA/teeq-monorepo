@@ -4,14 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
 import 'package:teeq/core/ui/text_field/underline_labeled_text_field.dart';
+import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/auth_input_validator.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 
 /// 이메일과 비밀번호로 로그인하는 화면. 성공 후 이동은 authRedirect가 맡는다.
+/// 가입하지 않은 계정이면 약관 → 닉네임 단계로 이어 간다.
 class EmailLoginScreen extends ConsumerStatefulWidget {
   const EmailLoginScreen({super.key});
 
@@ -46,11 +49,15 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
     final authFlow = ref.read(authFlowProvider);
     final errorHandler = ref.read(errorHandlerProvider);
     try {
-      await authFlow.signInWithEmail(
+      final outcome = await authFlow.signInWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
       TextInput.finishAutofillContext();
+      // 가입하지 않은 계정이면 약관 → 닉네임 단계로 이어간다. 이동한 화면이 닫힐 때까지 재진입을 막는다.
+      if (outcome == SignInOutcome.signupRequired && mounted) {
+        await context.push(AppRoutes.signupCompletion);
+      }
     } on Object catch (error) {
       errorHandler.handle(error);
     } finally {
@@ -78,7 +85,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
               children: [
                 UnderlineLabeledTextField(
                   label: '이메일',
-                  hintText: '이메일을 입력해주세요.',
+                  hintText: '이메일을 입력해줘.',
                   controller: _emailController,
                   onChanged: (_) => setState(() {}),
                   keyboardType: TextInputType.emailAddress,
@@ -88,7 +95,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
                 const SizedBox(height: AppSpacing.space24),
                 UnderlineLabeledTextField(
                   label: '비밀번호',
-                  hintText: '비밀번호를 입력해주세요.',
+                  hintText: '비밀번호를 입력해줘.',
                   controller: _passwordController,
                   onChanged: (_) => setState(() {}),
                   obscureText: true,

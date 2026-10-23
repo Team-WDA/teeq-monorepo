@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/error/app_exception.dart';
-import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
 import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
@@ -44,7 +43,7 @@ void main() {
   testWidgets('password row tap opens the form with a disabled button', (
     tester,
   ) async {
-    await _openPasswordChange(tester, MyPageHarness());
+    await _openPasswordChange(tester, MyPageHarness(member: emailMember));
 
     expect(find.byType(PasswordChangeScreen), findsOneWidget);
     expect(find.text('현재 비밀번호'), findsOneWidget);
@@ -54,7 +53,7 @@ void main() {
   testWidgets('submit is enabled only when all fields are valid and match', (
     tester,
   ) async {
-    await _openPasswordChange(tester, MyPageHarness());
+    await _openPasswordChange(tester, MyPageHarness(member: emailMember));
 
     await _enterPasswords(tester, current: '');
     expect(_isSubmitEnabled(tester), isFalse);
@@ -75,7 +74,7 @@ void main() {
 
   testWidgets('shows the guide until the new password is typed and swaps it '
       'for the error', (tester) async {
-    await _openPasswordChange(tester, MyPageHarness());
+    await _openPasswordChange(tester, MyPageHarness(member: emailMember));
     const guide = '8자 이상, 영문과 숫자를 함께 입력해줘';
     expect(find.text(guide), findsOneWidget);
     expect(find.text('현재 비밀번호를 입력해줘.'), findsOneWidget);
@@ -93,9 +92,9 @@ void main() {
   testWidgets('inputs are disabled while the request is in progress', (
     tester,
   ) async {
-    final harness = MyPageHarness();
+    final harness = MyPageHarness(member: emailMember);
     final gate = Completer<void>();
-    harness.repository.changePasswordGate = gate;
+    harness.credentialProvider.changePasswordGate = gate;
     await _openPasswordChange(tester, harness);
     await _enterPasswords(tester);
 
@@ -114,7 +113,7 @@ void main() {
   });
 
   testWidgets('shows an error message for each rule violation', (tester) async {
-    await _openPasswordChange(tester, MyPageHarness());
+    await _openPasswordChange(tester, MyPageHarness(member: emailMember));
 
     await _enterPasswords(tester, next: 'abc1', confirmation: '');
     expect(find.text('비밀번호는 8자 이상으로 입력해줘'), findsOneWidget);
@@ -130,10 +129,8 @@ void main() {
     tester,
   ) async {
     final harness = MyPageHarness(
-      changePasswordError: const ApiException(
-        errorCode: ErrorCode.invalidCurrentPassword,
-        httpStatus: 400,
-      ),
+      member: emailMember,
+      changePasswordError: const InvalidCurrentPasswordException(),
     );
     await _openPasswordChange(tester, harness);
 
@@ -155,7 +152,10 @@ void main() {
   });
 
   testWidgets('other errors go to the central error handler', (tester) async {
-    final harness = MyPageHarness(changePasswordError: Exception('offline'));
+    final harness = MyPageHarness(
+      member: emailMember,
+      changePasswordError: Exception('offline'),
+    );
     await _openPasswordChange(tester, harness);
 
     await _enterPasswords(tester);
@@ -170,15 +170,21 @@ void main() {
   testWidgets('success replaces the form with the completion screen', (
     tester,
   ) async {
-    final harness = MyPageHarness();
+    final harness = MyPageHarness(member: emailMember);
     await _openPasswordChange(tester, harness);
 
     await _enterPasswords(tester);
     await tester.tap(find.text('비밀번호 변경').last);
     await tester.pumpAndSettle();
 
-    expect(harness.repository.changedPassword?.newPassword, 'newpass12');
-    expect(harness.repository.changedPassword?.currentPassword, 'oldpass1');
+    expect(
+      harness.credentialProvider.lastPasswordChange?.newPassword,
+      'newpass12',
+    );
+    expect(
+      harness.credentialProvider.lastPasswordChange?.currentPassword,
+      'oldpass1',
+    );
     expect(find.byType(PasswordChangeScreen), findsNothing);
     expect(find.byType(PasswordChangeCompletionScreen), findsOneWidget);
     expect(find.text('비밀번호를 변경했어!'), findsOneWidget);
@@ -192,7 +198,7 @@ void main() {
   });
 
   testWidgets('completion back button returns to my page', (tester) async {
-    final harness = MyPageHarness();
+    final harness = MyPageHarness(member: emailMember);
     await _openPasswordChange(tester, harness);
     await _enterPasswords(tester);
     await tester.tap(find.text('비밀번호 변경').last);
@@ -208,9 +214,9 @@ void main() {
   testWidgets('repeated taps while submitting send one request', (
     tester,
   ) async {
-    final harness = MyPageHarness();
+    final harness = MyPageHarness(member: emailMember);
     final gate = Completer<void>();
-    harness.repository.changePasswordGate = gate;
+    harness.credentialProvider.changePasswordGate = gate;
     await _openPasswordChange(tester, harness);
 
     await _enterPasswords(tester);
@@ -220,7 +226,10 @@ void main() {
     await tester.tap(find.text('비밀번호 변경').last, warnIfMissed: false);
     await tester.pump();
 
-    expect(harness.repository.changePasswordCount, 1);
+    expect(
+      harness.credentialProvider.calls.where((c) => c == 'changeEmailPassword'),
+      hasLength(1),
+    );
 
     gate.complete();
     await tester.pumpAndSettle();

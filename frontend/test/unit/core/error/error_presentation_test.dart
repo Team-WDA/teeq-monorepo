@@ -31,12 +31,8 @@ void main() {
       }
     });
 
-    test('로그인 화면 401(invalidCredentials 등)은 toast', () {
-      for (final code in [
-        ErrorCode.invalidCredentials,
-        ErrorCode.socialTokenInvalid,
-        ErrorCode.loginMethodMismatch,
-      ]) {
+    test('로그인 401은 toast', () {
+      for (final code in [ErrorCode.authTokenInvalid]) {
         expect(classify(_api(code, status: 401)), ErrorPresentation.toast);
       }
     });

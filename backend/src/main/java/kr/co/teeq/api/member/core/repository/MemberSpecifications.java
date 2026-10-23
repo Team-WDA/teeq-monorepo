@@ -19,7 +19,7 @@ public final class MemberSpecifications {
         return (root, query, builder) -> builder.isFalse(root.<Boolean>get("deleted"));
     }
 
-    // 이메일 또는 닉네임에 키워드가 포함된 회원(대소문자 무시). nickname이 null이면 그 조건은 거짓이 된다
+    // 이메일 또는 닉네임에 키워드가 포함된 회원(대소문자 무시).
     public static Specification<Member> emailOrNicknameContaining(String keyword) {
         return (root, query, builder) -> {
             String pattern = toLikePattern(keyword);
@@ -31,13 +31,6 @@ public final class MemberSpecifications {
 
     public static Specification<Member> ofLoginType(LoginType loginType) {
         return (root, query, builder) -> builder.equal(root.get("loginType"), loginType);
-    }
-
-    // 가입 완료 회원은 닉네임이 있다
-    public static Specification<Member> signupCompleted(boolean signupCompleted) {
-        return (root, query, builder) -> signupCompleted
-            ? builder.isNotNull(root.get("nickname"))
-            : builder.isNull(root.get("nickname"));
     }
 
     // 키워드를 공백 제거 후 소문자로 바꾸고 이스케이프해 부분 일치용 LIKE 패턴(%키워드%)으로 만든다

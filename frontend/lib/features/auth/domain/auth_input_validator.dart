@@ -1,7 +1,7 @@
 /// 가입·로그인 입력값 형식 검증. 비밀번호·닉네임 규칙은 BE `MemberValidation`과 같다.
 /// 앞뒤 공백은 호출부가 `trim()`한 값을 넘긴다.
 abstract final class AuthInputValidator {
-  /// BE `SignUpRequest`의 이메일 최대 길이.
+  /// 이메일 최대 길이.
   static const int _emailMaxLength = 254;
 
   static final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');

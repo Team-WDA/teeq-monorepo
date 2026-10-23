@@ -36,6 +36,15 @@ open -a "Android Studio" frontend
 - 값은 `application-{dev,prod}.yml`(운영은 시크릿 `APPLICATION_PROD_YML`)에 직접 채운다. 웹훅 URL은 시크릿이므로 문서·로그·PR에 적지 않는다.
 - 하나라도 비어 있으면 기동에 실패한다.
 
+## Firebase 로그인 설정 (Apple, Google, 이메일/비밀번호)
+
+- Firebase 콘솔: Apple, Google, 이메일/비밀번호 제공자를 켠다. **이메일/비밀번호 제공자를 켜기 전에** "Create multiple accounts for each identity provider"(제공자별 별도 계정)가 켜져 있는지 확인한다. 비밀번호 정책은 최소 8자와 숫자 포함까지만 걸고(영문 포함 여부는 앱 검증이 맡는다), 앱의 비밀번호 검증보다 엄격하지 않게 둔다.
+- 필요한 GitHub Secret(값은 사용자가 GitHub Settings에 직접 등록하고 문서·로그·PR에 적지 않는다):
+  - `FIREBASE_ADMIN_SERVICE_ACCOUNT_JSON`: BE 배포 시 `backend/src/main/resources/firebase-service-account.json`으로 생성된다.
+  - `GOOGLE_SERVICES_JSON`: Android 빌드 시 `frontend/android/app/google-services.json`으로 생성된다.
+  - `GOOGLE_SERVICE_INFO_PLIST`: iOS 빌드 시 `frontend/ios/Runner/GoogleService-Info.plist`로 생성된다.
+- Flutter CI(`PROJECT-FLUTTER-CI`)도 이 Secret이 필요하므로, 비어 있거나 Secret을 쓸 수 없는 fork PR에서는 빌드가 실패한다.
+
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->

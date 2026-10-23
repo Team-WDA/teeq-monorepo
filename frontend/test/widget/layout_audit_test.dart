@@ -18,8 +18,6 @@ import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/profile_image_file.dart';
 import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
-import 'package:teeq/features/auth/presentation/email_login_screen.dart';
-import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
@@ -46,8 +44,6 @@ import 'package:teeq/features/my_page/data/legal_document_loader.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
-import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
-import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 import 'package:teeq/features/my_page/presentation/profile_image_sheet.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
@@ -121,7 +117,7 @@ const _member = Member(
   memberId: 'member-1',
   nickname: _longNickname,
   hasAiCharacter: false,
-  loginType: LoginType.email,
+  loginType: LoginType.google,
 );
 
 const _unnamedCharacter = AiCharacter(
@@ -138,9 +134,7 @@ AiCharacter _namedCharacter(String name) => AiCharacter(
 
 class _FixedSignupDraftController extends SignupDraftController {
   @override
-  SignupDraft build() => const SignupDraft(
-    email: 'a@b.co',
-    password: 'Abcdef12',
+  SignupDraft build() => SignupDraft.empty.copyWith(
     isServiceTermsAgreed: true,
     isPrivacyPolicyAgreed: true,
   );
@@ -324,12 +318,6 @@ Widget _legalDocumentScreen(LegalDocumentType type, String path) => _hostRouted(
 
 final Map<String, _ScreenBuilder> _screens = {
   '환영': () => _hostPlain(_newContainer(), const WelcomeScreen()),
-  '이메일 로그인': () => _hostPlain(_newContainer(), const EmailLoginScreen()),
-  '이메일 가입 자격 증명': () => _hostRouted(
-    _newContainer(),
-    AppRoutes.signup,
-    const EmailSignupCredentialsScreen(),
-  ),
   '닉네임': () => _hostRouted(
     _newContainer(
       overrides: [
@@ -341,7 +329,7 @@ final Map<String, _ScreenBuilder> _screens = {
     AppRoutes.signupNickname,
     const SignupNicknameScreen(),
   ),
-  '가입 완료': () =>
+  '약관 동의': () =>
       _hostPlain(_newContainer(), const SignupCompletionConsentScreen()),
   '닉네임 변경': () {
     final container = _newContainer();
@@ -352,16 +340,6 @@ final Map<String, _ScreenBuilder> _screens = {
       const NicknameChangeScreen(),
     );
   },
-  '비밀번호 변경': () => _hostRouted(
-    _newContainer(),
-    AppRoutes.passwordChange,
-    const PasswordChangeScreen(),
-  ),
-  '비밀번호 변경 완료': () => _hostRouted(
-    _newContainer(),
-    AppRoutes.passwordChangeCompletion,
-    const PasswordChangeCompletionScreen(),
-  ),
   '서비스 이용약관': () => _legalDocumentScreen(
     LegalDocumentType.serviceTerms,
     AppRoutes.serviceTerms,
@@ -521,13 +499,9 @@ final Map<String, _ScreenBuilder> _screens = {
 /// 각 구성에서 그려져야 하는 화면(또는 팝업).
 final Map<String, _ScreenFinder> _expectedScreens = {
   '환영': () => find.byType(WelcomeScreen),
-  '이메일 로그인': () => find.byType(EmailLoginScreen),
-  '이메일 가입 자격 증명': () => find.byType(EmailSignupCredentialsScreen),
   '닉네임': () => find.byType(SignupNicknameScreen),
-  '가입 완료': () => find.byType(SignupCompletionConsentScreen),
+  '약관 동의': () => find.byType(SignupCompletionConsentScreen),
   '닉네임 변경': () => find.byType(NicknameChangeScreen),
-  '비밀번호 변경': () => find.byType(PasswordChangeScreen),
-  '비밀번호 변경 완료': () => find.byType(PasswordChangeCompletionScreen),
   '서비스 이용약관': () => find.byType(LegalDocumentScreen),
   '개인정보 처리방침': () => find.byType(LegalDocumentScreen),
   '온보딩 시작': () => find.byType(OnboardingIntroductionScreen),
@@ -575,12 +549,6 @@ Future<void> _fillWorstCaseContent(WidgetTester tester, String name) async {
   // 오류 문구와 카운터가 모두 나오는 최악 내용으로 그린다.
   if (name == '닉네임 변경') {
     await tester.enterText(find.byType(TextField), '가 나다라마바사아자차카');
-    await tester.pumpAndSettle();
-  }
-  // 새 비밀번호 오류와 확인 불일치 문구가 모두 나오는 내용으로 그린다.
-  if (name == '비밀번호 변경') {
-    await tester.enterText(find.byType(TextField).at(1), 'abc');
-    await tester.enterText(find.byType(TextField).at(2), 'abcd');
     await tester.pumpAndSettle();
   }
   if (name == '닉네임') {

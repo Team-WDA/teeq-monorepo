@@ -97,19 +97,36 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('email login member sees password row', (tester) async {
+  testWidgets('google login member sees google login row and no password row', (
+    tester,
+  ) async {
     await _pumpMyPage(tester, MyPageHarness());
 
-    expect(find.text('비밀번호 변경'), findsOneWidget);
+    expect(find.text('Google로 로그인 중이에요!'), findsOneWidget);
+    expect(find.text('Apple로 로그인 중이에요!'), findsNothing);
+    expect(find.text('비밀번호 변경'), findsNothing);
   });
 
-  testWidgets('apple login member does not see password row', (tester) async {
+  testWidgets('apple login member sees apple login row', (tester) async {
     final harness = MyPageHarness(
       member: memberWithoutEmail.copyWith(loginType: LoginType.apple),
     );
     await _pumpMyPage(tester, harness);
 
+    expect(find.text('Apple로 로그인 중이에요!'), findsOneWidget);
+    expect(find.text('Google로 로그인 중이에요!'), findsNothing);
     expect(find.text('비밀번호 변경'), findsNothing);
+  });
+
+  testWidgets('email login member sees email login row and password row', (
+    tester,
+  ) async {
+    await _pumpMyPage(tester, MyPageHarness(member: emailMember));
+
+    expect(find.text('이메일로 로그인 중이에요!'), findsOneWidget);
+    expect(find.text('비밀번호 변경'), findsOneWidget);
+    expect(find.text('Google로 로그인 중이에요!'), findsNothing);
+    expect(find.text('Apple로 로그인 중이에요!'), findsNothing);
   });
 
   testWidgets('logout tap calls logout immediately', (tester) async {

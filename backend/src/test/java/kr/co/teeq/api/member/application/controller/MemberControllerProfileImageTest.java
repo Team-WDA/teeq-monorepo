@@ -89,13 +89,7 @@ class MemberControllerProfileImageTest {
     private MemberDeletionService memberDeletionService;
 
     private String bearer() {
-        Member member = Member.builder()
-            .email("soyeon@teeq.com")
-            .password("encoded")
-            .nickname("소연")
-            .serviceTermsAgreed(true)
-            .privacyPolicyAgreed(true)
-            .build();
+        Member member = Member.createMember(LoginType.GOOGLE, "google-uid", "soyeon@teeq.com", "소연");
         ReflectionTestUtils.setField(member, "id", MEMBER_ID);
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
         return "Bearer " + jwtProvider.issueAccessToken(MEMBER_ID);
@@ -139,7 +133,7 @@ class MemberControllerProfileImageTest {
     @Test
     void replace_success_returns200WithUpdatedMember() throws Exception {
         given(memberService.getMe(any())).willReturn(new MemberResponse(
-            MEMBER_ID, "soyeon@teeq.com", "소연", false, LoginType.EMAIL,
+            MEMBER_ID, "soyeon@teeq.com", "소연", false, LoginType.GOOGLE,
             "https://api.teeq.co.kr/media/profile-images/key.png"));
 
         mockMvc.perform(multipart(HttpMethod.PUT, PATH).file(imagePart()).header(HttpHeaders.AUTHORIZATION, bearer()))

@@ -56,9 +56,6 @@ public class MemberQueryService {
         if (request.loginType() != null) {
             specifications.add(MemberSpecifications.ofLoginType(request.loginType()));
         }
-        if (request.signupCompleted() != null) {
-            specifications.add(MemberSpecifications.signupCompleted(request.signupCompleted()));
-        }
         return Specification.allOf(specifications);
     }
 

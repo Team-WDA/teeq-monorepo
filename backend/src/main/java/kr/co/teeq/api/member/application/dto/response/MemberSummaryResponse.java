@@ -10,13 +10,12 @@ public record MemberSummaryResponse(
     String nickname,
     String email,
     LoginType loginType,
-    Instant createdAt,
-    boolean signupCompleted
+    Instant createdAt
 ) {
 
     public static MemberSummaryResponse from(Member member) {
         return new MemberSummaryResponse(member.getId(), member.getNickname(), member.getEmail(),
-            member.getLoginType(), member.getCreatedAt(), member.isSignupCompleted());
+            member.getLoginType(), member.getCreatedAt());
     }
 
 }

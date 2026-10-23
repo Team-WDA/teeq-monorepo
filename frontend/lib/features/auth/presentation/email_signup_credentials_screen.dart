@@ -52,6 +52,7 @@ class _EmailSignupCredentialsScreenState
         .read(signupDraftControllerProvider.notifier)
         .save(
           SignupDraft(
+            mode: SignupMode.emailSignup,
             email: _emailController.text.trim(),
             password: _passwordController.text,
             isServiceTermsAgreed: _isServiceTermsAgreed,
@@ -82,7 +83,7 @@ class _EmailSignupCredentialsScreenState
               children: [
                 UnderlineLabeledTextField(
                   label: '이메일',
-                  hintText: '이메일을 입력해주세요.',
+                  hintText: '이메일을 입력해줘.',
                   controller: _emailController,
                   onChanged: (_) => setState(() {}),
                   keyboardType: TextInputType.emailAddress,
@@ -92,7 +93,7 @@ class _EmailSignupCredentialsScreenState
                 const SizedBox(height: AppSpacing.space24),
                 UnderlineLabeledTextField(
                   label: '비밀번호',
-                  hintText: '비밀번호를 입력해주세요.',
+                  hintText: '비밀번호를 입력해줘.',
                   controller: _passwordController,
                   onChanged: (_) => setState(() {}),
                   obscureText: true,

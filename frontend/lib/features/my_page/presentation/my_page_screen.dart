@@ -9,6 +9,7 @@ import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
 import 'package:teeq/core/debug_console/tap_sequence_counter.dart';
 import 'package:teeq/core/design/app_assets.dart';
+import 'package:teeq/core/design/app_colors.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
@@ -81,6 +82,26 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     ref.read(authFlowProvider).logout();
   }
 
+  /// 가입한 로그인 방식을 제공자 로고와 굵은 문구로 보여 주는 행.
+  SettingsRow _loginProviderRow(LoginType loginType) => switch (loginType) {
+    LoginType.apple => const SettingsRow(
+      label: 'Apple로 로그인 중이에요!',
+      leadingIconAssetPath: AppAssets.appleLogoIcon,
+      leadingIconColor: AppColors.textPrimary,
+      isLabelBold: true,
+    ),
+    LoginType.google => const SettingsRow(
+      label: 'Google로 로그인 중이에요!',
+      leadingIconAssetPath: AppAssets.googleLogoIcon,
+      isLabelBold: true,
+    ),
+    LoginType.email => const SettingsRow(
+      label: '이메일로 로그인 중이에요!',
+      leadingIconAssetPath: AppAssets.mailIcon,
+      isLabelBold: true,
+    ),
+  };
+
   @override
   Widget build(BuildContext context) {
     // 로그아웃·탈퇴 순간 회원이 비면 이전 회원 정보를 그리지 않는다.
@@ -106,7 +127,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
           const Text('마이', style: AppTextStyles.display32Bold),
           const SizedBox(height: AppSpacing.space24),
           ProfileSummaryCard(
-            nickname: member.nickname ?? '',
+            nickname: member.nickname,
             email: member.email,
             profileImageUrl: member.profileImageUrl,
             onTap: () => context.push(AppRoutes.nicknameChange),
@@ -121,7 +142,8 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                 leadingIconAssetPath: AppAssets.mailIcon,
                 value: member.email,
               ),
-              // 비밀번호가 없는 회원(Apple 등)에게는 숨긴다.
+              _loginProviderRow(member.loginType),
+              // 비밀번호가 없는 회원(Apple, Google)에게는 숨긴다.
               if (member.loginType == LoginType.email)
                 SettingsRow(
                   label: '비밀번호 변경',

@@ -10,8 +10,8 @@ import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 import 'package:teeq/features/auth/presentation/widgets/signup_consent_checklist.dart';
 
-/// 소셜 로그인으로 가입을 시작한 회원의 약관 동의 화면. 동의를 받아 닉네임 단계로 넘긴다.
-/// 로그아웃 경로가 없으므로 뒤로가기 버튼을 두지 않는다.
+/// 로그인 후 가입이 필요한 계정(Apple, Google, 이메일)의 약관 동의 화면. 동의를 받아 닉네임 단계로 넘긴다.
+/// 뒤로 가면 시작 화면으로 돌아가며, Firebase 로그아웃은 하지 않는다.
 class SignupCompletionConsentScreen extends ConsumerStatefulWidget {
   const SignupCompletionConsentScreen({super.key});
 
@@ -46,11 +46,21 @@ class _SignupCompletionConsentScreenState
     _isNicknameStepOpen = false;
   }
 
+  // 닉네임 화면 가드가 go로 들어온 경우처럼 되돌아갈 화면이 없으면 시작 화면으로 보낸다.
+  void _goBack() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.go(AppRoutes.welcome);
+  }
+
   @override
   Widget build(BuildContext context) {
     // 이 화면이 스택에 있는 동안 가입 입력값 provider를 유지한다.
     ref.watch(signupDraftControllerProvider);
     return BottomActionScreenLayout(
+      onBackPressed: _goBack,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

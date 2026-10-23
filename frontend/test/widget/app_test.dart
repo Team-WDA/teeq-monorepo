@@ -12,7 +12,6 @@ import 'package:teeq/features/app_update/presentation/app_update_controller.dart
 import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
-import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
@@ -86,7 +85,7 @@ void main() {
         memberId: 'member-1',
         nickname: '소연',
         hasAiCharacter: true,
-        loginType: LoginType.email,
+        loginType: LoginType.google,
       ),
     );
 
@@ -95,21 +94,7 @@ void main() {
     expect(find.text('티티'), findsOneWidget);
   });
 
-  testWidgets('signedIn + 가입 미완료 회원이면 가입 완료 화면을 보여 준다', (tester) async {
-    await _pumpSignedInApp(
-      tester,
-      const Member(
-        memberId: 'member-1',
-        hasAiCharacter: false,
-        loginType: LoginType.apple,
-      ),
-    );
-
-    expect(find.byType(SignupCompletionConsentScreen), findsOneWidget);
-    expect(find.byType(HomeScreen), findsNothing);
-  });
-
-  testWidgets('signedIn + 가입 완료 회원이면 홈 화면을 보여 준다', (tester) async {
+  testWidgets('signedIn + 캐릭터가 있는 회원이면 홈 화면을 보여 준다', (tester) async {
     await _pumpSignedInApp(
       tester,
       const Member(
@@ -121,7 +106,6 @@ void main() {
     );
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.byType(SignupCompletionConsentScreen), findsNothing);
   });
 
   testWidgets('signedIn + 가입 완료 + 캐릭터 없는 회원이면 온보딩 시작 화면을 보여 준다', (

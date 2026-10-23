@@ -47,7 +47,7 @@ class MemberDeletionServiceTest {
 
     @Test
     void delete_existingMember_marksDeletedAndPublishesEvent() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         given(memberRepository.findByIdAndDeletedFalse(MEMBER_ID)).willReturn(Optional.of(member));
 
         memberDeletionService.delete(MEMBER_ID);

@@ -13,10 +13,13 @@ class FakeAuthRepository implements AuthRepository {
     this.fetchMeError,
     this.logoutError,
     this.deleteAccountError,
-    this.completeSignupError,
+    this.loginError,
+    this.signUpError,
+    this.isNicknameAvailable = true,
+    this.nicknameAvailabilityError,
     this.changeNicknameError,
-    this.changePasswordError,
     this.replaceProfileImageError,
+    this.onDeleteAccount,
   });
 
   final SignInResult? signInResult;
@@ -31,14 +34,23 @@ class FakeAuthRepository implements AuthRepository {
   /// 지정하면 [deleteAccount]가 이 오류를 던진다.
   final Object? deleteAccountError;
 
-  /// 지정하면 [completeSignup]이 이 오류를 던진다.
-  final Object? completeSignupError;
+  /// 지정하면 [login]이 이 오류를 던진다.
+  Object? loginError;
+
+  /// 지정하면 [signUp]이 이 오류를 던진다.
+  final Object? signUpError;
+
+  /// [checkNicknameAvailability]가 돌려줄 값.
+  final bool isNicknameAvailable;
+
+  /// 지정하면 [checkNicknameAvailability]가 이 오류를 던진다.
+  final Object? nicknameAvailabilityError;
+
+  /// 지정하면 [deleteAccount]가 호출될 때 실행한다(호출 순서 검증용).
+  final void Function()? onDeleteAccount;
 
   /// 지정하면 [changeNickname]이 이 오류를 던진다.
   final Object? changeNicknameError;
-
-  /// 지정하면 [changePassword]가 이 오류를 던진다.
-  final Object? changePasswordError;
 
   /// 지정하면 [replaceProfileImage]가 이 오류를 던진다.
   final Object? replaceProfileImageError;
@@ -48,9 +60,6 @@ class FakeAuthRepository implements AuthRepository {
 
   /// 지정하면 [replaceProfileImage]가 이 게이트가 완료될 때까지 응답을 미룬다.
   Completer<void>? replaceProfileImageGate;
-
-  /// 지정하면 [changePassword]가 이 게이트가 완료될 때까지 응답을 미룬다.
-  Completer<void>? changePasswordGate;
 
   /// 지정하면 [deleteAccount]가 이 게이트가 완료될 때까지 응답을 미룬다.
   Completer<void>? deleteAccountGate;
@@ -64,14 +73,20 @@ class FakeAuthRepository implements AuthRepository {
   int fetchMeCount = 0;
   int deleteAccountCount = 0;
   int logoutCount = 0;
-  int completeSignupCount = 0;
+  int loginCount = 0;
+  int signUpCount = 0;
+  int nicknameAvailabilityCount = 0;
+  String? checkedNickname;
   int changeNicknameCount = 0;
-  int changePasswordCount = 0;
-  String? socialLoginCredential;
-  ({String nickname, bool serviceTermsAgreed, bool privacyPolicyAgreed})?
-  completedSignup;
+  String? loginCredential;
+  ({
+    String credential,
+    String nickname,
+    bool serviceTermsAgreed,
+    bool privacyPolicyAgreed,
+  })?
+  signUpRequest;
   String? changedNickname;
-  ({String currentPassword, String newPassword})? changedPassword;
   ProfileImageFile? replacedProfileImage;
 
   @override
@@ -88,11 +103,23 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> deleteAccount() async {
     deleteAccountCount++;
+    onDeleteAccount?.call();
     await deleteAccountGate?.future;
     final error = deleteAccountError;
     if (error != null) {
       throw error;
     }
+  }
+
+  @override
+  Future<bool> checkNicknameAvailability({required String nickname}) async {
+    nicknameAvailabilityCount++;
+    checkedNickname = nickname;
+    final error = nicknameAvailabilityError;
+    if (error != null) {
+      throw error;
+    }
+    return isNicknameAvailable;
   }
 
   @override
@@ -106,43 +133,35 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<SignInResult> socialLogin({required String credential}) async {
-    socialLoginCredential = credential;
+  Future<SignInResult> login({required String credential}) async {
+    loginCount++;
+    loginCredential = credential;
+    final error = loginError;
+    if (error != null) {
+      throw error;
+    }
     return signInResult!;
   }
 
   @override
-  Future<SignInResult> login({
-    required String email,
-    required String password,
-  }) async => signInResult!;
-
-  @override
   Future<SignInResult> signUp({
-    required String email,
-    required String password,
-    required String nickname,
-    required bool serviceTermsAgreed,
-    required bool privacyPolicyAgreed,
-  }) async => signInResult!;
-
-  @override
-  Future<Member> completeSignup({
+    required String credential,
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
-    completeSignupCount++;
-    completedSignup = (
+    signUpCount++;
+    signUpRequest = (
+      credential: credential,
       nickname: nickname,
       serviceTermsAgreed: serviceTermsAgreed,
       privacyPolicyAgreed: privacyPolicyAgreed,
     );
-    final error = completeSignupError;
+    final error = signUpError;
     if (error != null) {
       throw error;
     }
-    return member!;
+    return signInResult!;
   }
 
   @override
@@ -155,24 +174,6 @@ class FakeAuthRepository implements AuthRepository {
       throw error;
     }
     return member!.copyWith(nickname: nickname);
-  }
-
-  @override
-  Future<SignInResult> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    changePasswordCount++;
-    changedPassword = (
-      currentPassword: currentPassword,
-      newPassword: newPassword,
-    );
-    await changePasswordGate?.future;
-    final error = changePasswordError;
-    if (error != null) {
-      throw error;
-    }
-    return signInResult!;
   }
 
   @override

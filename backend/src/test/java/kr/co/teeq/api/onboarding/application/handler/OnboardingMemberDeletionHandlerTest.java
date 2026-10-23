@@ -47,7 +47,7 @@ class OnboardingMemberDeletionHandlerTest {
 
     @Test
     void handle_softDeletesAnswersAndSubmissions() {
-        Member member = Member.createSocialMember(LoginType.APPLE, "social-id", "a@b.c");
+        Member member = Member.createMember(LoginType.APPLE, "social-id", "a@b.c", "소연");
         OnboardingSubmission submission = OnboardingSubmission.of(member, "persona-id", CharacterType.CHARACTER_1,
             List.of("태그1", "태그2", "태그3"));
         OnboardingAnswer firstAnswer = OnboardingAnswer.of(member, submission, OnboardingQuestion.RELATIONSHIP,

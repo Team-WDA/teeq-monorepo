@@ -18,18 +18,13 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
   final List<String> requestedNicknames = [];
-  final List<String> requestedEmails = [];
-  Completer<void> pendingRequest = Completer<void>();
+  Completer<SignupOutcome> pendingRequest = Completer<SignupOutcome>();
 
   @override
-  Future<void> signUp({
-    required String email,
-    required String password,
+  Future<SignupOutcome> completeSignup({
+    required SignupDraft draft,
     required String nickname,
-    required bool serviceTermsAgreed,
-    required bool privacyPolicyAgreed,
   }) {
-    requestedEmails.add(email);
     requestedNicknames.add(nickname);
     return pendingRequest.future;
   }
@@ -47,12 +42,15 @@ class _RecordingErrorHandler extends Fake implements ErrorHandler {
 class _FixedSignupDraftController extends SignupDraftController {
   @override
   SignupDraft build() => const SignupDraft(
-    email: 'a@b.co',
+    mode: SignupMode.emailSignup,
+    email: 'user@example.com',
     password: 'Abcdef12',
     isServiceTermsAgreed: true,
     isPrivacyPolicyAgreed: true,
   );
 }
+
+late ProviderContainer _container;
 
 Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
   WidgetTester tester,
@@ -61,7 +59,7 @@ Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
   final errorHandler = _RecordingErrorHandler();
   final router = GoRouter(
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const Text('이메일 단계 스텁')),
+      GoRoute(path: '/', builder: (context, state) => const Text('약관 단계 스텁')),
       GoRoute(
         path: '/nickname',
         builder: (context, state) => const SignupNicknameScreen(),
@@ -73,15 +71,21 @@ Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
     ],
   );
   addTearDown(router.dispose);
+  _container = ProviderContainer(
+    overrides: [
+      authFlowProvider.overrideWithValue(authFlow),
+      errorHandlerProvider.overrideWithValue(errorHandler),
+      signupDraftControllerProvider.overrideWith(
+        _FixedSignupDraftController.new,
+      ),
+    ],
+  );
+  addTearDown(_container.dispose);
+  // 화면 이동으로 autoDispose provider가 정리돼도 상태를 읽을 수 있게 붙잡아 둔다.
+  _container.listen(signupDraftControllerProvider, (previous, next) {});
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        authFlowProvider.overrideWithValue(authFlow),
-        errorHandlerProvider.overrideWithValue(errorHandler),
-        signupDraftControllerProvider.overrideWith(
-          _FixedSignupDraftController.new,
-        ),
-      ],
+    UncontrolledProviderScope(
+      container: _container,
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),
   );
@@ -132,7 +136,6 @@ void main() {
     await tester.pump();
 
     expect(authFlow.requestedNicknames, ['티큐']);
-    expect(authFlow.requestedEmails, ['a@b.co']);
     expect(_nextButtonOnPressed(tester), isNull);
   });
 
@@ -142,27 +145,29 @@ void main() {
 
     await tester.tap(find.text('다음'));
     await tester.pump();
-    authFlow.pendingRequest.complete();
+    authFlow.pendingRequest.complete(SignupOutcome.signedIn);
     await tester.pumpAndSettle();
 
     expect(find.text('온보딩 스텁'), findsOneWidget);
   });
 
-  testWidgets('이메일 중복이면 오류를 넘기고 이메일 단계로 돌아간다', (tester) async {
+  testWidgets('닉네임 중복이면 오류를 넘기고 화면에 남는다', (tester) async {
     final (authFlow, errorHandler) = await _pumpScreen(tester);
     await _enterNickname(tester, '티큐');
 
     await tester.tap(find.text('다음'));
     await tester.pump();
     const failure = ApiException(
-      errorCode: ErrorCode.duplicateEmail,
+      errorCode: ErrorCode.duplicateNickname,
       httpStatus: 409,
     );
     authFlow.pendingRequest.completeError(failure);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
 
     expect(errorHandler.handledErrors, [failure]);
-    expect(find.text('이메일 단계 스텁'), findsOneWidget);
+    expect(find.byType(SignupNicknameScreen), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNotNull);
   });
 
   testWidgets('그 외 오류면 화면에 남고 다음이 다시 활성화된다', (tester) async {
@@ -179,5 +184,47 @@ void main() {
     expect(errorHandler.handledErrors, [failure]);
     expect(find.byType(SignupNicknameScreen), findsOneWidget);
     expect(_nextButtonOnPressed(tester), isNotNull);
+  });
+
+  testWidgets('성공하면 draft의 비밀번호를 비운다', (tester) async {
+    final (authFlow, _) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.complete(SignupOutcome.signedIn);
+    await tester.pumpAndSettle();
+
+    expect(_container.read(signupDraftControllerProvider).password, isEmpty);
+  });
+
+  testWidgets('닉네임 사전 확인에서 걸리면 중복 닉네임 오류를 알리고 비밀번호를 유지한다', (tester) async {
+    final (authFlow, errorHandler) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.complete(SignupOutcome.nicknameUnavailable);
+    await tester.pump();
+    await tester.pump();
+
+    final handled = errorHandler.handledErrors.single as ApiException;
+    expect(handled.errorCode, ErrorCode.duplicateNickname);
+    expect(find.byType(SignupNicknameScreen), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNotNull);
+    expect(_container.read(signupDraftControllerProvider).password, 'Abcdef12');
+  });
+
+  testWidgets('실패하면 같은 비밀번호로 다시 시도할 수 있게 비밀번호를 유지한다', (tester) async {
+    final (authFlow, _) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.completeError(Exception('가입 실패'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(_container.read(signupDraftControllerProvider).password, 'Abcdef12');
   });
 }

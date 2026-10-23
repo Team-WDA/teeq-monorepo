@@ -14,7 +14,7 @@
 # RELEASE_KEYSTORE_PASSWORD: keystore 비밀번호
 # RELEASE_KEY_ALIAS: key alias
 # RELEASE_KEY_PASSWORD: key 비밀번호
-# GOOGLE_SERVICES_JSON (선택): Firebase google-services.json
+# GOOGLE_SERVICES_JSON: Firebase google-services.json (필수) [teeq]
 # SERVER_HOST: 서버 호스트(SMB 접속 주소)
 # SERVER_USER: SMB 사용자명
 # SERVER_PASSWORD: SMB 비밀번호
@@ -116,14 +116,18 @@ jobs:
             echo "::warning::DEBUG_KEYSTORE not set; skipping (Gradle default debug signing will be used)"
           fi
 
-      # [teeq: disabled - google-services 플러그인을 쓰지 않아 아무도 이 파일을 읽지 않음]
-      # - name: Create Google-services.json
-      #   run: |
-      #     cat << 'EOF' > android/app/google-services.json
-      #     ${{ secrets.GOOGLE_SERVICES_JSON }}
-      #     EOF
-      #     echo "✅ Google-services.json 생성 완료"
-      #     ls -la android/app/
+      # [teeq: GOOGLE_SERVICES_JSON secret -> frontend/android/app/google-services.json. 비어 있으면 google-services 플러그인이 예외를 던지므로 즉시 실패]
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICES_JSON" ]; then
+            echo "::error::GOOGLE_SERVICES_JSON secret is not set"
+            exit 1
+          fi
+          mkdir -p android/app
+          printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          python3 -m json.tool android/app/google-services.json > /dev/null
 
       # Flutter 설정 및 버전 확인
       - name: Set up Flutter

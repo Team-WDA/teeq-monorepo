@@ -12,4 +12,11 @@ class SignupDraftController extends _$SignupDraftController {
   void save(SignupDraft draft) {
     state = draft;
   }
+
+  /// 가입을 마친 뒤 비밀번호만 비운다. 화면이 이미 사라져 provider가 정리됐다면 아무것도 하지 않는다.
+  void clearPassword() {
+    if (ref.mounted) {
+      state = state.withoutPassword();
+    }
+  }
 }

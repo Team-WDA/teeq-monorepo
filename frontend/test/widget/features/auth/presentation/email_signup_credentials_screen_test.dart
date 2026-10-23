@@ -104,6 +104,7 @@ void main() {
     expect(
       _container.read(signupDraftControllerProvider),
       const SignupDraft(
+        mode: SignupMode.emailSignup,
         email: 'a@b.co',
         password: 'Abcdef12',
         isServiceTermsAgreed: true,

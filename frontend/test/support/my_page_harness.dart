@@ -16,6 +16,7 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
+import 'package:teeq/features/auth/data/firebase_auth_credential_provider.dart';
 import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
@@ -28,6 +29,7 @@ import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 
 import 'fake_auth_repository.dart';
 import 'fake_developer_mode_storage.dart';
+import 'fake_auth_credential_provider.dart';
 import 'fake_token_storage.dart';
 
 /// 호출 순서를 `events`에 남기는 토큰 저장소. 세션이 지워지는 시점을 알 수 있다.
@@ -67,6 +69,15 @@ const memberWithoutEmail = Member(
   memberId: 'member-1',
   nickname: '소연',
   hasAiCharacter: true,
+  loginType: LoginType.google,
+);
+
+/// 이메일로 가입한 회원. 비밀번호 변경 행이 보인다.
+const emailMember = Member(
+  memberId: 'member-1',
+  email: 'user@example.com',
+  nickname: '소연',
+  hasAiCharacter: true,
   loginType: LoginType.email,
 );
 
@@ -87,7 +98,6 @@ class MyPageHarness {
          fetchMeError: fetchMeError,
          deleteAccountError: deleteAccountError,
          changeNicknameError: changeNicknameError,
-         changePasswordError: changePasswordError,
          replaceProfileImageError: replaceProfileImageError,
          signInResult: SignInResult(
            tokens: const AuthTokens(
@@ -96,6 +106,9 @@ class MyPageHarness {
            ),
            member: fetchedMember ?? member,
          ),
+       ),
+       credentialProvider = FakeAuthCredentialProvider(
+         changePasswordError: changePasswordError,
        ) {
     tokenStorage = RecordingTokenStorage(events);
     container = ProviderContainer(
@@ -105,6 +118,7 @@ class MyPageHarness {
         appVersionOverride ??
             appVersionProvider.overrideWith((ref) async => '0.15.0'),
         authRepositoryProvider.overrideWithValue(repository),
+        authCredentialProviderProvider.overrideWithValue(credentialProvider),
         tokenStorageProvider.overrideWithValue(tokenStorage),
         developerModeStorageProvider.overrideWithValue(developerModeStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
@@ -118,6 +132,7 @@ class MyPageHarness {
   }
 
   final FakeAuthRepository repository;
+  final FakeAuthCredentialProvider credentialProvider;
   final List<String> events = [];
   final RecordingErrorHandler errorHandler = RecordingErrorHandler();
   final FakeDeveloperModeStorage developerModeStorage =

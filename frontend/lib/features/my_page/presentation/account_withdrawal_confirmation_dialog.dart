@@ -20,7 +20,7 @@ Future<void> showAccountWithdrawalConfirmationDialog(BuildContext context) {
 }
 
 /// 회원 탈퇴 확인 모달. "계속 이용하기"와 스크림은 모달만 닫고, "탈퇴하기"는 계정을 삭제한다.
-/// 요청 중에는 두 버튼과 스크림 닫기를 막고, 실패하면 모달을 유지한다.
+/// 요청 중에는 두 버튼과 스크림 닫기를 막고, 실패하거나 Apple 재인증을 취소하면 모달을 유지한다.
 class AccountWithdrawalConfirmationDialog extends ConsumerStatefulWidget {
   const AccountWithdrawalConfirmationDialog({super.key});
 
@@ -45,7 +45,13 @@ class _AccountWithdrawalConfirmationDialogState
     final errorHandler = ref.read(errorHandlerProvider);
     try {
       // 세션이 지워져 환영 화면으로 바뀌기 전에 모달을 먼저 닫는다.
-      await authFlow.deleteAccount(beforeSigningOut: navigator.pop);
+      final isDeleted = await authFlow.deleteAccount(
+        beforeSigningOut: navigator.pop,
+      );
+      // Apple 재인증을 취소했으면 조용히 모달에 머문다.
+      if (!isDeleted && mounted) {
+        setState(() => _isRequestInProgress = false);
+      }
     } on Object catch (error) {
       errorHandler.handle(error);
       if (mounted) {

@@ -102,24 +102,20 @@ void main() {
     final harness = _Harness(storedTokens: _oldTokens);
     harness.adapter
       ..on('/api/auth/login', [_ok()])
-      ..on('/api/auth/social-login', [_ok()])
+      ..on('/api/auth/signup', [_ok()])
       ..on(_refreshPath, [_ok()])
-      ..on('/api/members', [_ok(), _ok()]);
+      ..on('/api/members', [_ok()]);
 
     await harness.dio.post<dynamic>('/api/auth/login');
-    await harness.dio.post<dynamic>('/api/auth/social-login');
+    await harness.dio.post<dynamic>('/api/auth/signup');
     await harness.dio.post<dynamic>(_refreshPath);
-    await harness.dio.post<dynamic>('/api/members');
-    // POST만 면제이므로 같은 경로라도 GET에는 붙는다.
+    // 회원 경로는 면제가 아니므로 토큰이 붙는다.
     await harness.dio.get<dynamic>('/api/members');
 
     expect(harness.authorizationsTo('/api/auth/login'), [null]);
-    expect(harness.authorizationsTo('/api/auth/social-login'), [null]);
+    expect(harness.authorizationsTo('/api/auth/signup'), [null]);
     expect(harness.authorizationsTo(_refreshPath), [null]);
-    expect(harness.authorizationsTo('/api/members'), [
-      null,
-      'Bearer old-access',
-    ]);
+    expect(harness.authorizationsTo('/api/members'), ['Bearer old-access']);
   });
 
   test('request_appVersionCheck_hasNoAuthorizationHeader', () async {

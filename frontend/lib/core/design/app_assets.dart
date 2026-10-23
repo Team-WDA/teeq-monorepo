@@ -8,6 +8,7 @@ abstract final class AppAssets {
   static const String closeIcon = '$_icons/close.svg';
   static const String sparkleIcon = '$_icons/sparkle.svg';
   static const String appleLogoIcon = '$_icons/apple_logo.svg';
+  static const String googleLogoIcon = '$_icons/google_logo.svg';
   static const String profileSoftLimeIcon = '$_icons/profile_soft_lime.png';
   static const String heartSoftLimeIcon = '$_icons/heart_soft_lime.png';
   static const String sparklesSoftLimeIcon = '$_icons/sparkles_soft_lime.png';

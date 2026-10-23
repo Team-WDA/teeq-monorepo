@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
@@ -12,10 +14,10 @@ import 'package:teeq/features/auth/presentation/email_login_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
   final List<String> requestedEmails = [];
-  Completer<void> pendingRequest = Completer<void>();
+  Completer<SignInOutcome> pendingRequest = Completer<SignInOutcome>();
 
   @override
-  Future<void> signInWithEmail({
+  Future<SignInOutcome> signInWithEmail({
     required String email,
     required String password,
   }) {
@@ -133,5 +135,50 @@ void main() {
 
     expect(errorHandler.handledErrors, [failure]);
     expect(_nextButtonOnPressed(tester), isNotNull);
+  });
+
+  testWidgets('입력칸 힌트는 시안 문구를 쓴다', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.text('이메일을 입력해줘.'), findsOneWidget);
+    expect(find.text('비밀번호를 입력해줘.'), findsOneWidget);
+  });
+
+  testWidgets('가입이 필요한 계정이면 약관 화면을 push한다', (tester) async {
+    final authFlow = _RecordingAuthFlow();
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const Text('시작 스텁')),
+        GoRoute(
+          path: AppRoutes.login,
+          builder: (context, state) => const EmailLoginScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.signupCompletion,
+          builder: (context, state) => const Text('약관 스텁'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authFlowProvider.overrideWithValue(authFlow),
+          errorHandlerProvider.overrideWithValue(_RecordingErrorHandler()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    unawaited(router.push(AppRoutes.login));
+    await tester.pumpAndSettle();
+    await _enter(tester, 'a@b.co', 'Abcdef12');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.complete(SignInOutcome.signupRequired);
+    await tester.pumpAndSettle();
+
+    expect(find.text('약관 스텁'), findsOneWidget);
   });
 }

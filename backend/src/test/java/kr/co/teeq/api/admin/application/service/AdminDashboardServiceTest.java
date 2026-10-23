@@ -135,7 +135,7 @@ class AdminDashboardServiceTest {
     @Test
     void getDashboard_onboardingCompletionRate() {
         givenUsages(0, 0, 0, 900_000);
-        given(memberRepository.countByNicknameIsNotNullAndDeletedFalse()).willReturn(100L);
+        given(memberRepository.countByDeletedFalse()).willReturn(100L);
         given(onboardingSubmissionRepository.countSignedUpMembersWithActiveSubmission()).willReturn(82L);
 
         AdminDashboardResponse response = createService().getDashboard();

@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import kr.co.teeq.api.common.application.exception.ErrorResponse;
 import kr.co.teeq.api.member.application.dto.request.ChangeNicknameRequest;
-import kr.co.teeq.api.member.application.dto.request.SignupCompletionRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberResponse;
 import kr.co.teeq.api.member.application.dto.response.NicknameAvailabilityResponse;
 import kr.co.teeq.api.member.core.constant.MemberValidation;
@@ -20,7 +19,7 @@ import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
-@Tag(name = "회원", description = "내 정보 조회, 가입 완료, 닉네임 변경, 닉네임 중복 확인, 프로필 사진 교체·삭제")
+@Tag(name = "회원", description = "내 정보 조회, 닉네임 변경, 닉네임 중복 확인, 프로필 사진 교체·삭제")
 public interface MemberControllerDocs {
 
     @Operation(summary = "닉네임 사용 가능 여부 확인",
@@ -48,30 +47,6 @@ public interface MemberControllerDocs {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<MemberResponse> getMe(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
-
-    @Operation(summary = "가입 완료",
-        description = """
-            소셜 첫 로그인으로 만들어진 가입 미완료 회원(`nickname`이 NULL)이 닉네임과 필수 약관 동의를 제출해 가입을 마친다.
-            가입을 마치기 전에는 내 정보 조회, 가입 완료, 로그아웃, 탈퇴와 공개 경로 외의 API가 403 `SIGNUP_NOT_COMPLETED`로 막힌다.
-            이 API는 가입 미완료 회원도 호출할 수 있으므로 `SIGNUP_NOT_COMPLETED`로 응답하지 않는다.""")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "가입 완료 성공. 닉네임이 채워진 회원 정보 반환"),
-        @ApiResponse(responseCode = "400",
-            description = "`INVALID_REQUEST`: 닉네임이 비었거나 규칙 위반, 또는 필수 약관에 동의하지 않음(`errorMessage`에 사유). `MALFORMED_REQUEST_BODY`: 요청 본문이 올바른 JSON이 아님",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "401",
-            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않음. `EXPIRED_TOKEN`: Access Token이 만료됨",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "404",
-            description = "`MEMBER_NOT_FOUND`: 인증 직후 회원이 삭제된 경우(드묾)",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "409",
-            description = "`STATE_CONFLICT`: 이미 가입을 완료한 회원. `DUPLICATE_NICKNAME`: 다른 회원이 이미 사용 중인 닉네임",
-            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    ResponseEntity<MemberResponse> completeSignup(
-        @Parameter(hidden = true) AuthenticatedMember authenticatedMember,
-        @Valid SignupCompletionRequest request);
 
     @Operation(summary = "닉네임 변경",
         description = """

@@ -5,7 +5,6 @@ import 'package:teeq/core/design/app_colors.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/app_exception.dart';
-import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
@@ -76,10 +75,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
       // 폼으로 되돌아오지 못하게 완료 화면으로 교체한다. 이동이 끝날 때까지 잠금을 유지한다.
       context.pushReplacement(AppRoutes.passwordChangeCompletion);
     } on Object catch (error) {
-      final isCurrentPasswordMismatch =
-          error is ApiException &&
-          error.errorCode == ErrorCode.invalidCurrentPassword;
-      if (isCurrentPasswordMismatch) {
+      if (error is InvalidCurrentPasswordException) {
         if (mounted) {
           setState(() {
             _isCurrentPasswordMismatch = true;
