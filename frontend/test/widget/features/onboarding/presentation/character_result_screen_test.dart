@@ -24,7 +24,7 @@ const _member = Member(
   memberId: 'member-1',
   nickname: '소연',
   hasAiCharacter: false,
-  loginType: LoginType.email,
+  loginType: LoginType.google,
 );
 
 AiCharacter _character(String name) => AiCharacter(

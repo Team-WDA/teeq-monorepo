@@ -12,16 +12,28 @@ import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
   int appleSignInCount = 0;
+  int googleSignInCount = 0;
   Object? failure;
+  SocialSignInOutcome outcome = SocialSignInOutcome.signedIn;
 
   @override
-  Future<bool> signInWithApple() async {
+  Future<SocialSignInOutcome> signInWithApple() async {
     appleSignInCount++;
     final error = failure;
     if (error != null) {
       throw error;
     }
-    return true;
+    return outcome;
+  }
+
+  @override
+  Future<SocialSignInOutcome> signInWithGoogle() async {
+    googleSignInCount++;
+    final error = failure;
+    if (error != null) {
+      throw error;
+    }
+    return outcome;
   }
 }
 
@@ -85,12 +97,13 @@ void main() {
     expect(find.text('Apple로 시작하기'), findsNothing);
   });
 
-  testWidgets('가입하기와 로그인 링크가 보인다', (tester) async {
+  testWidgets('Google 버튼이 보이고 가입하기·로그인하기 진입은 없다', (tester) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('가입하기'), findsOneWidget);
-    expect(find.text('이미 계정이 있나요? 로그인하기'), findsOneWidget);
+    expect(find.text('Google로 시작하기'), findsOneWidget);
+    expect(find.text('가입하기'), findsNothing);
+    expect(find.text('이미 계정이 있나요? 로그인하기'), findsNothing);
   });
 
   testWidgets('320x568, 글자 1.2배, iOS에서도 오버플로가 없다', (tester) async {
@@ -104,7 +117,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Apple로 시작하기'), findsOneWidget);
-      expect(find.text('가입하기'), findsOneWidget);
+      expect(find.text('Google로 시작하기'), findsOneWidget);
     });
   });
 
@@ -129,17 +142,34 @@ void main() {
     });
   });
 
-  testWidgets('가입하기를 연속으로 탭해도 가입 화면은 한 번만 열린다', (tester) async {
-    var signupBuildCount = 0;
+  testWidgets('Google 탭은 signInWithGoogle을 한 번 부르고 오류는 ErrorHandler로 간다', (
+    tester,
+  ) async {
+    final authFlow = _RecordingAuthFlow();
+    final errorHandler = _RecordingErrorHandler();
+    final failure = Exception('Google 실패');
+    authFlow.failure = failure;
+    await tester.pumpWidget(
+      _buildScreen(authFlow: authFlow, errorHandler: errorHandler),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Google로 시작하기'));
+    await tester.pumpAndSettle();
+
+    expect(authFlow.googleSignInCount, 1);
+    expect(errorHandler.handledErrors, [failure]);
+  });
+
+  testWidgets('가입이 필요한 계정이면 약관 화면으로 이동한다', (tester) async {
+    final authFlow = _RecordingAuthFlow()
+      ..outcome = SocialSignInOutcome.signupRequired;
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
         GoRoute(
-          path: AppRoutes.signup,
-          builder: (context, state) {
-            signupBuildCount++;
-            return const Text('가입 스텁');
-          },
+          path: AppRoutes.signupCompletion,
+          builder: (context, state) => const Text('약관 스텁'),
         ),
       ],
     );
@@ -147,7 +177,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          authFlowProvider.overrideWithValue(_RecordingAuthFlow()),
+          authFlowProvider.overrideWithValue(authFlow),
           errorHandlerProvider.overrideWithValue(_RecordingErrorHandler()),
         ],
         child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
@@ -155,11 +185,25 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('가입하기'));
-    await tester.tap(find.text('가입하기'), warnIfMissed: false);
+    await tester.tap(find.text('Google로 시작하기'));
     await tester.pumpAndSettle();
 
-    expect(signupBuildCount, 1);
-    expect(find.text('가입 스텁'), findsOneWidget);
+    expect(find.text('약관 스텁'), findsOneWidget);
+  });
+
+  testWidgets('취소하면 화면에 머물고 오류도 없다', (tester) async {
+    final authFlow = _RecordingAuthFlow()
+      ..outcome = SocialSignInOutcome.cancelled;
+    final errorHandler = _RecordingErrorHandler();
+    await tester.pumpWidget(
+      _buildScreen(authFlow: authFlow, errorHandler: errorHandler),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Google로 시작하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(errorHandler.handledErrors, isEmpty);
   });
 }

@@ -7,7 +7,7 @@ import 'package:teeq/features/auth/data/dto/login_type_json.dart';
 
 part 'auth_response_dto.g.dart';
 
-/// 로그인·가입·소셜 로그인 응답(`AuthResponse`).
+/// 소셜 로그인·소셜 가입 응답(`AuthResponse`).
 @JsonSerializable(createToJson: false)
 class AuthResponseDto {
   const AuthResponseDto({
@@ -26,7 +26,7 @@ class AuthResponseDto {
   final String accessToken;
   final String refreshToken;
   final String memberId;
-  final String? nickname;
+  final String nickname;
   final bool hasAiCharacter;
   @JsonKey(fromJson: loginTypeFromJson)
   final LoginType loginType;

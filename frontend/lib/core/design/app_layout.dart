@@ -4,6 +4,7 @@ abstract final class AppLayout {
   static const double horizontalMargin = 24;
   static const double buttonHeight = 48;
   static const double actionButtonHeight = 52;
+  static const double socialSignInButtonHeight = 56;
   static const double inputFieldHeight = 44;
   static const double outlinedInputHeight = 48;
   static const double hintTagHeight = 32;

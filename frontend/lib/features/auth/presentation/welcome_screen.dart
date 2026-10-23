@@ -5,17 +5,17 @@ import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
-import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
-import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/illustration/teeq_characters_illustration.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
 import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
+import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/widgets/apple_sign_in_button.dart';
+import 'package:teeq/features/auth/presentation/widgets/google_sign_in_button.dart';
 
 /// 로그아웃 상태로 앱을 열면 처음 보는 시작 화면.
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -26,8 +26,7 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 }
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
-  bool _isAppleSignInInProgress = false;
-  bool _isPushedRouteOpen = false;
+  bool _isSignInInProgress = false;
 
   @override
   Widget build(BuildContext context) {
@@ -50,63 +49,46 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         children: [
           if (showsAppleButton) ...[
             AppleSignInButton(
-              onPressed: _isAppleSignInInProgress ? null : _signInWithApple,
+              onPressed: _isSignInInProgress ? null : _signInWithApple,
             ),
-            const SizedBox(height: AppSpacing.space8),
+            const SizedBox(height: AppSpacing.space12),
           ],
-          PrimaryFilledButton(
-            label: '가입하기',
-            onPressed: () => _pushRoute(AppRoutes.signup),
-          ),
-          Semantics(
-            button: true,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _pushRoute(AppRoutes.login),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: AppLayout.minimumTapTarget,
-                ),
-                child: const Center(
-                  child: Text(
-                    '이미 계정이 있나요? 로그인하기',
-                    style: AppTextStyles.caption12SemiBold,
-                  ),
-                ),
-              ),
-            ),
+          GoogleSignInButton(
+            onPressed: _isSignInInProgress ? null : _signInWithGoogle,
           ),
         ],
       ),
     );
   }
 
-  Future<void> _pushRoute(String path) async {
-    // 이동한 화면이 열려 있는 동안 연속 탭으로 중복 이동하지 않는다.
-    if (_isPushedRouteOpen) {
-      return;
-    }
-    _isPushedRouteOpen = true;
-    await context.push(path);
-    _isPushedRouteOpen = false;
-  }
+  Future<void> _signInWithApple() =>
+      _signIn((authFlow) => authFlow.signInWithApple());
 
-  Future<void> _signInWithApple() async {
+  Future<void> _signInWithGoogle() =>
+      _signIn((authFlow) => authFlow.signInWithGoogle());
+
+  Future<void> _signIn(
+    Future<SocialSignInOutcome> Function(AuthFlow authFlow) signIn,
+  ) async {
     // 리빌드 전에 들어오는 연속 탭도 막는다.
-    if (_isAppleSignInInProgress) {
+    if (_isSignInInProgress) {
       return;
     }
-    setState(() => _isAppleSignInInProgress = true);
+    setState(() => _isSignInInProgress = true);
     // 화면이 먼저 사라져도 오류를 전달할 수 있게 await 전에 가져온다.
     final authFlow = ref.read(authFlowProvider);
     final errorHandler = ref.read(errorHandlerProvider);
     try {
-      await authFlow.signInWithApple();
+      final outcome = await signIn(authFlow);
+      // 가입하지 않은 계정이면 약관 → 닉네임 단계로 이어간다.
+      if (outcome == SocialSignInOutcome.signupRequired && mounted) {
+        await context.push(AppRoutes.signupCompletion);
+      }
     } on Object catch (error) {
       errorHandler.handle(error);
     } finally {
       if (mounted) {
-        setState(() => _isAppleSignInInProgress = false);
+        setState(() => _isSignInInProgress = false);
       }
     }
   }

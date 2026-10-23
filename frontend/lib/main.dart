@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
@@ -13,6 +14,8 @@ import 'package:teeq/core/network/retry_policy.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   AppConfig.current.validate();
+  // 네이티브 설정 파일(google-services.json, GoogleService-Info.plist)로 초기화한다.
+  await Firebase.initializeApp();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   // 저장된 개발자 모드 플래그를 앱을 띄우기 전에 읽어, 시작 중 발생한 오류도 수집한다.
   final isDeveloperModeEnabled = await SecureDeveloperModeStorage(

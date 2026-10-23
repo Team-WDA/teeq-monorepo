@@ -1,11 +1,7 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/design/app_spacing.dart';
-import 'package:teeq/core/error/app_exception.dart';
-import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
@@ -17,7 +13,7 @@ import 'package:teeq/features/auth/domain/auth_input_validator.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 
-/// 가입 마지막 단계. 이메일 가입과 소셜 가입 완료가 함께 쓰며, 닉네임을 받아 가입을 마치고 온보딩으로 이동한다.
+/// 소셜 가입 마지막 단계. 닉네임을 받아 가입을 마치고 온보딩으로 이동한다.
 class SignupNicknameScreen extends ConsumerStatefulWidget {
   const SignupNicknameScreen({super.key});
 
@@ -37,11 +33,8 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
   @override
   void initState() {
     super.initState();
-    // 약관에 동의하지 않은 가입 미완료 회원이 이 화면에 들어오면 약관 화면으로 되돌린다.
-    final member = ref.read(currentMemberControllerProvider);
-    final isIncompleteMember = member != null && !member.isSignupCompleted;
-    if (isIncompleteMember &&
-        !ref.read(signupDraftControllerProvider).isAllRequiredConsentAgreed) {
+    // 약관 동의 없이 이 화면에 들어오면 약관 화면으로 되돌린다.
+    if (!ref.read(signupDraftControllerProvider).isAllRequiredConsentAgreed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           context.go(AppRoutes.signupCompletion);
@@ -66,37 +59,20 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
     final authFlow = ref.read(authFlowProvider);
     final errorHandler = ref.read(errorHandlerProvider);
     final draft = ref.read(signupDraftControllerProvider);
-    final member = ref.read(currentMemberControllerProvider);
     final nickname = _nicknameController.text.trim();
     try {
-      // 소셜 로그인으로 들어온 가입 미완료 회원은 가입을 완료하고, 이메일 가입은 새로 가입한다.
-      if (member != null && !member.isSignupCompleted) {
-        await authFlow.completeSignup(
-          nickname: nickname,
-          serviceTermsAgreed: draft.isServiceTermsAgreed,
-          privacyPolicyAgreed: draft.isPrivacyPolicyAgreed,
-        );
-      } else {
-        await authFlow.signUp(
-          email: draft.email,
-          password: draft.password,
-          nickname: nickname,
-          serviceTermsAgreed: draft.isServiceTermsAgreed,
-          privacyPolicyAgreed: draft.isPrivacyPolicyAgreed,
-        );
-      }
-      TextInput.finishAutofillContext();
+      await authFlow.completeSocialSignup(
+        nickname: nickname,
+        serviceTermsAgreed: draft.isServiceTermsAgreed,
+        privacyPolicyAgreed: draft.isPrivacyPolicyAgreed,
+      );
       if (!mounted) {
         return;
       }
       context.go(AppRoutes.onboarding);
     } on Object catch (error) {
+      // 중복 닉네임 등 오류는 알리고 이 화면에 머문다.
       errorHandler.handle(error);
-      final isDuplicateEmail =
-          error is ApiException && error.errorCode == ErrorCode.duplicateEmail;
-      if (isDuplicateEmail && mounted) {
-        context.pop();
-      }
     } finally {
       if (mounted) {
         setState(() => _isRequestInProgress = false);

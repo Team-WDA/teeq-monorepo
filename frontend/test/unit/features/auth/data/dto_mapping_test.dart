@@ -3,16 +3,15 @@ import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/features/auth/data/dto/auth_response_dto.dart';
 import 'package:teeq/features/auth/data/dto/member_response_dto.dart';
 
-Map<String, dynamic> _authJson({Object? nickname = '티큐', String? loginType}) =>
-    {
-      'accessToken': 'access',
-      'refreshToken': 'refresh',
-      'memberId': 'member-1',
-      'nickname': nickname,
-      'hasAiCharacter': true,
-      'loginType': loginType ?? 'EMAIL',
-      'profileImageUrl': '/media/a.jpg',
-    };
+Map<String, dynamic> _authJson({String? loginType}) => {
+  'accessToken': 'access',
+  'refreshToken': 'refresh',
+  'memberId': 'member-1',
+  'nickname': '티큐',
+  'hasAiCharacter': true,
+  'loginType': loginType ?? 'GOOGLE',
+  'profileImageUrl': '/media/a.jpg',
+};
 
 void main() {
   test('authResponse_withNickname_mapsMemberAndTokens', () {
@@ -23,19 +22,15 @@ void main() {
     expect(result.member.memberId, 'member-1');
     expect(result.member.nickname, '티큐');
     expect(result.member.hasAiCharacter, isTrue);
-    expect(result.member.loginType, LoginType.email);
+    expect(result.member.loginType, LoginType.google);
     expect(result.member.profileImageUrl, '/media/a.jpg');
-    expect(result.member.isSignupCompleted, isTrue);
   });
 
-  test('authResponse_nullNickname_mapsToIncompleteMember', () {
-    final result = AuthResponseDto.fromJson(
-      _authJson(nickname: null, loginType: 'APPLE'),
-    ).toSignInResult();
+  test('authResponse_apple_mapsAppleLoginType', () {
+    final result = AuthResponseDto.fromJson(_authJson(loginType: 'APPLE'))
+        .toSignInResult();
 
-    expect(result.member.nickname, isNull);
     expect(result.member.loginType, LoginType.apple);
-    expect(result.member.isSignupCompleted, isFalse);
   });
 
   test('memberResponse_mapsEmailToMember', () {
@@ -44,7 +39,7 @@ void main() {
       'email': 'user@example.com',
       'nickname': '티큐',
       'hasAiCharacter': false,
-      'loginType': 'EMAIL',
+      'loginType': 'GOOGLE',
       'profileImageUrl': null,
     }).toMember();
 
@@ -52,7 +47,7 @@ void main() {
     expect(member.email, 'user@example.com');
     expect(member.nickname, '티큐');
     expect(member.hasAiCharacter, isFalse);
-    expect(member.loginType, LoginType.email);
+    expect(member.loginType, LoginType.google);
     expect(member.profileImageUrl, isNull);
   });
 
@@ -62,7 +57,7 @@ void main() {
       'email': null,
       'nickname': '티큐',
       'hasAiCharacter': false,
-      'loginType': 'EMAIL',
+      'loginType': 'GOOGLE',
       'profileImageUrl': null,
     }).toMember();
 
@@ -71,14 +66,15 @@ void main() {
 
   test('unknownLoginType_throws', () {
     expect(
-      () => AuthResponseDto.fromJson(_authJson(loginType: 'GOOGLE')),
+      () => AuthResponseDto.fromJson(_authJson(loginType: 'EMAIL')),
       throwsA(anything),
     );
     expect(
       () => MemberResponseDto.fromJson({
         'memberId': 'member-1',
+        'nickname': '티큐',
         'hasAiCharacter': false,
-        'loginType': 'GOOGLE',
+        'loginType': 'EMAIL',
       }),
       throwsA(anything),
     );

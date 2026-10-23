@@ -21,7 +21,7 @@ const _memberJson = {
   'email': 'user@example.com',
   'nickname': '티큐',
   'hasAiCharacter': false,
-  'loginType': 'EMAIL',
+  'loginType': 'GOOGLE',
   'profileImageUrl': null,
 };
 
@@ -31,7 +31,7 @@ const _authJson = {
   'memberId': 'member-1',
   'nickname': '티큐',
   'hasAiCharacter': false,
-  'loginType': 'EMAIL',
+  'loginType': 'GOOGLE',
   'profileImageUrl': null,
 };
 
@@ -40,11 +40,7 @@ const _authJson = {
     overrides: [
       tokenStorageProvider.overrideWithValue(FakeTokenStorage()),
       appConfigProvider.overrideWithValue(
-        const AppConfig(
-          apiBaseUrl: 'https://api.example.test',
-          appleServiceId: 'kr.co.teeq.app.service',
-          appleRedirectUri: 'https://api.example.test/api/auth/apple/callback',
-        ),
+        const AppConfig(apiBaseUrl: 'https://api.example.test'),
       ),
     ],
   );
@@ -55,69 +51,42 @@ const _authJson = {
 }
 
 void main() {
-  test('login_postsCredentialsAndMapsSignInResult', () async {
+  test('socialLogin_postsCredentialAndMapsSignInResult', () async {
     final (:repository, :adapter) = _setUp();
-    adapter.on('/api/auth/login', [ScriptedReply.json(200, _authJson)]);
+    adapter.on('/api/auth/social-login', [
+      ScriptedReply.json(200, {..._authJson, 'loginType': 'APPLE'}),
+    ]);
 
-    final result = await repository.login(
-      email: 'user@example.com',
-      password: 'Teeq1234!',
-    );
+    final result = await repository.socialLogin(credential: 'firebase-token');
 
-    final request = adapter.requestsTo('/api/auth/login').single;
+    final request = adapter.requestsTo('/api/auth/social-login').single;
     expect(request.method, 'POST');
-    expect(request.data, {
-      'email': 'user@example.com',
-      'password': 'Teeq1234!',
-    });
+    expect(request.data, {'credential': 'firebase-token'});
     expect(result.tokens.accessToken, 'access');
-    expect(result.member.loginType, LoginType.email);
+    expect(result.member.loginType, LoginType.apple);
+    expect(result.member.nickname, '티큐');
   });
 
-  test('signUp_postsMemberAndMapsSignInResult', () async {
+  test('socialSignUp_postsCredentialNicknameAndConsents', () async {
     final (:repository, :adapter) = _setUp();
-    adapter.on('/api/members', [ScriptedReply.json(201, _authJson)]);
+    adapter.on('/api/auth/social-signup', [ScriptedReply.json(201, _authJson)]);
 
-    final result = await repository.signUp(
-      email: 'user@example.com',
-      password: 'Teeq1234!',
+    final result = await repository.socialSignUp(
+      credential: 'firebase-token',
       nickname: '티큐',
       serviceTermsAgreed: true,
       privacyPolicyAgreed: true,
     );
 
-    final request = adapter.requestsTo('/api/members').single;
+    final request = adapter.requestsTo('/api/auth/social-signup').single;
     expect(request.method, 'POST');
     expect(request.data, {
-      'email': 'user@example.com',
-      'password': 'Teeq1234!',
+      'credential': 'firebase-token',
       'nickname': '티큐',
       'serviceTermsAgreed': true,
       'privacyPolicyAgreed': true,
     });
-    expect(result.member.nickname, '티큐');
-  });
-
-  test('socialLogin_postsAppleCredential', () async {
-    final (:repository, :adapter) = _setUp();
-    adapter.on('/api/auth/social-login', [
-      ScriptedReply.json(200, {
-        ..._authJson,
-        'nickname': null,
-        'loginType': 'APPLE',
-      }),
-    ]);
-
-    final result = await repository.socialLogin(credential: 'identity-token');
-
-    final request = adapter.requestsTo('/api/auth/social-login').single;
-    expect(request.method, 'POST');
-    expect(request.data, {
-      'socialType': 'APPLE',
-      'credential': 'identity-token',
-    });
-    expect(result.member.loginType, LoginType.apple);
-    expect(result.member.isSignupCompleted, isFalse);
+    expect(result.member.loginType, LoginType.google);
   });
 
   test('logout_postsLogout', () async {
@@ -139,30 +108,6 @@ void main() {
     final request = adapter.requestsTo('/api/members/me').single;
     expect(request.method, 'GET');
     expect(member.memberId, 'member-1');
-    expect(member.nickname, '티큐');
-  });
-
-  test('completeSignup_postsCompletionAndMapsMember', () async {
-    final (:repository, :adapter) = _setUp();
-    adapter.on('/api/members/me/signup-completion', [
-      ScriptedReply.json(200, _memberJson),
-    ]);
-
-    final member = await repository.completeSignup(
-      nickname: '티큐',
-      serviceTermsAgreed: true,
-      privacyPolicyAgreed: true,
-    );
-
-    final request = adapter
-        .requestsTo('/api/members/me/signup-completion')
-        .single;
-    expect(request.method, 'POST');
-    expect(request.data, {
-      'nickname': '티큐',
-      'serviceTermsAgreed': true,
-      'privacyPolicyAgreed': true,
-    });
     expect(member.nickname, '티큐');
   });
 
@@ -213,28 +158,6 @@ void main() {
     expect(request.method, 'PATCH');
     expect(request.data, {'nickname': '새닉네임'});
     expect(member.nickname, '새닉네임');
-  });
-
-  test('changePassword_patchesPasswordsAndMapsSignInResult', () async {
-    final (:repository, :adapter) = _setUp();
-    adapter.on('/api/members/me/password', [
-      ScriptedReply.json(200, _authJson),
-    ]);
-
-    final result = await repository.changePassword(
-      currentPassword: 'oldpass1',
-      newPassword: 'newpass12',
-    );
-
-    final request = adapter.requestsTo('/api/members/me/password').single;
-    expect(request.method, 'PATCH');
-    expect(request.data, {
-      'currentPassword': 'oldpass1',
-      'newPassword': 'newpass12',
-    });
-    expect(result.tokens.accessToken, 'access');
-    expect(result.tokens.refreshToken, 'refresh');
-    expect(result.member.nickname, '티큐');
   });
 
   group('replaceProfileImage', () {

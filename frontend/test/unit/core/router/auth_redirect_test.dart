@@ -19,12 +19,6 @@ const _memberWithCharacter = Member(
   loginType: LoginType.apple,
 );
 
-const _incompleteMember = Member(
-  memberId: 'member-2',
-  hasAiCharacter: false,
-  loginType: LoginType.apple,
-);
-
 void main() {
   group('authRedirect', () {
     test('error 위치는 어떤 상태에서도 null', () {
@@ -33,7 +27,6 @@ void main() {
           null,
           _memberWithoutCharacter,
           _memberWithCharacter,
-          _incompleteMember,
         ]) {
           expect(
             authRedirect(
@@ -64,7 +57,7 @@ void main() {
         authRedirect(
           AuthStatus.unknown,
           null,
-          AppRoutes.login,
+          AppRoutes.welcome,
           isSplashMinimumDisplayElapsed: true,
           isUpdateRequired: false,
         ),
@@ -86,7 +79,6 @@ void main() {
       for (final location in [
         AppRoutes.home,
         AppRoutes.splash,
-        AppRoutes.signupCompletion,
         AppRoutes.onboarding,
       ]) {
         expect(
@@ -102,8 +94,7 @@ void main() {
       }
       for (final location in [
         AppRoutes.welcome,
-        AppRoutes.login,
-        AppRoutes.signup,
+        AppRoutes.signupCompletion,
         AppRoutes.signupNickname,
       ]) {
         expect(
@@ -119,57 +110,10 @@ void main() {
       }
     });
 
-    test('signedIn + 미완료 회원은 signupCompletion으로, 이미 거기면 null', () {
+    test('member without character is sent to onboarding from every non-onboarding location', () {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.welcome,
-        AppRoutes.login,
-        AppRoutes.signup,
-        AppRoutes.onboarding,
-        AppRoutes.home,
-      ]) {
-        expect(
-          authRedirect(
-            AuthStatus.signedIn,
-            _incompleteMember,
-            location,
-            isSplashMinimumDisplayElapsed: true,
-            isUpdateRequired: false,
-          ),
-          AppRoutes.signupCompletion,
-        );
-      }
-      expect(
-        authRedirect(
-          AuthStatus.signedIn,
-          _incompleteMember,
-          AppRoutes.signupCompletion,
-          isSplashMinimumDisplayElapsed: true,
-          isUpdateRequired: false,
-        ),
-        isNull,
-      );
-    });
-
-    test('signedIn + 미완료 회원은 약관 화면이 push하는 닉네임 위치에서 null', () {
-      expect(
-        authRedirect(
-          AuthStatus.signedIn,
-          _incompleteMember,
-          AppRoutes.signupNickname,
-          isSplashMinimumDisplayElapsed: true,
-          isUpdateRequired: false,
-        ),
-        isNull,
-      );
-    });
-
-    test('completed member without character is sent to onboarding from every non-onboarding location', () {
-      for (final location in [
-        AppRoutes.splash,
-        AppRoutes.welcome,
-        AppRoutes.login,
-        AppRoutes.signup,
         AppRoutes.signupNickname,
         AppRoutes.signupCompletion,
         AppRoutes.home,
@@ -245,8 +189,6 @@ void main() {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.welcome,
-        AppRoutes.login,
-        AppRoutes.signup,
         AppRoutes.signupCompletion,
       ]) {
         expect(
@@ -298,12 +240,7 @@ void main() {
     });
 
     group('최소 노출 시간 전', () {
-      const members = [
-        null,
-        _memberWithoutCharacter,
-        _memberWithCharacter,
-        _incompleteMember,
-      ];
+      const members = [null, _memberWithoutCharacter, _memberWithCharacter];
 
       test('splash는 모든 상태에서 null', () {
         for (final status in AuthStatus.values) {
@@ -340,7 +277,7 @@ void main() {
       });
 
       test('unknown이 splash가 아닌 위치에 있으면 splash로 보낸다', () {
-        for (final location in [AppRoutes.home, AppRoutes.login]) {
+        for (final location in [AppRoutes.home, AppRoutes.welcome]) {
           expect(
             authRedirect(
               AuthStatus.unknown,
@@ -382,8 +319,6 @@ void main() {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.welcome,
-        AppRoutes.login,
-        AppRoutes.signup,
         AppRoutes.signupCompletion,
       ]) {
         expect(
@@ -414,7 +349,6 @@ void main() {
         null,
         _memberWithoutCharacter,
         _memberWithCharacter,
-        _incompleteMember,
       ];
       const locations = [
         AppRoutes.splash,

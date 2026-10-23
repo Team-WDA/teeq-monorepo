@@ -70,7 +70,7 @@ void main() {
   test('알려진 errorCode는 ApiException으로 바뀌고 원본 응답이 유지된다', () async {
     final dio = _dioWith(
       _FakeHttpClientAdapter.response(
-        jsonEncode({'errorCode': 'DUPLICATE_EMAIL', 'errorMessage': '상세'}),
+        jsonEncode({'errorCode': 'DUPLICATE_NICKNAME', 'errorMessage': '상세'}),
         409,
       ),
     );
@@ -78,7 +78,7 @@ void main() {
     final error = await _captureError(dio);
     final exception = error.error as ApiException;
 
-    expect(exception.errorCode, ErrorCode.duplicateEmail);
+    expect(exception.errorCode, ErrorCode.duplicateNickname);
     expect(exception.httpStatus, 409);
     expect(exception.developerMessage, '상세');
     expect(error.response?.statusCode, 409);
@@ -189,7 +189,7 @@ void main() {
     final entries = <AppLogEntry>[];
     final dio = _dioWith(
       _FakeHttpClientAdapter.response(
-        jsonEncode({'errorCode': 'DUPLICATE_EMAIL', 'errorMessage': '상세'}),
+        jsonEncode({'errorCode': 'DUPLICATE_NICKNAME', 'errorMessage': '상세'}),
         409,
       ),
       logger: AppLogger(onEntry: entries.add),
@@ -200,7 +200,7 @@ void main() {
     expect(entries, hasLength(1));
     expect(entries.single.level, AppLogLevel.warning);
     expect(entries.single.name, 'ApiErrorInterceptor');
-    expect(entries.single.message, contains('DUPLICATE_EMAIL'));
+    expect(entries.single.message, contains('DUPLICATE_NICKNAME'));
   });
 
   test('5xx API 오류는 error 로그로 남는다', () async {

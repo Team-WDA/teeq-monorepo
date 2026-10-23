@@ -15,12 +15,13 @@ import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
-import 'package:teeq/features/auth/domain/apple_credential_provider.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/profile_image_file.dart';
+import 'package:teeq/features/auth/domain/social_credential_provider.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 
 import '../../../../support/fake_auth_repository.dart';
+import '../../../../support/fake_social_credential_provider.dart';
 import '../../../../support/fake_token_storage.dart';
 
 const _tokens = AuthTokens(accessToken: 'access', refreshToken: 'refresh');
@@ -32,44 +33,32 @@ const _member = Member(
   loginType: LoginType.apple,
 );
 
-class _FakeAppleCredentialProvider implements AppleCredentialProvider {
-  _FakeAppleCredentialProvider({this.error});
-
-  final Object? error;
-
-  @override
-  Future<String> requestIdentityToken() async {
-    final failure = error;
-    if (failure != null) {
-      throw failure;
-    }
-    return 'apple-token';
-  }
-}
-
 class _Harness {
   _Harness({
     FakeAuthRepository? repository,
-    Object? appleError,
+    FakeSocialCredentialProvider? socialProvider,
     AuthTokens? storedTokens,
   }) : repository = repository ?? FakeAuthRepository(),
+       socialProvider = socialProvider ?? FakeSocialCredentialProvider(),
        tokenStorage = FakeTokenStorage(storedTokens: storedTokens) {
     container = ProviderContainer(
       overrides: [tokenStorageProvider.overrideWithValue(tokenStorage)],
     );
     flow = AuthFlow(
       repository: this.repository,
-      appleCredentialProvider: _FakeAppleCredentialProvider(error: appleError),
+      socialCredentialProvider: this.socialProvider,
       session: container.read(authSessionProvider),
       tokenStorage: tokenStorage,
       readStatus: () => container.read(authStatusControllerProvider),
       reportError: (error, {bool blocking = false}) =>
           reported.add((error: error, blocking: blocking)),
-      isSignupAlreadyCompleted: isSignupAlreadyCompletedError,
+      isSignupRequired: isSocialSignupRequiredError,
+      isStateConflict: isStateConflictError,
     );
   }
 
   final FakeAuthRepository repository;
+  final FakeSocialCredentialProvider socialProvider;
   final FakeTokenStorage tokenStorage;
   final List<({Object error, bool blocking})> reported = [];
   late final ProviderContainer container;
@@ -153,110 +142,160 @@ void main() {
     expect(harness.repository.fetchMeCount, 0);
   });
 
-  test('signInWithApple_cancelled_returnsFalseAndKeepsState', () async {
-    final harness = _Harness(appleError: AppleSignInCancelledException());
+  group('소셜 로그인', () {
+    const signedInResult = SignInResult(tokens: _tokens, member: _member);
 
-    final signedIn = await harness.flow.signInWithApple();
-
-    expect(signedIn, isFalse);
-    expect(harness.status, AuthStatus.unknown);
-    expect(harness.reported, isEmpty);
-    expect(harness.repository.socialLoginCredential, isNull);
-    expect(harness.tokenStorage.savedTokens, isNull);
-  });
-
-  test('signInWithApple_success_signsInWithMember', () async {
-    final harness = _Harness(
-      repository: FakeAuthRepository(
-        signInResult: const SignInResult(tokens: _tokens, member: _member),
-      ),
+    DioException apiError(ErrorCode errorCode, int status) => DioException(
+      requestOptions: RequestOptions(path: '/api/auth/social-login'),
+      error: ApiException(errorCode: errorCode, httpStatus: status),
     );
 
-    final signedIn = await harness.flow.signInWithApple();
+    test('signInWithApple_cancelled_returnsCancelledAndKeepsState', () async {
+      final harness = _Harness(
+        socialProvider: FakeSocialCredentialProvider(
+          signInError: const SocialSignInCancelledException(),
+        ),
+      );
 
-    expect(signedIn, isTrue);
-    expect(harness.repository.socialLoginCredential, 'apple-token');
-    expect(harness.status, AuthStatus.signedIn);
-    expect(harness.currentMember, _member);
-    expect(harness.tokenStorage.savedTokens, _tokens);
-  });
+      final outcome = await harness.flow.signInWithApple();
 
-  test('completeSignup_updatesCurrentMember', () async {
-    final harness = _Harness(repository: FakeAuthRepository(member: _member));
+      expect(outcome, SocialSignInOutcome.cancelled);
+      expect(harness.status, AuthStatus.unknown);
+      expect(harness.reported, isEmpty);
+      expect(harness.repository.socialLoginCredential, isNull);
+      expect(harness.tokenStorage.savedTokens, isNull);
+    });
 
-    await harness.flow.completeSignup(
-      nickname: '티큐',
-      serviceTermsAgreed: true,
-      privacyPolicyAgreed: true,
+    test('signInWithApple_success_signsInWithMember', () async {
+      final harness = _Harness(
+        repository: FakeAuthRepository(signInResult: signedInResult),
+      );
+
+      final outcome = await harness.flow.signInWithApple();
+
+      expect(outcome, SocialSignInOutcome.signedIn);
+      expect(harness.repository.socialLoginCredential, 'apple-token');
+      expect(harness.status, AuthStatus.signedIn);
+      expect(harness.currentMember, _member);
+      expect(harness.tokenStorage.savedTokens, _tokens);
+    });
+
+    test('signInWithGoogle_success_signsInWithGoogleToken', () async {
+      final harness = _Harness(
+        repository: FakeAuthRepository(signInResult: signedInResult),
+      );
+
+      final outcome = await harness.flow.signInWithGoogle();
+
+      expect(outcome, SocialSignInOutcome.signedIn);
+      expect(harness.repository.socialLoginCredential, 'google-token');
+      expect(harness.status, AuthStatus.signedIn);
+    });
+
+    test('signInWithGoogle_cancelled_returnsCancelled', () async {
+      final harness = _Harness(
+        socialProvider: FakeSocialCredentialProvider(
+          signInError: const SocialSignInCancelledException(),
+        ),
+      );
+
+      final outcome = await harness.flow.signInWithGoogle();
+
+      expect(outcome, SocialSignInOutcome.cancelled);
+      expect(harness.repository.socialLoginCount, 0);
+    });
+
+    test(
+      'socialSignupRequired_returnsSignupRequiredWithoutSigningIn',
+      () async {
+        final harness = _Harness(
+          repository: FakeAuthRepository(
+            socialLoginError: apiError(ErrorCode.socialSignupRequired, 404),
+          ),
+        );
+
+        final outcome = await harness.flow.signInWithGoogle();
+
+        expect(outcome, SocialSignInOutcome.signupRequired);
+        expect(harness.status, AuthStatus.unknown);
+        expect(harness.tokenStorage.savedTokens, isNull);
+        expect(harness.reported, isEmpty);
+        expect(harness.socialProvider.calls, ['signInWithGoogle']);
+      },
     );
 
-    expect(harness.currentMember, _member);
+    test('otherLoginError_propagates', () async {
+      final error = apiError(ErrorCode.socialTokenInvalid, 401);
+      final harness = _Harness(
+        repository: FakeAuthRepository(socialLoginError: error),
+      );
+
+      await expectLater(harness.flow.signInWithApple(), throwsA(error));
+
+      expect(harness.status, AuthStatus.unknown);
+    });
   });
 
-  group('completeSignup_recovery', () {
-    const incompleteMember = Member(
-      memberId: 'member-1',
-      hasAiCharacter: false,
-      loginType: LoginType.apple,
+  group('completeSocialSignup', () {
+    const signedInResult = SignInResult(tokens: _tokens, member: _member);
+
+    DioException apiError(ErrorCode errorCode, int status) => DioException(
+      requestOptions: RequestOptions(path: '/api/auth/social-signup'),
+      error: ApiException(errorCode: errorCode, httpStatus: status),
     );
 
-    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
+    test('success_signsUpWithLatestTokenAndSignsIn', () async {
+      final repository = FakeAuthRepository(signInResult: signedInResult);
       final harness = _Harness(repository: repository);
-      await harness.container
-          .read(authSessionProvider)
-          .restored(incompleteMember);
-      return harness;
-    }
 
-    DioException wrapped(ErrorCode errorCode) => DioException(
-      requestOptions: RequestOptions(path: '/api/members/me/signup-completion'),
-      error: ApiException(errorCode: errorCode, httpStatus: 409),
+      await harness.flow.completeSocialSignup(
+        nickname: '티큐',
+        serviceTermsAgreed: true,
+        privacyPolicyAgreed: true,
+      );
+
+      expect(repository.socialSignUpRequest?.credential, 'latest-token');
+      expect(repository.socialSignUpRequest?.nickname, '티큐');
+      expect(repository.socialSignUpRequest?.serviceTermsAgreed, isTrue);
+      expect(repository.socialSignUpRequest?.privacyPolicyAgreed, isTrue);
+      expect(repository.socialLoginCount, 0);
+      expect(harness.status, AuthStatus.signedIn);
+      expect(harness.currentMember, _member);
+      expect(harness.tokenStorage.savedTokens, _tokens);
+    });
+
+    test(
+      'stateConflict_retriesSocialLoginOnceWithSameTokenAndSignsIn',
+      () async {
+        final repository = FakeAuthRepository(
+          signInResult: signedInResult,
+          socialSignUpError: apiError(ErrorCode.stateConflict, 409),
+        );
+        final harness = _Harness(repository: repository);
+
+        await harness.flow.completeSocialSignup(
+          nickname: '티큐',
+          serviceTermsAgreed: true,
+          privacyPolicyAgreed: true,
+        );
+
+        expect(repository.socialLoginCount, 1);
+        expect(repository.socialLoginCredential, 'latest-token');
+        expect(harness.status, AuthStatus.signedIn);
+        expect(harness.currentMember, _member);
+      },
     );
 
-    test('success_updatesMemberWithAgreements', () async {
-      final repository = FakeAuthRepository(member: _member);
-      final harness = await signedInHarness(repository);
-
-      await harness.flow.completeSignup(
-        nickname: '티큐',
-        serviceTermsAgreed: true,
-        privacyPolicyAgreed: true,
-      );
-
-      expect(harness.currentMember, _member);
-      expect(repository.completedSignup?.nickname, '티큐');
-      expect(repository.completedSignup?.serviceTermsAgreed, isTrue);
-      expect(repository.completedSignup?.privacyPolicyAgreed, isTrue);
-      expect(repository.fetchMeCount, 0);
-    });
-
-    test('alreadyCompleted_refreshesMemberAndDoesNotThrow', () async {
+    test('duplicateNickname_propagatesWithoutRetry', () async {
+      final error = apiError(ErrorCode.duplicateNickname, 409);
       final repository = FakeAuthRepository(
-        member: _member,
-        completeSignupError: wrapped(ErrorCode.stateConflict),
+        signInResult: signedInResult,
+        socialSignUpError: error,
       );
-      final harness = await signedInHarness(repository);
-
-      await harness.flow.completeSignup(
-        nickname: '티큐',
-        serviceTermsAgreed: true,
-        privacyPolicyAgreed: true,
-      );
-
-      expect(repository.fetchMeCount, 1);
-      expect(harness.currentMember, _member);
-    });
-
-    test('otherApiError_propagatesWithoutRefresh', () async {
-      final error = wrapped(ErrorCode.duplicateEmail);
-      final repository = FakeAuthRepository(
-        member: _member,
-        completeSignupError: error,
-      );
-      final harness = await signedInHarness(repository);
+      final harness = _Harness(repository: repository);
 
       await expectLater(
-        harness.flow.completeSignup(
+        harness.flow.completeSocialSignup(
           nickname: '티큐',
           serviceTermsAgreed: true,
           privacyPolicyAgreed: true,
@@ -264,30 +303,26 @@ void main() {
         throwsA(error),
       );
 
-      expect(repository.fetchMeCount, 0);
-      expect(harness.currentMember, incompleteMember);
+      expect(repository.socialLoginCount, 0);
+      expect(harness.status, AuthStatus.unknown);
     });
 
-    test('refreshFailure_propagates', () async {
-      final refreshError = DioException(
-        requestOptions: RequestOptions(path: '/api/members/me'),
-        type: DioExceptionType.connectionError,
-      );
-      final harness = await signedInHarness(
-        FakeAuthRepository(
-          member: _member,
-          completeSignupError: wrapped(ErrorCode.stateConflict),
-          fetchMeError: refreshError,
+    test('retryLoginFailure_propagates', () async {
+      final retryError = apiError(ErrorCode.socialTokenInvalid, 401);
+      final harness = _Harness(
+        repository: FakeAuthRepository(
+          socialSignUpError: apiError(ErrorCode.stateConflict, 409),
+          socialLoginError: retryError,
         ),
       );
 
       await expectLater(
-        harness.flow.completeSignup(
+        harness.flow.completeSocialSignup(
           nickname: '티큐',
           serviceTermsAgreed: true,
           privacyPolicyAgreed: true,
         ),
-        throwsA(refreshError),
+        throwsA(retryError),
       );
     });
   });
@@ -361,6 +396,148 @@ void main() {
     expect(harness.tokenStorage.storedTokens, _tokens);
   });
 
+  test('logout_signsOutOfSocialSessionAndIgnoresItsFailure', () async {
+    final harness = _Harness(
+      socialProvider: FakeSocialCredentialProvider(
+        signOutError: Exception('firebase down'),
+      ),
+      storedTokens: _tokens,
+    );
+    harness.container
+        .read(authStatusControllerProvider.notifier)
+        .markSignedIn();
+
+    await harness.flow.logout();
+
+    expect(harness.socialProvider.calls, ['signOut']);
+    expect(harness.status, AuthStatus.signedOut);
+    expect(harness.tokenStorage.storedTokens, isNull);
+  });
+
+  group('deleteAccount_social', () {
+    const googleMember = Member(
+      memberId: 'member-1',
+      nickname: '티큐',
+      hasAiCharacter: false,
+      loginType: LoginType.google,
+    );
+
+    test(
+      'apple_revokesThenDeletesAccountThenFirebaseUserThenSignsOut',
+      () async {
+        final provider = FakeSocialCredentialProvider();
+        final harness = _Harness(
+          repository: FakeAuthRepository(
+            onDeleteAccount: () => provider.calls.add('deleteAccount'),
+          ),
+          socialProvider: provider,
+          storedTokens: _tokens,
+        );
+        await harness.container.read(authSessionProvider).restored(_member);
+
+        final isDeleted = await harness.flow.deleteAccount();
+
+        expect(isDeleted, isTrue);
+        expect(provider.calls, [
+          'revokeAppleConnection',
+          'deleteAccount',
+          'deleteFirebaseUser',
+          'signOut',
+        ]);
+        expect(harness.status, AuthStatus.signedOut);
+        expect(harness.tokenStorage.storedTokens, isNull);
+      },
+    );
+
+    test('apple_reauthenticationCancelled_staysSignedInSilently', () async {
+      final provider = FakeSocialCredentialProvider(
+        revokeError: const SocialSignInCancelledException(),
+      );
+      final harness = _Harness(socialProvider: provider, storedTokens: _tokens);
+      await harness.container.read(authSessionProvider).restored(_member);
+      var callbackCalled = false;
+
+      final isDeleted = await harness.flow.deleteAccount(
+        beforeSigningOut: () => callbackCalled = true,
+      );
+
+      expect(isDeleted, isFalse);
+      expect(callbackCalled, isFalse);
+      expect(harness.repository.deleteAccountCount, 0);
+      expect(provider.calls, ['revokeAppleConnection']);
+      expect(harness.status, AuthStatus.signedIn);
+      expect(harness.tokenStorage.storedTokens, _tokens);
+    });
+
+    test('apple_revokeFailure_abortsWithoutDeletingAnything', () async {
+      const failure = AppleConnectionRevokeFailedException('revoke 실패');
+      final provider = FakeSocialCredentialProvider(revokeError: failure);
+      final harness = _Harness(socialProvider: provider, storedTokens: _tokens);
+      await harness.container.read(authSessionProvider).restored(_member);
+
+      await expectLater(harness.flow.deleteAccount(), throwsA(failure));
+
+      expect(failure.userMessage, 'Apple 연동을 해제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      expect(harness.repository.deleteAccountCount, 0);
+      expect(provider.calls, ['revokeAppleConnection']);
+      expect(harness.currentMember, _member);
+      expect(harness.tokenStorage.storedTokens, _tokens);
+    });
+
+    test('apple_serverDeleteFailure_keepsSessionAndFirebaseUser', () async {
+      final error = Exception('server down');
+      final provider = FakeSocialCredentialProvider();
+      final harness = _Harness(
+        repository: FakeAuthRepository(deleteAccountError: error),
+        socialProvider: provider,
+        storedTokens: _tokens,
+      );
+      await harness.container.read(authSessionProvider).restored(_member);
+
+      await expectLater(harness.flow.deleteAccount(), throwsA(error));
+
+      expect(provider.calls, ['revokeAppleConnection']);
+      expect(harness.currentMember, _member);
+    });
+
+    test('google_skipsRevokeAndDeletesFirebaseUserAfterAccount', () async {
+      final provider = FakeSocialCredentialProvider();
+      final harness = _Harness(
+        repository: FakeAuthRepository(
+          onDeleteAccount: () => provider.calls.add('deleteAccount'),
+        ),
+        socialProvider: provider,
+        storedTokens: _tokens,
+      );
+      await harness.container.read(authSessionProvider).restored(googleMember);
+
+      final isDeleted = await harness.flow.deleteAccount();
+
+      expect(isDeleted, isTrue);
+      expect(provider.calls, [
+        'deleteAccount',
+        'deleteFirebaseUser',
+        'signOut',
+      ]);
+      expect(harness.status, AuthStatus.signedOut);
+    });
+
+    test('firebaseCleanupFailures_areIgnored', () async {
+      final provider = FakeSocialCredentialProvider(
+        deleteFirebaseUserError: Exception('requires-recent-login'),
+        signOutError: Exception('firebase down'),
+      );
+      final harness = _Harness(socialProvider: provider, storedTokens: _tokens);
+      await harness.container.read(authSessionProvider).restored(googleMember);
+
+      final isDeleted = await harness.flow.deleteAccount();
+
+      expect(isDeleted, isTrue);
+      expect(harness.status, AuthStatus.signedOut);
+      expect(harness.tokenStorage.storedTokens, isNull);
+    });
+  });
+
   test('refreshMember_replacesCurrentMemberWithFetchedMember', () async {
     const fetched = Member(
       memberId: 'member-1',
@@ -414,7 +591,7 @@ void main() {
         memberId: 'member-2',
         nickname: '다른사람',
         hasAiCharacter: false,
-        loginType: LoginType.email,
+        loginType: LoginType.google,
       );
 
       final refreshing = harness.flow.refreshMember();
@@ -456,7 +633,7 @@ void main() {
       email: 'user@example.com',
       nickname: '티큐',
       hasAiCharacter: false,
-      loginType: LoginType.email,
+      loginType: LoginType.google,
     );
     final renamed = emailMember.copyWith(nickname: '새닉네임');
 
@@ -499,72 +676,6 @@ void main() {
       await expectLater(harness.flow.changeNickname('새닉네임'), throwsA(error));
 
       expect(harness.currentMember, emailMember);
-    });
-  });
-
-  group('changePassword', () {
-    const emailMember = Member(
-      memberId: 'member-1',
-      email: 'user@example.com',
-      nickname: '티큐',
-      hasAiCharacter: false,
-      loginType: LoginType.email,
-    );
-    const newTokens = AuthTokens(
-      accessToken: 'new-access',
-      refreshToken: 'new-refresh',
-    );
-    const result = SignInResult(tokens: newTokens, member: _member);
-
-    Future<_Harness> signedInHarness(FakeAuthRepository repository) async {
-      final harness = _Harness(repository: repository, storedTokens: _tokens);
-      await harness.container.read(authSessionProvider).restored(emailMember);
-      return harness;
-    }
-
-    test('savesNewTokensAndKeepsMemberWithEmail', () async {
-      final repository = FakeAuthRepository(signInResult: result);
-      final harness = await signedInHarness(repository);
-
-      await harness.flow.changePassword(current: 'old-pw', next: 'new-pw');
-
-      expect(repository.changedPassword?.currentPassword, 'old-pw');
-      expect(repository.changedPassword?.newPassword, 'new-pw');
-      expect(harness.tokenStorage.storedTokens, newTokens);
-      expect(harness.currentMember, emailMember);
-      expect(harness.currentMember?.email, 'user@example.com');
-    });
-
-    test('serverError_propagatesAndKeepsTokens', () async {
-      final error = Exception('invalid current password');
-      final harness = await signedInHarness(
-        FakeAuthRepository(signInResult: result, changePasswordError: error),
-      );
-
-      await expectLater(
-        harness.flow.changePassword(current: 'old-pw', next: 'new-pw'),
-        throwsA(error),
-      );
-
-      expect(harness.tokenStorage.storedTokens, _tokens);
-      expect(harness.tokenStorage.savedTokens, isNull);
-    });
-
-    test('logoutWhileWaiting_doesNotSaveTokens', () async {
-      final repository = FakeAuthRepository(signInResult: result)
-        ..changePasswordGate = Completer<void>();
-      final harness = await signedInHarness(repository);
-
-      final changing = harness.flow.changePassword(
-        current: 'old-pw',
-        next: 'new-pw',
-      );
-      await harness.flow.logout();
-      repository.changePasswordGate!.complete();
-      await changing;
-
-      expect(harness.tokenStorage.storedTokens, isNull);
-      expect(harness.tokenStorage.savedTokens, isNull);
     });
   });
 

@@ -12,20 +12,35 @@ class SettingsRow extends StatelessWidget {
     super.key,
     required this.label,
     required this.leadingIconAssetPath,
+    this.leadingIconColor,
     this.value,
     this.showsChevron = false,
+    this.isLabelBold = false,
     this.onTap,
   });
 
   final String label;
   final String leadingIconAssetPath;
+
+  /// 단색으로 칠할 아이콘 색. 없으면 에셋 원래 색을 쓴다(예: 흰색 Apple 로고를 어두운 색으로 바꿀 때).
+  final Color? leadingIconColor;
   final String? value;
   final bool showsChevron;
+
+  /// 라벨을 굵게 보여 준다(로그인 방식처럼 강조할 문구).
+  final bool isLabelBold;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final trailingValue = value;
+    final iconColor = leadingIconColor;
+    final labelText = Text(
+      label,
+      style: isLabelBold
+          ? AppTextStyles.body14Bold
+          : AppTextStyles.body14Medium,
+    );
     final content = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: AppLayout.settingsRowHeight),
       child: Padding(
@@ -39,24 +54,30 @@ class SettingsRow extends StatelessWidget {
               leadingIconAssetPath,
               width: AppLayout.iconSize,
               height: AppLayout.iconSize,
+              colorFilter: iconColor == null
+                  ? null
+                  : ColorFilter.mode(iconColor, BlendMode.srcIn),
             ),
             const SizedBox(width: AppSpacing.space12),
-            // 라벨은 짧은 고정 문구라 자기 폭만 쓰고, 남는 폭은 값(또는 빈 공간)이 차지한다.
-            Text(label, style: AppTextStyles.body14Medium),
-            const SizedBox(width: AppSpacing.space12),
-            Expanded(
-              child: trailingValue == null
-                  ? const SizedBox.shrink()
-                  : Text(
-                      trailingValue,
-                      textAlign: TextAlign.end,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption12Medium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-            ),
+            // 값이 있는 행의 라벨은 짧은 고정 문구라 자기 폭만 쓰고, 남는 폭은 값이 차지한다.
+            // 값이 없는 행의 라벨(로그인 방식 등)은 남는 폭 안에서 줄바꿈한다.
+            if (trailingValue == null)
+              Expanded(child: labelText)
+            else ...[
+              labelText,
+              const SizedBox(width: AppSpacing.space12),
+              Expanded(
+                child: Text(
+                  trailingValue,
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.caption12Medium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
             if (showsChevron) ...[
               const SizedBox(width: AppSpacing.space12),
               SvgPicture.asset(

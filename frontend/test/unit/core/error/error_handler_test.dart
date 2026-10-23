@@ -76,11 +76,11 @@ void main() {
 
     container
         .read(errorHandlerProvider)
-        .handle(_api(ErrorCode.duplicateEmail, status: 409));
+        .handle(_api(ErrorCode.duplicateNickname, status: 409));
     await tester.pump();
 
-    expect(container.read(toastControllerProvider), '이미 사용 중인 이메일이에요.');
-    expect(find.text('이미 사용 중인 이메일이에요.'), findsOneWidget);
+    expect(container.read(toastControllerProvider), '이미 사용 중인 닉네임이에요.');
+    expect(find.text('이미 사용 중인 닉네임이에요.'), findsOneWidget);
     expect(find.textContaining('SQL'), findsNothing);
 
     await tester.pump(const Duration(seconds: 4));
@@ -208,7 +208,7 @@ void main() {
 
       container
           .read(errorHandlerProvider)
-          .handle(_api(ErrorCode.duplicateEmail, status: 409));
+          .handle(_api(ErrorCode.duplicateNickname, status: 409));
 
       expect(entries.single.level, AppLogLevel.warning);
       expect(entries.single.name, 'ErrorHandler');
@@ -221,7 +221,7 @@ void main() {
 
       container
           .read(errorHandlerProvider)
-          .handle(_api(ErrorCode.duplicateEmail, status: 503));
+          .handle(_api(ErrorCode.duplicateNickname, status: 503));
 
       expect(entries.single.level, AppLogLevel.error);
     });

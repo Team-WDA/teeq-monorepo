@@ -13,10 +13,8 @@ enum ErrorCode {
   // 인증과 계정
   unauthenticated('UNAUTHENTICATED'),
   expiredToken('EXPIRED_TOKEN'),
-  invalidCredentials('INVALID_CREDENTIALS'),
   invalidRefreshToken('INVALID_REFRESH_TOKEN'),
   accessDenied('ACCESS_DENIED'),
-  duplicateEmail('DUPLICATE_EMAIL'),
   duplicateNickname('DUPLICATE_NICKNAME'),
   invalidCurrentPassword('INVALID_CURRENT_PASSWORD'),
   memberNotFound('MEMBER_NOT_FOUND'),
@@ -26,8 +24,7 @@ enum ErrorCode {
   adminSelfChangeForbidden('ADMIN_SELF_CHANGE_FORBIDDEN'),
   socialTokenInvalid('SOCIAL_TOKEN_INVALID'),
   socialServerUnavailable('SOCIAL_SERVER_UNAVAILABLE'),
-  signupNotCompleted('SIGNUP_NOT_COMPLETED'),
-  loginMethodMismatch('LOGIN_METHOD_MISMATCH'),
+  socialSignupRequired('SOCIAL_SIGNUP_REQUIRED'),
 
   // 통화
   callLimitInsufficient('CALL_LIMIT_INSUFFICIENT'),

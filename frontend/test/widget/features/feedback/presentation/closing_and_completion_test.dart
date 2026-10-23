@@ -82,7 +82,7 @@ const _member = Member(
   memberId: 'member-1',
   nickname: '소연',
   hasAiCharacter: true,
-  loginType: LoginType.email,
+  loginType: LoginType.google,
 );
 
 const _summary = HomeSummary(

@@ -18,18 +18,14 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
   final List<String> requestedNicknames = [];
-  final List<String> requestedEmails = [];
   Completer<void> pendingRequest = Completer<void>();
 
   @override
-  Future<void> signUp({
-    required String email,
-    required String password,
+  Future<void> completeSocialSignup({
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) {
-    requestedEmails.add(email);
     requestedNicknames.add(nickname);
     return pendingRequest.future;
   }
@@ -47,8 +43,6 @@ class _RecordingErrorHandler extends Fake implements ErrorHandler {
 class _FixedSignupDraftController extends SignupDraftController {
   @override
   SignupDraft build() => const SignupDraft(
-    email: 'a@b.co',
-    password: 'Abcdef12',
     isServiceTermsAgreed: true,
     isPrivacyPolicyAgreed: true,
   );
@@ -61,7 +55,7 @@ Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
   final errorHandler = _RecordingErrorHandler();
   final router = GoRouter(
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const Text('이메일 단계 스텁')),
+      GoRoute(path: '/', builder: (context, state) => const Text('약관 단계 스텁')),
       GoRoute(
         path: '/nickname',
         builder: (context, state) => const SignupNicknameScreen(),
@@ -132,7 +126,6 @@ void main() {
     await tester.pump();
 
     expect(authFlow.requestedNicknames, ['티큐']);
-    expect(authFlow.requestedEmails, ['a@b.co']);
     expect(_nextButtonOnPressed(tester), isNull);
   });
 
@@ -148,21 +141,23 @@ void main() {
     expect(find.text('온보딩 스텁'), findsOneWidget);
   });
 
-  testWidgets('이메일 중복이면 오류를 넘기고 이메일 단계로 돌아간다', (tester) async {
+  testWidgets('닉네임 중복이면 오류를 넘기고 화면에 남는다', (tester) async {
     final (authFlow, errorHandler) = await _pumpScreen(tester);
     await _enterNickname(tester, '티큐');
 
     await tester.tap(find.text('다음'));
     await tester.pump();
     const failure = ApiException(
-      errorCode: ErrorCode.duplicateEmail,
+      errorCode: ErrorCode.duplicateNickname,
       httpStatus: 409,
     );
     authFlow.pendingRequest.completeError(failure);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
 
     expect(errorHandler.handledErrors, [failure]);
-    expect(find.text('이메일 단계 스텁'), findsOneWidget);
+    expect(find.byType(SignupNicknameScreen), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNotNull);
   });
 
   testWidgets('그 외 오류면 화면에 남고 다음이 다시 활성화된다', (tester) async {

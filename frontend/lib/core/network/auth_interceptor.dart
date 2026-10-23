@@ -25,12 +25,11 @@ class AuthInterceptor extends Interceptor {
   static const _authorizationHeader = 'Authorization';
   static const _bearerPrefix = 'Bearer ';
   static const _logoutPath = '/api/auth/logout';
-  static const _signupPath = '/api/members';
 
   /// Authorization을 붙이지 않고 갱신 대상에서도 빼는 경로(메서드 무관).
   static const _exemptPaths = {
-    '/api/auth/login',
     '/api/auth/social-login',
+    '/api/auth/social-signup',
     '/api/auth/refresh',
     '/api/app-versions/check',
   };
@@ -112,9 +111,7 @@ class AuthInterceptor extends Interceptor {
   }
 
   bool _isExempt(RequestOptions options) {
-    final path = options.uri.path;
-    return _exemptPaths.contains(path) ||
-        (path == _signupPath && options.method.toUpperCase() == 'POST');
+    return _exemptPaths.contains(options.uri.path);
   }
 
   bool _shouldRefresh(DioException err) {

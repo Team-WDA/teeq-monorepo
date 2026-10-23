@@ -87,3 +87,17 @@ final class UnexpectedException extends AppException {
   @override
   String toString() => 'UnexpectedException(cause: $cause)';
 }
+
+/// 탈퇴 중 Apple 연동 해제(재인증·revoke)에 실패했다. 탈퇴는 진행하지 않는다.
+final class AppleConnectionRevokeFailedException extends AppException {
+  const AppleConnectionRevokeFailedException([this.cause]);
+
+  /// 로그 전용 원인 객체.
+  final Object? cause;
+
+  @override
+  String get userMessage => appleConnectionRevokeFailedMessage;
+
+  @override
+  String toString() => 'AppleConnectionRevokeFailedException(cause: $cause)';
+}

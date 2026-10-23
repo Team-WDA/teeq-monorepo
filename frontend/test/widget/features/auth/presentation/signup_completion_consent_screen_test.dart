@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,9 +67,31 @@ void main() {
     expect(find.text('닉네임 스텁'), findsOneWidget);
   });
 
-  testWidgets('뒤로가기 버튼이 없다', (tester) async {
-    await _pumpScreen(tester);
+  testWidgets('뒤로가기 버튼을 누르면 이전 화면으로 돌아간다', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const Text('시작 스텁')),
+        GoRoute(
+          path: AppRoutes.signupCompletion,
+          builder: (context, state) => const SignupCompletionConsentScreen(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    unawaited(router.push(AppRoutes.signupCompletion));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppBackButton), findsOneWidget);
 
-    expect(find.byType(AppBackButton), findsNothing);
+    await tester.tap(find.byType(AppBackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('시작 스텁'), findsOneWidget);
+    expect(find.byType(SignupCompletionConsentScreen), findsNothing);
   });
 }

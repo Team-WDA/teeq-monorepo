@@ -17,43 +17,29 @@ final class AuthRepositoryImpl implements AuthRepository {
   final Dio _dio;
 
   @override
-  Future<SignInResult> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<SignInResult> socialLogin({required String credential}) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/login',
-      data: {'email': email, 'password': password},
+      '/api/auth/social-login',
+      data: {'credential': credential},
     );
     return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
 
   @override
-  Future<SignInResult> signUp({
-    required String email,
-    required String password,
+  Future<SignInResult> socialSignUp({
+    required String credential,
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/members',
+      '/api/auth/social-signup',
       data: {
-        'email': email,
-        'password': password,
+        'credential': credential,
         'nickname': nickname,
         'serviceTermsAgreed': serviceTermsAgreed,
         'privacyPolicyAgreed': privacyPolicyAgreed,
       },
-    );
-    return AuthResponseDto.fromJson(response.data!).toSignInResult();
-  }
-
-  @override
-  Future<SignInResult> socialLogin({required String credential}) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/social-login',
-      data: {'socialType': 'APPLE', 'credential': credential},
     );
     return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
@@ -75,41 +61,12 @@ final class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Member> completeSignup({
-    required String nickname,
-    required bool serviceTermsAgreed,
-    required bool privacyPolicyAgreed,
-  }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/api/members/me/signup-completion',
-      data: {
-        'nickname': nickname,
-        'serviceTermsAgreed': serviceTermsAgreed,
-        'privacyPolicyAgreed': privacyPolicyAgreed,
-      },
-    );
-    return MemberResponseDto.fromJson(response.data!).toMember();
-  }
-
-  @override
   Future<Member> changeNickname({required String nickname}) async {
     final response = await _dio.patch<Map<String, dynamic>>(
       '/api/members/me/nickname',
       data: {'nickname': nickname},
     );
     return MemberResponseDto.fromJson(response.data!).toMember();
-  }
-
-  @override
-  Future<SignInResult> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    final response = await _dio.patch<Map<String, dynamic>>(
-      '/api/members/me/password',
-      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
-    );
-    return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
 
   @override
