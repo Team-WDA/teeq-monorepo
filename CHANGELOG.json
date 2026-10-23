@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-10-23T12:09:09Z",
-    "currentVersion": "0.34.0",
+    "lastUpdated": "2026-10-23T12:27:17Z",
+    "currentVersion": "0.34.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 45
+    "totalReleases": 46
   },
   "releases": [
+    {
+      "version": "0.34.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-10-23",
+      "pr_number": null,
+      "raw_summary": "## [0.34.1]\n\n### 🐛 수정\n- 토큰에 email이 없으면 사용자 레코드의 제공자 이메일로 로그인 처리",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "토큰에 email이 없으면 사용자 레코드의 제공자 이메일로 로그인 처리"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.34.0",
       "project_types": [
