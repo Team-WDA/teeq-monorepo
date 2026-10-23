@@ -31,8 +31,8 @@ void main() {
       }
     });
 
-    test('소셜 로그인 401은 toast', () {
-      for (final code in [ErrorCode.socialTokenInvalid]) {
+    test('로그인 401은 toast', () {
+      for (final code in [ErrorCode.authTokenInvalid]) {
         expect(classify(_api(code, status: 401)), ErrorPresentation.toast);
       }
     });

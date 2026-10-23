@@ -28,8 +28,8 @@ class AuthInterceptor extends Interceptor {
 
   /// Authorization을 붙이지 않고 갱신 대상에서도 빼는 경로(메서드 무관).
   static const _exemptPaths = {
-    '/api/auth/social-login',
-    '/api/auth/social-signup',
+    '/api/auth/login',
+    '/api/auth/signup',
     '/api/auth/refresh',
     '/api/app-versions/check',
   };

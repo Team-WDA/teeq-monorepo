@@ -2,19 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:teeq/core/error/app_exception.dart';
-import 'package:teeq/features/auth/domain/social_credential_provider.dart';
+import 'package:teeq/features/auth/domain/auth_credential_provider.dart';
 
-part 'firebase_social_credential_provider.g.dart';
+part 'firebase_auth_credential_provider.g.dart';
 
 @Riverpod(keepAlive: true)
-SocialCredentialProvider socialCredentialProvider(Ref ref) =>
-    FirebaseSocialCredentialProvider();
+AuthCredentialProvider authCredentialProvider(Ref ref) =>
+    FirebaseAuthCredentialProvider();
 
-/// Firebase Authentication과 `google_sign_in`으로 소셜 로그인 자격 증명을 만드는 구현.
+/// Firebase Authentication과 `google_sign_in`으로 로그인 자격 증명을 만드는 구현.
 /// Apple은 Firebase가 네이티브 시트를 직접 열고, Google은 `google_sign_in`으로 받은 토큰을 Firebase에 넘긴다.
-final class FirebaseSocialCredentialProvider
-    implements SocialCredentialProvider {
-  FirebaseSocialCredentialProvider({
+/// 이메일·비밀번호는 Firebase가 직접 처리하며, 그 실패(`FirebaseAuthException`)는 앱 예외로 바꿔 던진다.
+final class FirebaseAuthCredentialProvider implements AuthCredentialProvider {
+  FirebaseAuthCredentialProvider({
     FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
   }) : _firebaseAuthOverride = firebaseAuth,
@@ -54,7 +54,7 @@ final class FirebaseSocialCredentialProvider
       );
     } on FirebaseAuthException catch (error) {
       if (isCancellation(error)) {
-        throw const SocialSignInCancelledException();
+        throw const SignInCancelledException();
       }
       rethrow;
     }
@@ -69,7 +69,7 @@ final class FirebaseSocialCredentialProvider
       account = await _googleSignIn.authenticate();
     } on GoogleSignInException catch (error) {
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        throw const SocialSignInCancelledException();
+        throw const SignInCancelledException();
       }
       rethrow;
     }
@@ -82,6 +82,92 @@ final class FirebaseSocialCredentialProvider
     );
     return _idTokenOf(credential.user);
   }
+
+  @override
+  Future<String> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await _guardEmailAuth(
+      () => _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      ),
+    );
+    return _idTokenOf(credential.user);
+  }
+
+  @override
+  Future<String> createEmailAccount({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await _guardEmailAuth(
+      () => _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      ),
+    );
+    return _idTokenOf(credential.user);
+  }
+
+  @override
+  Future<void> changeEmailPassword({
+    required String email,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final credential = await _guardEmailAuth(
+      () => _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: currentPassword,
+      ),
+      isCurrentPasswordCheck: true,
+    );
+    final user = credential.user;
+    if (user == null) {
+      throw const UnexpectedException('Firebase 사용자 없음');
+    }
+    await _guardEmailAuth(() => user.updatePassword(newPassword));
+  }
+
+  /// Firebase 오류를 앱 예외로 바꿔 던진다. [isCurrentPasswordCheck]이면 자격 증명 오류를
+  /// 현재 비밀번호 오류로 바꾼다(비밀번호 변경 화면이 인라인으로 보여 준다).
+  Future<T> _guardEmailAuth<T>(
+    Future<T> Function() action, {
+    bool isCurrentPasswordCheck = false,
+  }) async {
+    try {
+      return await action();
+    } on FirebaseAuthException catch (error) {
+      throw mapEmailAuthException(
+        error,
+        isCurrentPasswordCheck: isCurrentPasswordCheck,
+      );
+    }
+  }
+
+  /// 이메일 인증 관련 Firebase 오류 코드를 앱 예외로 바꾼다.
+  /// 이메일 열거 방지가 켜져 있으면 없는 이메일과 틀린 비밀번호가 모두 `invalid-credential`로 온다.
+  /// 그 밖의 코드(`weak-password`, `user-disabled` 등)는 일반 오류로 처리한다.
+  static AppException mapEmailAuthException(
+    FirebaseAuthException error, {
+    bool isCurrentPasswordCheck = false,
+  }) => switch (error.code) {
+    'invalid-credential' ||
+    'wrong-password' ||
+    'user-not-found' ||
+    'invalid-email' =>
+      isCurrentPasswordCheck
+          ? InvalidCurrentPasswordException(error)
+          : InvalidCredentialsException(error),
+    'email-already-in-use' => EmailAlreadyInUseException(error),
+    'too-many-requests' => TooManyAttemptsException(error),
+    'network-request-failed' => const NetworkException(
+      NetworkFailureKind.connection,
+    ),
+    _ => UnexpectedException(error),
+  };
 
   @override
   Future<String> fetchLatestIdToken() => _idTokenOf(_firebaseAuth.currentUser);
@@ -99,7 +185,7 @@ final class FirebaseSocialCredentialProvider
       );
     } on FirebaseAuthException catch (error) {
       if (isCancellation(error)) {
-        throw const SocialSignInCancelledException();
+        throw const SignInCancelledException();
       }
       // 다른 Apple 계정으로 재인증한 경우(user-mismatch)도 여기서 실패로 본다.
       throw AppleConnectionRevokeFailedException(error);
@@ -118,7 +204,7 @@ final class FirebaseSocialCredentialProvider
   }
 
   @override
-  Future<void> deleteFirebaseUser() async {
+  Future<void> deleteCreatedAccount() async {
     await _firebaseAuth.currentUser?.delete();
   }
 

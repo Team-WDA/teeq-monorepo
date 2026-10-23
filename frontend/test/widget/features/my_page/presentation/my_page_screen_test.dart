@@ -118,6 +118,17 @@ void main() {
     expect(find.text('비밀번호 변경'), findsNothing);
   });
 
+  testWidgets('email login member sees email login row and password row', (
+    tester,
+  ) async {
+    await _pumpMyPage(tester, MyPageHarness(member: emailMember));
+
+    expect(find.text('이메일로 로그인 중이에요!'), findsOneWidget);
+    expect(find.text('비밀번호 변경'), findsOneWidget);
+    expect(find.text('Google로 로그인 중이에요!'), findsNothing);
+    expect(find.text('Apple로 로그인 중이에요!'), findsNothing);
+  });
+
   testWidgets('logout tap calls logout immediately', (tester) async {
     final harness = MyPageHarness();
     await _pumpMyPage(tester, harness);

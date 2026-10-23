@@ -94,6 +94,8 @@ void main() {
       }
       for (final location in [
         AppRoutes.welcome,
+        AppRoutes.login,
+        AppRoutes.signup,
         AppRoutes.signupCompletion,
         AppRoutes.signupNickname,
       ]) {
@@ -114,6 +116,8 @@ void main() {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.welcome,
+        AppRoutes.login,
+        AppRoutes.signup,
         AppRoutes.signupNickname,
         AppRoutes.signupCompletion,
         AppRoutes.home,
@@ -189,6 +193,8 @@ void main() {
       for (final location in [
         AppRoutes.splash,
         AppRoutes.welcome,
+        AppRoutes.login,
+        AppRoutes.signup,
         AppRoutes.signupCompletion,
       ]) {
         expect(

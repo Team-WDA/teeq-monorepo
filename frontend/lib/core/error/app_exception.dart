@@ -101,3 +101,59 @@ final class AppleConnectionRevokeFailedException extends AppException {
   @override
   String toString() => 'AppleConnectionRevokeFailedException(cause: $cause)';
 }
+
+/// 이메일 또는 비밀번호가 틀려 Firebase 로그인에 실패했다.
+final class InvalidCredentialsException extends AppException {
+  const InvalidCredentialsException([this.cause]);
+
+  /// 로그 전용 원인 객체.
+  final Object? cause;
+
+  @override
+  String get userMessage => invalidCredentialsMessage;
+
+  @override
+  String toString() => 'InvalidCredentialsException(cause: $cause)';
+}
+
+/// 이미 가입된 이메일이라 Firebase 계정을 만들 수 없다.
+final class EmailAlreadyInUseException extends AppException {
+  const EmailAlreadyInUseException([this.cause]);
+
+  /// 로그 전용 원인 객체.
+  final Object? cause;
+
+  @override
+  String get userMessage => emailAlreadyInUseMessage;
+
+  @override
+  String toString() => 'EmailAlreadyInUseException(cause: $cause)';
+}
+
+/// 비밀번호 변경 중 입력한 현재 비밀번호가 틀렸다. 화면이 현재 비밀번호 칸의 인라인 오류로 보여 준다.
+final class InvalidCurrentPasswordException extends AppException {
+  const InvalidCurrentPasswordException([this.cause]);
+
+  /// 로그 전용 원인 객체.
+  final Object? cause;
+
+  @override
+  String get userMessage => invalidCurrentPasswordMessage;
+
+  @override
+  String toString() => 'InvalidCurrentPasswordException(cause: $cause)';
+}
+
+/// Firebase가 로그인 시도 과다로 잠시 요청을 막았다.
+final class TooManyAttemptsException extends AppException {
+  const TooManyAttemptsException([this.cause]);
+
+  /// 로그 전용 원인 객체.
+  final Object? cause;
+
+  @override
+  String get userMessage => tooManyAttemptsMessage;
+
+  @override
+  String toString() => 'TooManyAttemptsException(cause: $cause)';
+}

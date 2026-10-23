@@ -18,13 +18,12 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
   final List<String> requestedNicknames = [];
-  Completer<void> pendingRequest = Completer<void>();
+  Completer<SignupOutcome> pendingRequest = Completer<SignupOutcome>();
 
   @override
-  Future<void> completeSocialSignup({
+  Future<SignupOutcome> completeSignup({
+    required SignupDraft draft,
     required String nickname,
-    required bool serviceTermsAgreed,
-    required bool privacyPolicyAgreed,
   }) {
     requestedNicknames.add(nickname);
     return pendingRequest.future;
@@ -43,10 +42,15 @@ class _RecordingErrorHandler extends Fake implements ErrorHandler {
 class _FixedSignupDraftController extends SignupDraftController {
   @override
   SignupDraft build() => const SignupDraft(
+    mode: SignupMode.emailSignup,
+    email: 'user@example.com',
+    password: 'Abcdef12',
     isServiceTermsAgreed: true,
     isPrivacyPolicyAgreed: true,
   );
 }
+
+late ProviderContainer _container;
 
 Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
   WidgetTester tester,
@@ -67,15 +71,21 @@ Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
     ],
   );
   addTearDown(router.dispose);
+  _container = ProviderContainer(
+    overrides: [
+      authFlowProvider.overrideWithValue(authFlow),
+      errorHandlerProvider.overrideWithValue(errorHandler),
+      signupDraftControllerProvider.overrideWith(
+        _FixedSignupDraftController.new,
+      ),
+    ],
+  );
+  addTearDown(_container.dispose);
+  // 화면 이동으로 autoDispose provider가 정리돼도 상태를 읽을 수 있게 붙잡아 둔다.
+  _container.listen(signupDraftControllerProvider, (previous, next) {});
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        authFlowProvider.overrideWithValue(authFlow),
-        errorHandlerProvider.overrideWithValue(errorHandler),
-        signupDraftControllerProvider.overrideWith(
-          _FixedSignupDraftController.new,
-        ),
-      ],
+    UncontrolledProviderScope(
+      container: _container,
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),
   );
@@ -135,7 +145,7 @@ void main() {
 
     await tester.tap(find.text('다음'));
     await tester.pump();
-    authFlow.pendingRequest.complete();
+    authFlow.pendingRequest.complete(SignupOutcome.signedIn);
     await tester.pumpAndSettle();
 
     expect(find.text('온보딩 스텁'), findsOneWidget);
@@ -174,5 +184,47 @@ void main() {
     expect(errorHandler.handledErrors, [failure]);
     expect(find.byType(SignupNicknameScreen), findsOneWidget);
     expect(_nextButtonOnPressed(tester), isNotNull);
+  });
+
+  testWidgets('성공하면 draft의 비밀번호를 비운다', (tester) async {
+    final (authFlow, _) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.complete(SignupOutcome.signedIn);
+    await tester.pumpAndSettle();
+
+    expect(_container.read(signupDraftControllerProvider).password, isEmpty);
+  });
+
+  testWidgets('닉네임 사전 확인에서 걸리면 중복 닉네임 오류를 알리고 비밀번호를 유지한다', (tester) async {
+    final (authFlow, errorHandler) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.complete(SignupOutcome.nicknameUnavailable);
+    await tester.pump();
+    await tester.pump();
+
+    final handled = errorHandler.handledErrors.single as ApiException;
+    expect(handled.errorCode, ErrorCode.duplicateNickname);
+    expect(find.byType(SignupNicknameScreen), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNotNull);
+    expect(_container.read(signupDraftControllerProvider).password, 'Abcdef12');
+  });
+
+  testWidgets('실패하면 같은 비밀번호로 다시 시도할 수 있게 비밀번호를 유지한다', (tester) async {
+    final (authFlow, _) = await _pumpScreen(tester);
+    await _enterNickname(tester, '티큐');
+
+    await tester.tap(find.text('다음'));
+    await tester.pump();
+    authFlow.pendingRequest.completeError(Exception('가입 실패'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(_container.read(signupDraftControllerProvider).password, 'Abcdef12');
   });
 }

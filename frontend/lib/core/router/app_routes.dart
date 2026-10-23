@@ -2,6 +2,8 @@
 abstract final class AppRoutes {
   static const String splash = '/splash';
   static const String welcome = '/welcome';
+  static const String login = '/login';
+  static const String signup = '/signup';
   static const String signupNickname = '/signup/nickname';
   static const String signupCompletion = '/signup-completion';
   static const String onboarding = '/onboarding';
@@ -12,6 +14,8 @@ abstract final class AppRoutes {
   static const String home = '/';
   static const String myPage = '/my-page';
   static const String nicknameChange = '/my-page/nickname';
+  static const String passwordChange = '/my-page/password';
+  static const String passwordChangeCompletion = '/my-page/password/completion';
   static const String serviceTerms = '/my-page/service-terms';
   static const String privacyPolicy = '/my-page/privacy-policy';
   static const String bugReport = '/my-page/bug-report';

@@ -51,15 +51,15 @@ const _authJson = {
 }
 
 void main() {
-  test('socialLogin_postsCredentialAndMapsSignInResult', () async {
+  test('login_postsCredentialAndMapsSignInResult', () async {
     final (:repository, :adapter) = _setUp();
-    adapter.on('/api/auth/social-login', [
+    adapter.on('/api/auth/login', [
       ScriptedReply.json(200, {..._authJson, 'loginType': 'APPLE'}),
     ]);
 
-    final result = await repository.socialLogin(credential: 'firebase-token');
+    final result = await repository.login(credential: 'firebase-token');
 
-    final request = adapter.requestsTo('/api/auth/social-login').single;
+    final request = adapter.requestsTo('/api/auth/login').single;
     expect(request.method, 'POST');
     expect(request.data, {'credential': 'firebase-token'});
     expect(result.tokens.accessToken, 'access');
@@ -67,18 +67,18 @@ void main() {
     expect(result.member.nickname, '티큐');
   });
 
-  test('socialSignUp_postsCredentialNicknameAndConsents', () async {
+  test('signUp_postsCredentialNicknameAndConsents', () async {
     final (:repository, :adapter) = _setUp();
-    adapter.on('/api/auth/social-signup', [ScriptedReply.json(201, _authJson)]);
+    adapter.on('/api/auth/signup', [ScriptedReply.json(201, _authJson)]);
 
-    final result = await repository.socialSignUp(
+    final result = await repository.signUp(
       credential: 'firebase-token',
       nickname: '티큐',
       serviceTermsAgreed: true,
       privacyPolicyAgreed: true,
     );
 
-    final request = adapter.requestsTo('/api/auth/social-signup').single;
+    final request = adapter.requestsTo('/api/auth/signup').single;
     expect(request.method, 'POST');
     expect(request.data, {
       'credential': 'firebase-token',
@@ -87,6 +87,24 @@ void main() {
       'privacyPolicyAgreed': true,
     });
     expect(result.member.loginType, LoginType.google);
+  });
+
+  test('checkNicknameAvailability_getsWithQueryAndReturnsFlag', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/members/nickname-availability', [
+      ScriptedReply.json(200, {'available': false}),
+    ]);
+
+    final isAvailable = await repository.checkNicknameAvailability(
+      nickname: '티큐',
+    );
+
+    final request = adapter
+        .requestsTo('/api/members/nickname-availability')
+        .single;
+    expect(request.method, 'GET');
+    expect(request.uri.queryParameters, {'nickname': '티큐'});
+    expect(isAvailable, isFalse);
   });
 
   test('logout_postsLogout', () async {

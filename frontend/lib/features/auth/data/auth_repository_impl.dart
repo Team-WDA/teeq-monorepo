@@ -5,6 +5,7 @@ import 'package:teeq/core/auth/sign_in_result.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/auth/data/dto/auth_response_dto.dart';
 import 'package:teeq/features/auth/data/dto/member_response_dto.dart';
+import 'package:teeq/features/auth/data/dto/nickname_availability_response_dto.dart';
 import 'package:teeq/features/auth/domain/auth_repository.dart';
 import 'package:teeq/features/auth/domain/profile_image_file.dart';
 
@@ -17,23 +18,23 @@ final class AuthRepositoryImpl implements AuthRepository {
   final Dio _dio;
 
   @override
-  Future<SignInResult> socialLogin({required String credential}) async {
+  Future<SignInResult> login({required String credential}) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/social-login',
+      '/api/auth/login',
       data: {'credential': credential},
     );
     return AuthResponseDto.fromJson(response.data!).toSignInResult();
   }
 
   @override
-  Future<SignInResult> socialSignUp({
+  Future<SignInResult> signUp({
     required String credential,
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/api/auth/social-signup',
+      '/api/auth/signup',
       data: {
         'credential': credential,
         'nickname': nickname,
@@ -42,6 +43,15 @@ final class AuthRepositoryImpl implements AuthRepository {
       },
     );
     return AuthResponseDto.fromJson(response.data!).toSignInResult();
+  }
+
+  @override
+  Future<bool> checkNicknameAvailability({required String nickname}) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/members/nickname-availability',
+      queryParameters: {'nickname': nickname},
+    );
+    return NicknameAvailabilityResponseDto.fromJson(response.data!).available;
   }
 
   @override

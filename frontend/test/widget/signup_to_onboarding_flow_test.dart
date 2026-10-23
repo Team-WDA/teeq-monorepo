@@ -17,7 +17,7 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/ui/button/app_back_button.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
-import 'package:teeq/features/auth/data/firebase_social_credential_provider.dart';
+import 'package:teeq/features/auth/data/firebase_auth_credential_provider.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
@@ -25,7 +25,7 @@ import 'package:teeq/features/onboarding/presentation/onboarding_introduction_sc
 
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
-import '../support/fake_social_credential_provider.dart';
+import '../support/fake_auth_credential_provider.dart';
 import '../support/fake_splash_minimum_display_controller.dart';
 import '../support/fake_token_storage.dart';
 
@@ -42,19 +42,19 @@ DioException _apiError(ErrorCode errorCode, int status) => DioException(
 );
 
 /// 로그아웃 상태로 앱을 띄운다. 첫 로그인은 가입이 필요한 계정(404)으로 응답한다.
-Future<(FakeAuthRepository, FakeSocialCredentialProvider)> _pumpApp(
+Future<(FakeAuthRepository, FakeAuthCredentialProvider)> _pumpApp(
   WidgetTester tester, {
-  Object? socialSignUpError,
+  Object? signUpError,
 }) async {
   final repository = FakeAuthRepository(
     signInResult: const SignInResult(
       tokens: AuthTokens(accessToken: 'access', refreshToken: 'refresh'),
       member: _member,
     ),
-    socialLoginError: _apiError(ErrorCode.socialSignupRequired, 404),
-    socialSignUpError: socialSignUpError,
+    loginError: _apiError(ErrorCode.authSignupRequired, 404),
+    signUpError: signUpError,
   );
-  final socialProvider = FakeSocialCredentialProvider();
+  final credentialProvider = FakeAuthCredentialProvider();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -66,13 +66,13 @@ Future<(FakeAuthRepository, FakeSocialCredentialProvider)> _pumpApp(
         ),
         tokenStorageProvider.overrideWithValue(FakeTokenStorage()),
         authRepositoryProvider.overrideWithValue(repository),
-        socialCredentialProviderProvider.overrideWithValue(socialProvider),
+        authCredentialProviderProvider.overrideWithValue(credentialProvider),
       ],
       child: const App(),
     ),
   );
   await tester.pumpAndSettle();
-  return (repository, socialProvider);
+  return (repository, credentialProvider);
 }
 
 Future<void> _startGoogleSignIn(WidgetTester tester) async {
@@ -104,11 +104,11 @@ void main() {
     expect(find.byType(SignupNicknameScreen), findsOneWidget);
     await _submitNickname(tester);
 
-    expect(repository.socialSignUpCount, 1);
-    expect(repository.socialSignUpRequest?.credential, 'latest-token');
-    expect(repository.socialSignUpRequest?.nickname, '티큐');
-    expect(repository.socialSignUpRequest?.serviceTermsAgreed, isTrue);
-    expect(repository.socialSignUpRequest?.privacyPolicyAgreed, isTrue);
+    expect(repository.signUpCount, 1);
+    expect(repository.signUpRequest?.credential, 'latest-token');
+    expect(repository.signUpRequest?.nickname, '티큐');
+    expect(repository.signUpRequest?.serviceTermsAgreed, isTrue);
+    expect(repository.signUpRequest?.privacyPolicyAgreed, isTrue);
     expect(find.byType(OnboardingIntroductionScreen), findsOneWidget);
     expect(find.byType(SignupNicknameScreen), findsNothing);
     expect(find.byType(SignupCompletionConsentScreen), findsNothing);
@@ -118,24 +118,24 @@ void main() {
   testWidgets('가입 요청이 STATE_CONFLICT여도 로그인을 다시 시도해 온보딩에 도착한다', (tester) async {
     final (repository, _) = await _pumpApp(
       tester,
-      socialSignUpError: _apiError(ErrorCode.stateConflict, 409),
+      signUpError: _apiError(ErrorCode.stateConflict, 409),
     );
     await _startGoogleSignIn(tester);
     await _agreeAllAndProceed(tester);
     // 이제 서버에는 이미 가입된 계정이라 로그인이 성공한다.
-    repository.socialLoginError = null;
+    repository.loginError = null;
 
     await _submitNickname(tester);
 
-    expect(repository.socialSignUpCount, 1);
-    expect(repository.socialLoginCount, 2);
+    expect(repository.signUpCount, 1);
+    expect(repository.loginCount, 2);
     expect(find.byType(OnboardingIntroductionScreen), findsOneWidget);
   });
 
   testWidgets('중복 닉네임이면 닉네임 화면에 머문다', (tester) async {
     await _pumpApp(
       tester,
-      socialSignUpError: _apiError(ErrorCode.duplicateNickname, 409),
+      signUpError: _apiError(ErrorCode.duplicateNickname, 409),
     );
     await _startGoogleSignIn(tester);
     await _agreeAllAndProceed(tester);
@@ -161,7 +161,7 @@ void main() {
   testWidgets('약관 화면에서 뒤로가면 시작 화면으로 돌아가고 Firebase 로그아웃은 하지 않는다', (
     tester,
   ) async {
-    final (_, socialProvider) = await _pumpApp(tester);
+    final (_, credentialProvider) = await _pumpApp(tester);
     await _startGoogleSignIn(tester);
 
     await tester.tap(find.byType(AppBackButton));
@@ -169,7 +169,7 @@ void main() {
 
     expect(find.byType(WelcomeScreen), findsOneWidget);
     expect(find.byType(SignupCompletionConsentScreen), findsNothing);
-    expect(socialProvider.calls, ['signInWithGoogle']);
+    expect(credentialProvider.calls, ['signInWithGoogle']);
   });
 
   testWidgets('닉네임 화면에서 뒤로가기를 누르면 약관 화면으로 돌아온다', (tester) async {

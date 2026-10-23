@@ -22,9 +22,9 @@ enum ErrorCode {
   duplicateAdminUsername('DUPLICATE_ADMIN_USERNAME'),
   lastSuperAdminProtected('LAST_SUPER_ADMIN_PROTECTED'),
   adminSelfChangeForbidden('ADMIN_SELF_CHANGE_FORBIDDEN'),
-  socialTokenInvalid('SOCIAL_TOKEN_INVALID'),
-  socialServerUnavailable('SOCIAL_SERVER_UNAVAILABLE'),
-  socialSignupRequired('SOCIAL_SIGNUP_REQUIRED'),
+  authTokenInvalid('AUTH_TOKEN_INVALID'),
+  authServerUnavailable('AUTH_SERVER_UNAVAILABLE'),
+  authSignupRequired('AUTH_SIGNUP_REQUIRED'),
 
   // 통화
   callLimitInsufficient('CALL_LIMIT_INSUFFICIENT'),

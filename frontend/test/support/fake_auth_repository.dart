@@ -13,8 +13,10 @@ class FakeAuthRepository implements AuthRepository {
     this.fetchMeError,
     this.logoutError,
     this.deleteAccountError,
-    this.socialLoginError,
-    this.socialSignUpError,
+    this.loginError,
+    this.signUpError,
+    this.isNicknameAvailable = true,
+    this.nicknameAvailabilityError,
     this.changeNicknameError,
     this.replaceProfileImageError,
     this.onDeleteAccount,
@@ -32,11 +34,17 @@ class FakeAuthRepository implements AuthRepository {
   /// 지정하면 [deleteAccount]가 이 오류를 던진다.
   final Object? deleteAccountError;
 
-  /// 지정하면 [socialLogin]이 이 오류를 던진다.
-  Object? socialLoginError;
+  /// 지정하면 [login]이 이 오류를 던진다.
+  Object? loginError;
 
-  /// 지정하면 [socialSignUp]이 이 오류를 던진다.
-  final Object? socialSignUpError;
+  /// 지정하면 [signUp]이 이 오류를 던진다.
+  final Object? signUpError;
+
+  /// [checkNicknameAvailability]가 돌려줄 값.
+  final bool isNicknameAvailable;
+
+  /// 지정하면 [checkNicknameAvailability]가 이 오류를 던진다.
+  final Object? nicknameAvailabilityError;
 
   /// 지정하면 [deleteAccount]가 호출될 때 실행한다(호출 순서 검증용).
   final void Function()? onDeleteAccount;
@@ -65,17 +73,19 @@ class FakeAuthRepository implements AuthRepository {
   int fetchMeCount = 0;
   int deleteAccountCount = 0;
   int logoutCount = 0;
-  int socialLoginCount = 0;
-  int socialSignUpCount = 0;
+  int loginCount = 0;
+  int signUpCount = 0;
+  int nicknameAvailabilityCount = 0;
+  String? checkedNickname;
   int changeNicknameCount = 0;
-  String? socialLoginCredential;
+  String? loginCredential;
   ({
     String credential,
     String nickname,
     bool serviceTermsAgreed,
     bool privacyPolicyAgreed,
   })?
-  socialSignUpRequest;
+  signUpRequest;
   String? changedNickname;
   ProfileImageFile? replacedProfileImage;
 
@@ -102,6 +112,17 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<bool> checkNicknameAvailability({required String nickname}) async {
+    nicknameAvailabilityCount++;
+    checkedNickname = nickname;
+    final error = nicknameAvailabilityError;
+    if (error != null) {
+      throw error;
+    }
+    return isNicknameAvailable;
+  }
+
+  @override
   Future<void> logout() async {
     logoutCount++;
     await logoutGate?.future;
@@ -112,10 +133,10 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<SignInResult> socialLogin({required String credential}) async {
-    socialLoginCount++;
-    socialLoginCredential = credential;
-    final error = socialLoginError;
+  Future<SignInResult> login({required String credential}) async {
+    loginCount++;
+    loginCredential = credential;
+    final error = loginError;
     if (error != null) {
       throw error;
     }
@@ -123,20 +144,20 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<SignInResult> socialSignUp({
+  Future<SignInResult> signUp({
     required String credential,
     required String nickname,
     required bool serviceTermsAgreed,
     required bool privacyPolicyAgreed,
   }) async {
-    socialSignUpCount++;
-    socialSignUpRequest = (
+    signUpCount++;
+    signUpRequest = (
       credential: credential,
       nickname: nickname,
       serviceTermsAgreed: serviceTermsAgreed,
       privacyPolicyAgreed: privacyPolicyAgreed,
     );
-    final error = socialSignUpError;
+    final error = signUpError;
     if (error != null) {
       throw error;
     }

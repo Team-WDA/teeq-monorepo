@@ -95,6 +95,11 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
       leadingIconAssetPath: AppAssets.googleLogoIcon,
       isLabelBold: true,
     ),
+    LoginType.email => const SettingsRow(
+      label: '이메일로 로그인 중이에요!',
+      leadingIconAssetPath: AppAssets.mailIcon,
+      isLabelBold: true,
+    ),
   };
 
   @override
@@ -138,6 +143,14 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
                 value: member.email,
               ),
               _loginProviderRow(member.loginType),
+              // 비밀번호가 없는 회원(Apple, Google)에게는 숨긴다.
+              if (member.loginType == LoginType.email)
+                SettingsRow(
+                  label: '비밀번호 변경',
+                  leadingIconAssetPath: AppAssets.lockIcon,
+                  showsChevron: true,
+                  onTap: () => context.push(AppRoutes.passwordChange),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.space24),

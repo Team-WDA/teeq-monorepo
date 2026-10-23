@@ -10,7 +10,7 @@ import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
 import 'package:teeq/features/auth/presentation/widgets/signup_consent_checklist.dart';
 
-/// 소셜 로그인 후 가입이 필요한 계정의 약관 동의 화면. 동의를 받아 닉네임 단계로 넘긴다.
+/// 로그인 후 가입이 필요한 계정(Apple, Google, 이메일)의 약관 동의 화면. 동의를 받아 닉네임 단계로 넘긴다.
 /// 뒤로 가면 시작 화면으로 돌아가며, Firebase 로그아웃은 하지 않는다.
 class SignupCompletionConsentScreen extends ConsumerStatefulWidget {
   const SignupCompletionConsentScreen({super.key});

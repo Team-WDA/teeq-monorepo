@@ -16,7 +16,7 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
-import 'package:teeq/features/auth/data/firebase_social_credential_provider.dart';
+import 'package:teeq/features/auth/data/firebase_auth_credential_provider.dart';
 import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
@@ -24,10 +24,12 @@ import 'package:teeq/features/my_page/domain/profile_image_picker.dart';
 import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 
 import 'fake_auth_repository.dart';
 import 'fake_developer_mode_storage.dart';
-import 'fake_social_credential_provider.dart';
+import 'fake_auth_credential_provider.dart';
 import 'fake_token_storage.dart';
 
 /// 호출 순서를 `events`에 남기는 토큰 저장소. 세션이 지워지는 시점을 알 수 있다.
@@ -70,6 +72,15 @@ const memberWithoutEmail = Member(
   loginType: LoginType.google,
 );
 
+/// 이메일로 가입한 회원. 비밀번호 변경 행이 보인다.
+const emailMember = Member(
+  memberId: 'member-1',
+  email: 'user@example.com',
+  nickname: '소연',
+  hasAiCharacter: true,
+  loginType: LoginType.email,
+);
+
 /// 마이 화면과 탈퇴 모달 테스트가 함께 쓰는 실제 `AuthFlow` 구성.
 class MyPageHarness {
   MyPageHarness({
@@ -78,6 +89,7 @@ class MyPageHarness {
     Object? fetchMeError,
     Object? deleteAccountError,
     Object? changeNicknameError,
+    Object? changePasswordError,
     Object? replaceProfileImageError,
     Override? appVersionOverride,
     ProfileImagePicker? profileImagePicker,
@@ -94,6 +106,9 @@ class MyPageHarness {
            ),
            member: fetchedMember ?? member,
          ),
+       ),
+       credentialProvider = FakeAuthCredentialProvider(
+         changePasswordError: changePasswordError,
        ) {
     tokenStorage = RecordingTokenStorage(events);
     container = ProviderContainer(
@@ -103,7 +118,7 @@ class MyPageHarness {
         appVersionOverride ??
             appVersionProvider.overrideWith((ref) async => '0.15.0'),
         authRepositoryProvider.overrideWithValue(repository),
-        socialCredentialProviderProvider.overrideWithValue(socialProvider),
+        authCredentialProviderProvider.overrideWithValue(credentialProvider),
         tokenStorageProvider.overrideWithValue(tokenStorage),
         developerModeStorageProvider.overrideWithValue(developerModeStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
@@ -117,8 +132,7 @@ class MyPageHarness {
   }
 
   final FakeAuthRepository repository;
-  final FakeSocialCredentialProvider socialProvider =
-      FakeSocialCredentialProvider();
+  final FakeAuthCredentialProvider credentialProvider;
   final List<String> events = [];
   final RecordingErrorHandler errorHandler = RecordingErrorHandler();
   final FakeDeveloperModeStorage developerModeStorage =
@@ -152,6 +166,14 @@ class MyPageHarness {
         GoRoute(
           path: AppRoutes.nicknameChange,
           builder: (context, state) => const NicknameChangeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.passwordChange,
+          builder: (context, state) => const PasswordChangeScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.passwordChangeCompletion,
+          builder: (context, state) => const PasswordChangeCompletionScreen(),
         ),
         GoRoute(
           path: AppRoutes.serviceTerms,

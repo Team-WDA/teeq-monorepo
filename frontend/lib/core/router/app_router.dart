@@ -10,6 +10,8 @@ import 'package:teeq/core/router/splash_minimum_display_controller.dart';
 import 'package:teeq/core/ui/layout/main_tab_shell_screen.dart';
 import 'package:teeq/features/app_update/presentation/app_update_controller.dart';
 import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
+import 'package:teeq/features/auth/presentation/email_login_screen.dart';
+import 'package:teeq/features/auth/presentation/email_signup_credentials_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_completion_consent_screen.dart';
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
@@ -26,6 +28,8 @@ import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/presentation/legal_document_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
+import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
@@ -87,6 +91,14 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.welcome,
         builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const EmailLoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signup,
+        builder: (context, state) => const EmailSignupCredentialsScreen(),
       ),
       GoRoute(
         path: AppRoutes.signupNickname,
@@ -155,6 +167,14 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.nicknameChange,
         builder: (context, state) => const NicknameChangeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordChange,
+        builder: (context, state) => const PasswordChangeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.passwordChangeCompletion,
+        builder: (context, state) => const PasswordChangeCompletionScreen(),
       ),
       GoRoute(
         path: AppRoutes.serviceTerms,

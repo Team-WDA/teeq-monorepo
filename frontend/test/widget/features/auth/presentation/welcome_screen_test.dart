@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:teeq/core/design/app_layout.dart';
+import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
@@ -14,10 +18,13 @@ class _RecordingAuthFlow extends Fake implements AuthFlow {
   int appleSignInCount = 0;
   int googleSignInCount = 0;
   Object? failure;
-  SocialSignInOutcome outcome = SocialSignInOutcome.signedIn;
+  SignInOutcome outcome = SignInOutcome.signedIn;
+
+  /// 지정하면 Google 로그인이 이 값이 완료될 때까지 끝나지 않는다.
+  Completer<SignInOutcome>? googleGate;
 
   @override
-  Future<SocialSignInOutcome> signInWithApple() async {
+  Future<SignInOutcome> signInWithApple() async {
     appleSignInCount++;
     final error = failure;
     if (error != null) {
@@ -27,8 +34,12 @@ class _RecordingAuthFlow extends Fake implements AuthFlow {
   }
 
   @override
-  Future<SocialSignInOutcome> signInWithGoogle() async {
+  Future<SignInOutcome> signInWithGoogle() async {
     googleSignInCount++;
+    final gate = googleGate;
+    if (gate != null) {
+      return gate.future;
+    }
     final error = failure;
     if (error != null) {
       throw error;
@@ -97,13 +108,73 @@ void main() {
     expect(find.text('Apple로 시작하기'), findsNothing);
   });
 
-  testWidgets('Google 버튼이 보이고 가입하기·로그인하기 진입은 없다', (tester) async {
+  testWidgets('Google 버튼과 가입하기, 로그인하기 링크가 보인다', (tester) async {
     await tester.pumpWidget(_buildScreen());
     await tester.pumpAndSettle();
 
     expect(find.text('Google로 시작하기'), findsOneWidget);
-    expect(find.text('가입하기'), findsNothing);
-    expect(find.text('이미 계정이 있나요? 로그인하기'), findsNothing);
+    expect(find.text('가입하기'), findsOneWidget);
+    expect(find.text('이미 계정이 있나요? 로그인하기'), findsOneWidget);
+  });
+
+  testWidgets('위에서부터 Apple, Google, 가입하기, 로그인하기 순서이고 간격은 8이다', (tester) async {
+    await _withIosPlatform(() async {
+      await tester.pumpWidget(_buildScreen());
+      await tester.pumpAndSettle();
+
+      final apple = tester.getRect(find.text('Apple로 시작하기'));
+      final google = tester.getRect(find.text('Google로 시작하기'));
+      final signup = tester.getRect(find.text('가입하기'));
+      final login = tester.getRect(find.text('이미 계정이 있나요? 로그인하기'));
+      expect(apple.top, lessThan(google.top));
+      expect(google.top, lessThan(signup.top));
+      expect(signup.top, lessThan(login.top));
+
+      final appleButton = tester.getRect(find.bySemanticsLabel('Apple로 시작하기'));
+      final googleButton = tester.getRect(
+        find.bySemanticsLabel('Google로 시작하기'),
+      );
+      expect(appleButton.height, AppLayout.actionButtonHeight);
+      expect(googleButton.height, AppLayout.actionButtonHeight);
+      expect(googleButton.top - appleButton.bottom, AppSpacing.space8);
+    });
+  });
+
+  testWidgets('가입하기와 로그인하기는 각 화면을 push한다', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
+        GoRoute(
+          path: AppRoutes.signup,
+          builder: (context, state) => const Text('가입 스텁'),
+        ),
+        GoRoute(
+          path: AppRoutes.login,
+          builder: (context, state) => const Text('로그인 스텁'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authFlowProvider.overrideWithValue(_RecordingAuthFlow()),
+          errorHandlerProvider.overrideWithValue(_RecordingErrorHandler()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('가입하기'));
+    await tester.pumpAndSettle();
+    expect(find.text('가입 스텁'), findsOneWidget);
+
+    router.pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('이미 계정이 있나요? 로그인하기'));
+    await tester.pumpAndSettle();
+    expect(find.text('로그인 스텁'), findsOneWidget);
   });
 
   testWidgets('320x568, 글자 1.2배, iOS에서도 오버플로가 없다', (tester) async {
@@ -163,7 +234,7 @@ void main() {
 
   testWidgets('가입이 필요한 계정이면 약관 화면으로 이동한다', (tester) async {
     final authFlow = _RecordingAuthFlow()
-      ..outcome = SocialSignInOutcome.signupRequired;
+      ..outcome = SignInOutcome.signupRequired;
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
@@ -191,9 +262,50 @@ void main() {
     expect(find.text('약관 스텁'), findsOneWidget);
   });
 
+  testWidgets('소셜 로그인이 진행 중이면 가입하기와 로그인하기는 이동하지 않는다', (tester) async {
+    final gate = Completer<SignInOutcome>();
+    final authFlow = _RecordingAuthFlow()..googleGate = gate;
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
+        GoRoute(
+          path: AppRoutes.signup,
+          builder: (context, state) => const Text('가입 스텁'),
+        ),
+        GoRoute(
+          path: AppRoutes.login,
+          builder: (context, state) => const Text('로그인 스텁'),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authFlowProvider.overrideWithValue(authFlow),
+          errorHandlerProvider.overrideWithValue(_RecordingErrorHandler()),
+        ],
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Google로 시작하기'));
+    await tester.pump();
+    await tester.tap(find.text('가입하기'));
+    await tester.pump();
+    await tester.tap(find.text('이미 계정이 있나요? 로그인하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('가입 스텁'), findsNothing);
+    expect(find.text('로그인 스텁'), findsNothing);
+
+    gate.complete(SignInOutcome.signedIn);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('취소하면 화면에 머물고 오류도 없다', (tester) async {
-    final authFlow = _RecordingAuthFlow()
-      ..outcome = SocialSignInOutcome.cancelled;
+    final authFlow = _RecordingAuthFlow()..outcome = SignInOutcome.cancelled;
     final errorHandler = _RecordingErrorHandler();
     await tester.pumpWidget(
       _buildScreen(authFlow: authFlow, errorHandler: errorHandler),

@@ -134,7 +134,7 @@ AiCharacter _namedCharacter(String name) => AiCharacter(
 
 class _FixedSignupDraftController extends SignupDraftController {
   @override
-  SignupDraft build() => const SignupDraft(
+  SignupDraft build() => SignupDraft.empty.copyWith(
     isServiceTermsAgreed: true,
     isPrivacyPolicyAgreed: true,
   );

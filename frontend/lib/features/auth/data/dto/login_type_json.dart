@@ -4,5 +4,6 @@ import 'package:teeq/core/auth/login_type.dart';
 LoginType loginTypeFromJson(String value) => switch (value) {
   'APPLE' => LoginType.apple,
   'GOOGLE' => LoginType.google,
+  'EMAIL' => LoginType.email,
   _ => throw FormatException('알 수 없는 로그인 방식: $value'),
 };

@@ -10,6 +10,18 @@ const String networkErrorMessage = '네트워크 연결을 확인하고 다시 �
 const String appleConnectionRevokeFailedMessage =
     'Apple 연동을 해제하지 못했어요. 잠시 후 다시 시도해 주세요.';
 
+/// 이메일 또는 비밀번호가 틀렸을 때 쓰는 사용자 문구.
+const String invalidCredentialsMessage = '이메일 또는 비밀번호가 올바르지 않아요.';
+
+/// 이미 가입된 이메일로 가입하려 했을 때 쓰는 사용자 문구.
+const String emailAlreadyInUseMessage = '이미 사용 중인 이메일이에요.';
+
+/// 현재 비밀번호가 틀렸을 때 쓰는 사용자 문구.
+const String invalidCurrentPasswordMessage = '현재 비밀번호가 올바르지 않아요.';
+
+/// 로그인 시도가 너무 많아 잠시 막혔을 때 쓰는 사용자 문구.
+const String tooManyAttemptsMessage = '잠시 후 다시 시도해 주세요.';
+
 /// [ErrorCode]를 사용자에게 보여 줄 한국어 문구로 바꾸는 중앙 매핑.
 /// 서버가 보낸 `errorMessage`는 어디에서도 표시하지 않는다.
 extension ErrorCodeUserMessage on ErrorCode {
@@ -26,16 +38,15 @@ extension ErrorCodeUserMessage on ErrorCode {
     ErrorCode.invalidRefreshToken => '다시 로그인해 주세요.',
     ErrorCode.accessDenied => '접근 권한이 없어요.',
     ErrorCode.duplicateNickname => '이미 사용 중인 닉네임이에요.',
-    ErrorCode.invalidCurrentPassword => '현재 비밀번호가 올바르지 않아요.',
+    ErrorCode.invalidCurrentPassword => invalidCurrentPasswordMessage,
     ErrorCode.memberNotFound => '회원 정보를 찾을 수 없어요.',
     ErrorCode.adminNotFound => '관리자를 찾을 수 없어요.',
     ErrorCode.duplicateAdminUsername => '이미 사용 중인 관리자 아이디예요.',
     ErrorCode.lastSuperAdminProtected => '마지막 최고 관리자는 바꿀 수 없어요.',
     ErrorCode.adminSelfChangeForbidden => '본인 계정은 여기서 바꿀 수 없어요.',
-    ErrorCode.socialTokenInvalid => '소셜 로그인에 실패했어요. 다시 시도해 주세요.',
-    ErrorCode.socialServerUnavailable =>
-      '소셜 로그인 서버와 연결할 수 없어요. 잠시 후 다시 시도해 주세요.',
-    ErrorCode.socialSignupRequired => '소셜 로그인을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.',
+    ErrorCode.authTokenInvalid => '로그인에 실패했어요. 다시 시도해 주세요.',
+    ErrorCode.authServerUnavailable => '로그인 서버와 연결할 수 없어요. 잠시 후 다시 시도해 주세요.',
+    ErrorCode.authSignupRequired => '로그인을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.',
     ErrorCode.callLimitInsufficient => '오늘 쓸 수 있는 통화 시간이 부족해요.',
     ErrorCode.callServiceLimitExceeded => '지금은 통화를 이용할 수 없어요. 잠시 후 다시 시도해 주세요.',
     ErrorCode.callBonusNotFound => '추가 통화 시간을 찾을 수 없어요.',

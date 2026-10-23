@@ -64,9 +64,16 @@ void main() {
     expect(member.email, isNull);
   });
 
+  test('emailLoginType_mapsToEmail', () {
+    final result = AuthResponseDto.fromJson(_authJson(loginType: 'EMAIL'))
+        .toSignInResult();
+
+    expect(result.member.loginType, LoginType.email);
+  });
+
   test('unknownLoginType_throws', () {
     expect(
-      () => AuthResponseDto.fromJson(_authJson(loginType: 'EMAIL')),
+      () => AuthResponseDto.fromJson(_authJson(loginType: 'KAKAO')),
       throwsA(anything),
     );
     expect(
@@ -74,7 +81,7 @@ void main() {
         'memberId': 'member-1',
         'nickname': '티큐',
         'hasAiCharacter': false,
-        'loginType': 'EMAIL',
+        'loginType': 'KAKAO',
       }),
       throwsA(anything),
     );
