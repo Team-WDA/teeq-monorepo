@@ -241,4 +241,31 @@ void main() {
     gate.complete();
     await tester.pumpAndSettle();
   });
+
+  testWidgets('screen guard blocks re-entry when callback is invoked', (
+    tester,
+  ) async {
+    final harness = MyPageHarness(member: emailMember);
+    final gate = Completer<void>();
+    harness.credentialProvider.changePasswordGate = gate;
+    await _openPasswordChange(tester, harness);
+
+    await _enterPasswords(tester);
+    await tester.tap(find.text('비밀번호 변경').last);
+    await tester.pump();
+    // 로딩 버튼은 탭을 무시하므로 화면의 재진입 방지를 보려면 콜백을 직접 호출한다.
+    final onPressed = tester
+        .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+        .onPressed!;
+    onPressed();
+    await tester.pump();
+
+    expect(
+      harness.credentialProvider.calls.where((c) => c == 'changeEmailPassword'),
+      hasLength(1),
+    );
+
+    gate.complete();
+    await tester.pumpAndSettle();
+  });
 }
