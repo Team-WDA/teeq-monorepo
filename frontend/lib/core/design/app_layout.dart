@@ -11,6 +11,7 @@ abstract final class AppLayout {
   static const double checkboxSize = 24;
   static const double iconSize = 24;
   static const double smallIconSize = 20;
+  static const double buttonLoadingIndicatorSize = 20;
   static const double minimumTapTarget = 48;
   static const double stepCardHeight = 69.4;
   static const double stepProgressBarHeight = 5.246;

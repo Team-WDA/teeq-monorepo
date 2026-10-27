@@ -4,30 +4,35 @@ import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_radius.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 
 /// 로그아웃·회원 탈퇴처럼 되돌리기 어려운 동작에 쓰는 붉은 계열의 연한 채움 버튼.
 /// 눈에 보이는 높이는 44이고, 터치 영역은 최소 48이 되도록 위아래에 투명 여백을 둔다.
+/// [isLoading]이 true이면 글자 대신 스피너를 보이고 탭을 무시한다.
 class DestructiveTonalButton extends StatelessWidget {
   const DestructiveTonalButton({
     super.key,
     required this.label,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final tapCallback = isLoading ? null : onPressed;
     return Semantics(
       button: true,
-      enabled: onPressed != null,
+      enabled: !isLoading && onPressed != null,
       excludeSemantics: true,
-      label: label,
-      onTap: onPressed,
+      label: isLoading ? buttonLoadingSemanticsLabel : label,
+      onTap: tapCallback,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
+        onTap: tapCallback,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             minHeight: AppLayout.minimumTapTarget,
@@ -43,12 +48,16 @@ class DestructiveTonalButton extends StatelessWidget {
                 color: AppColors.destructiveSurface,
                 borderRadius: AppRadius.borderRadiusMd,
               ),
-              child: Text(
-                label,
-                style: AppTextStyles.body16Medium.copyWith(
-                  color: AppColors.destructiveText,
-                ),
-              ),
+              child: isLoading
+                  ? const ButtonLoadingIndicator(
+                      color: AppColors.destructiveText,
+                    )
+                  : Text(
+                      label,
+                      style: AppTextStyles.body16Medium.copyWith(
+                        color: AppColors.destructiveText,
+                      ),
+                    ),
             ),
           ),
         ),
