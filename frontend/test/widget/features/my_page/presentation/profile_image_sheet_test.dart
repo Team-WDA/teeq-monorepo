@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/features/my_page/domain/profile_image_rule.dart';
@@ -113,11 +115,10 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(find.text('사진을 올리고 있어'), findsOneWidget);
-      expect(find.text('사진 선택하기'), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('사진을 올리고 있어'), findsNothing);
+      expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
 
-      await tester.tap(find.text('사진을 올리고 있어'));
+      await tester.tap(find.byType(PrimaryFilledButton), warnIfMissed: false);
       await tester.tap(find.text('취소'));
       await tester.tap(find.bySemanticsLabel('닫기'), warnIfMissed: false);
       await tester.pump();

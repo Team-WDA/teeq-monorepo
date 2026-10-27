@@ -34,17 +34,13 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
 
   String get _input => _nicknameController.text;
 
-  bool get _canSubmit =>
-      !_isRequestInProgress &&
-      NicknameInputRule.isSubmittable(
-        _input,
-        ref.watch(
-              currentMemberControllerProvider.select(
-                (member) => member?.nickname,
-              ),
-            ) ??
-            '',
-      );
+  bool get _canSubmit => NicknameInputRule.isSubmittable(
+    _input,
+    ref.watch(
+          currentMemberControllerProvider.select((member) => member?.nickname),
+        ) ??
+        '',
+  );
 
   @override
   void initState() {
@@ -172,6 +168,7 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
                   ),
                   child: PrimaryFilledButton(
                     label: '저장하기',
+                    isLoading: _isRequestInProgress,
                     onPressed: _canSubmit ? _submit : null,
                   ),
                 ),

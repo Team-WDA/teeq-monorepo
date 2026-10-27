@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
 
 import '../../../../support/my_page_harness.dart';
@@ -174,10 +175,16 @@ void main() {
     await _enterNickname(tester, '새닉네임');
     await tester.tap(find.text('저장하기'));
     await tester.pump();
-    await tester.tap(find.text('저장하기'), warnIfMissed: false);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(find.byType(PrimaryFilledButton), warnIfMissed: false);
     await tester.pump();
 
-    expect(_isSaveEnabled(tester), isFalse);
     expect(harness.repository.changeNicknameCount, 1);
 
     gate.complete();

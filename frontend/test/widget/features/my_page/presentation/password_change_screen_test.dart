@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
 import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
 
@@ -222,8 +223,14 @@ void main() {
     await _enterPasswords(tester);
     await tester.tap(find.text('비밀번호 변경').last);
     await tester.pump();
-    expect(_isSubmitEnabled(tester), isFalse);
-    await tester.tap(find.text('비밀번호 변경').last, warnIfMissed: false);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(find.byType(PrimaryFilledButton), warnIfMissed: false);
     await tester.pump();
 
     expect(

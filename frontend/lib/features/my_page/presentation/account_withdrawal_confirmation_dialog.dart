@@ -96,7 +96,8 @@ class _AccountWithdrawalConfirmationDialogState
               const SizedBox(height: AppSpacing.space16),
               PrimaryFilledButton(
                 label: '탈퇴하기',
-                onPressed: _isRequestInProgress ? null : _withdraw,
+                isLoading: _isRequestInProgress,
+                onPressed: _withdraw,
               ),
             ],
           ),

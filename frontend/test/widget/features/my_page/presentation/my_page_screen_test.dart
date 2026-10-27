@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/core/ui/button/destructive_tonal_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
@@ -148,7 +150,12 @@ void main() {
 
     final logoutButton = find.text('로그아웃');
     await tester.tap(logoutButton);
-    await tester.tap(logoutButton);
+    await tester.pump();
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(
+      find.byType(DestructiveTonalButton).first,
+      warnIfMissed: false,
+    );
 
     expect(harness.repository.logoutCount, 1);
     harness.repository.logoutGate!.complete();

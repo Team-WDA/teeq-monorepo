@@ -142,8 +142,9 @@ class _ProfileImageSheetContentState
                 ],
                 const SizedBox(height: AppSpacing.space16),
                 PrimaryFilledButton(
-                  label: _isUploading ? '사진을 올리고 있어' : '사진 선택하기',
-                  onPressed: _isUploading ? null : _selectPhoto,
+                  label: '사진 선택하기',
+                  isLoading: _isUploading,
+                  onPressed: _selectPhoto,
                 ),
                 const SizedBox(height: AppSpacing.space8),
                 ProfileImageSheetCancelButton(
