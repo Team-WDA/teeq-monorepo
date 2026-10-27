@@ -14,6 +14,7 @@ import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_back_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/feedback/data/feedback_repository_impl.dart';
 import 'package:teeq/features/feedback/domain/awkward_moment.dart';
 import 'package:teeq/features/feedback/domain/detailed_feedback_question.dart';
@@ -378,7 +379,8 @@ void main() {
 
       await tester.tap(find.text('의견 보내기'));
       await tester.pump();
-      await tester.tap(find.text('의견 보내기'));
+      expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+      await tester.tap(find.byType(PrimaryFilledButton));
       await tester.pump();
 
       expect(repository.submitDetailedCalls, hasLength(1));

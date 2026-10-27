@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/bug_report/data/bug_report_repository_impl.dart';
@@ -103,8 +104,14 @@ void main() {
     await tester.tap(find.text('제보하기'));
     await tester.pump();
 
-    expect(_isSubmitEnabled(tester), isFalse);
-    await tester.tap(find.text('제보하기'));
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    await tester.tap(find.byType(PrimaryFilledButton));
     await tester.pump();
     expect(harness.repository.submissions, hasLength(1));
 

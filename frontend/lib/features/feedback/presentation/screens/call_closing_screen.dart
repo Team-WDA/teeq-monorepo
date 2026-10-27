@@ -109,10 +109,9 @@ class _CallClosingScreenState extends ConsumerState<CallClosingScreen> {
         builder: (context, characterName) => BottomActionScreenLayout(
           bottomAction: PrimaryFilledButton(
             label: '의견 남기기',
-            // 조회 중에는 비활성으로 두어 같은 요청이 겹치지 않게 한다.
-            onPressed: isRequestInProgress
-                ? null
-                : () => unawaited(_openRequiredFeedback(characterName)),
+            onPressed: () => unawaited(_openRequiredFeedback(characterName)),
+            // 조회 중에는 로딩으로 두어 같은 요청이 겹치지 않게 한다.
+            isLoading: isRequestInProgress,
           ),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

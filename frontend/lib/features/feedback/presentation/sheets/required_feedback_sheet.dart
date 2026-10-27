@@ -82,7 +82,6 @@ class _RequiredFeedbackSheetContent extends ConsumerWidget {
         answers.isComplete(
           previousCallRecallRequired: previousCallRecallRequired,
         ) &&
-        !state.isRequestInProgress &&
         !state.requiredSubmitted;
     // 문항 번호는 보이는 순서대로 붙는다.
     var questionNumber = 1;
@@ -169,6 +168,7 @@ class _RequiredFeedbackSheetContent extends ConsumerWidget {
               onPressed: canSubmit
                   ? () => unawaited(_submit(context, ref))
                   : null,
+              isLoading: state.isRequestInProgress,
             ),
           ),
         ],

@@ -16,6 +16,7 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/bottom_sheet/app_bottom_sheet.dart';
 import 'package:teeq/core/ui/button/app_back_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/feedback/data/feedback_repository_impl.dart';
 import 'package:teeq/features/feedback/domain/awkward_moment.dart';
 import 'package:teeq/features/feedback/domain/feedback_status.dart';
@@ -349,7 +350,8 @@ void main() {
 
       await tester.tap(find.text('의견 남기기'));
       await tester.pump();
-      await tester.tap(find.text('의견 남기기'));
+      expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+      await tester.tap(find.byType(PrimaryFilledButton));
       await tester.pump();
 
       expect(repository.fetchStatusCount, 1);
@@ -562,7 +564,16 @@ void main() {
 
       await tester.tap(find.text('의견 보내기'));
       await tester.pump();
-      await tester.tap(find.text('의견 보내기'));
+      // 뒤쪽 닫힘 화면 버튼도 같은 요청 상태를 따르므로 맨 위 시트 버튼을 쓴다.
+      final sheetButton = find.byType(PrimaryFilledButton).last;
+      expect(
+        find.descendant(
+          of: sheetButton,
+          matching: find.byType(ButtonLoadingIndicator),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(sheetButton);
       await tester.pump();
 
       expect(repository.submitRequiredCalls, hasLength(1));
