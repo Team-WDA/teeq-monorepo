@@ -35,8 +35,11 @@ class _SignupCompletionConsentScreenState
       return;
     }
     _isDetailRouteOpen = true;
-    await context.push(path);
-    _isDetailRouteOpen = false;
+    try {
+      await context.push(path);
+    } finally {
+      _isDetailRouteOpen = false;
+    }
   }
 
   Future<void> _proceed() async {
