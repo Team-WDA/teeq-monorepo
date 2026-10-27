@@ -417,10 +417,12 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels,
-      0,
-    );
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .position;
+    // 내용이 뷰포트를 넘쳐야 스크롤 제거 단언이 의미가 있다.
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(position.pixels, 0);
     expect(tester.takeException(), isNull);
   });
 }
