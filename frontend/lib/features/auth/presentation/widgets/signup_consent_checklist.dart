@@ -13,12 +13,16 @@ class SignupConsentChecklist extends StatelessWidget {
     required this.isPrivacyPolicyAgreed,
     required this.onServiceTermsChanged,
     required this.onPrivacyPolicyChanged,
+    required this.onServiceTermsDetailTap,
+    required this.onPrivacyPolicyDetailTap,
   });
 
   final bool isServiceTermsAgreed;
   final bool isPrivacyPolicyAgreed;
   final ValueChanged<bool> onServiceTermsChanged;
   final ValueChanged<bool> onPrivacyPolicyChanged;
+  final VoidCallback onServiceTermsDetailTap;
+  final VoidCallback onPrivacyPolicyDetailTap;
 
   bool get _isAllAgreed => isServiceTermsAgreed && isPrivacyPolicyAgreed;
 
@@ -46,6 +50,7 @@ class SignupConsentChecklist extends StatelessWidget {
           ),
           isChecked: isServiceTermsAgreed,
           onChanged: onServiceTermsChanged,
+          onLabelTap: onServiceTermsDetailTap,
         ),
         const SizedBox(height: AppSpacing.space8),
         _ConsentRow(
@@ -55,6 +60,7 @@ class SignupConsentChecklist extends StatelessWidget {
           ),
           isChecked: isPrivacyPolicyAgreed,
           onChanged: onPrivacyPolicyChanged,
+          onLabelTap: onPrivacyPolicyDetailTap,
         ),
         const SizedBox(height: AppSpacing.space8),
         Text(
@@ -68,22 +74,78 @@ class SignupConsentChecklist extends StatelessWidget {
   }
 }
 
-/// 체크박스와 문구를 한 탭 영역으로 묶은 동의 한 줄.
+/// 동의 한 줄. [onLabelTap]이 없으면 줄 전체가 토글 영역이고,
+/// 있으면 체크박스만 토글하고 문구 영역은 상세 보기 탭 영역이다.
 class _ConsentRow extends StatelessWidget {
   const _ConsentRow({
     required this.label,
     required this.labelStyle,
     required this.isChecked,
     required this.onChanged,
+    this.onLabelTap,
   });
 
   final String label;
   final TextStyle labelStyle;
   final bool isChecked;
   final ValueChanged<bool> onChanged;
+  final VoidCallback? onLabelTap;
 
   @override
   Widget build(BuildContext context) {
+    final onLabelTap = this.onLabelTap;
+    if (onLabelTap == null) {
+      return _buildWholeRowToggle();
+    }
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: AppLayout.consentRowHeight),
+      child: Row(
+        children: [
+          Semantics(
+            button: true,
+            checked: isChecked,
+            label: label,
+            onTap: () => onChanged(!isChecked),
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onChanged(!isChecked),
+              child: IgnorePointer(
+                child: RoundedSquareCheckbox(
+                  isChecked: isChecked,
+                  onChanged: (_) {},
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.space10),
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: '$label 상세 보기',
+              onTap: onLabelTap,
+              excludeSemantics: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onLabelTap,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppLayout.consentRowHeight,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(label, style: labelStyle),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWholeRowToggle() {
     return Semantics(
       button: true,
       checked: isChecked,

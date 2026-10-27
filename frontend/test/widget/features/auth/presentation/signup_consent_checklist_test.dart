@@ -7,11 +7,16 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/ui/checkbox/rounded_square_checkbox.dart';
 import 'package:teeq/features/auth/presentation/widgets/signup_consent_checklist.dart';
 
+int _serviceTermsDetailTapCount = 0;
+int _privacyPolicyDetailTapCount = 0;
+
 Future<(List<bool>, List<bool>)> _pump(
   WidgetTester tester, {
   required bool isServiceTermsAgreed,
   required bool isPrivacyPolicyAgreed,
 }) async {
+  _serviceTermsDetailTapCount = 0;
+  _privacyPolicyDetailTapCount = 0;
   final serviceTermsChanges = <bool>[];
   final privacyPolicyChanges = <bool>[];
   await tester.pumpWidget(
@@ -23,6 +28,8 @@ Future<(List<bool>, List<bool>)> _pump(
           isPrivacyPolicyAgreed: isPrivacyPolicyAgreed,
           onServiceTermsChanged: serviceTermsChanges.add,
           onPrivacyPolicyChanged: privacyPolicyChanges.add,
+          onServiceTermsDetailTap: () => _serviceTermsDetailTapCount++,
+          onPrivacyPolicyDetailTap: () => _privacyPolicyDetailTapCount++,
         ),
       ),
     ),
@@ -78,7 +85,35 @@ void main() {
     expect(privacy, [true]);
   });
 
-  testWidgets('서비스 이용약관 행을 탭하면 해당 콜백만 불린다', (tester) async {
+  testWidgets('서비스 이용약관 체크박스를 탭하면 체크 콜백만 불린다', (tester) async {
+    final (service, privacy) = await _pump(
+      tester,
+      isServiceTermsAgreed: false,
+      isPrivacyPolicyAgreed: false,
+    );
+
+    await tester.tap(find.byType(RoundedSquareCheckbox).at(1));
+
+    expect(service, [true]);
+    expect(privacy, isEmpty);
+    expect(_serviceTermsDetailTapCount, 0);
+  });
+
+  testWidgets('개인정보 체크박스를 탭하면 체크 콜백만 불린다', (tester) async {
+    final (service, privacy) = await _pump(
+      tester,
+      isServiceTermsAgreed: false,
+      isPrivacyPolicyAgreed: true,
+    );
+
+    await tester.tap(find.byType(RoundedSquareCheckbox).at(2));
+
+    expect(service, isEmpty);
+    expect(privacy, [false]);
+    expect(_privacyPolicyDetailTapCount, 0);
+  });
+
+  testWidgets('서비스 이용약관 문구를 탭하면 상세 콜백만 불린다', (tester) async {
     final (service, privacy) = await _pump(
       tester,
       isServiceTermsAgreed: false,
@@ -87,21 +122,40 @@ void main() {
 
     await tester.tap(find.text('[필수] 서비스 이용약관 동의'));
 
-    expect(service, [true]);
+    expect(_serviceTermsDetailTapCount, 1);
+    expect(_privacyPolicyDetailTapCount, 0);
+    expect(service, isEmpty);
     expect(privacy, isEmpty);
   });
 
-  testWidgets('개인정보 행을 탭하면 해당 콜백만 불린다', (tester) async {
+  testWidgets('개인정보 문구를 탭하면 상세 콜백만 불린다', (tester) async {
     final (service, privacy) = await _pump(
       tester,
       isServiceTermsAgreed: false,
-      isPrivacyPolicyAgreed: true,
+      isPrivacyPolicyAgreed: false,
     );
 
     await tester.tap(find.text('[필수] 개인정보 수집·이용 동의'));
 
+    expect(_privacyPolicyDetailTapCount, 1);
+    expect(_serviceTermsDetailTapCount, 0);
     expect(service, isEmpty);
-    expect(privacy, [false]);
+    expect(privacy, isEmpty);
+  });
+
+  testWidgets('약관 문구는 밑줄 스타일을 유지한다', (tester) async {
+    await _pump(
+      tester,
+      isServiceTermsAgreed: false,
+      isPrivacyPolicyAgreed: false,
+    );
+
+    for (final label in ['[필수] 서비스 이용약관 동의', '[필수] 개인정보 수집·이용 동의']) {
+      expect(
+        tester.widget<Text>(find.text(label)).style?.decoration,
+        TextDecoration.underline,
+      );
+    }
   });
 
   testWidgets('안내 문구를 보여 준다', (tester) async {
