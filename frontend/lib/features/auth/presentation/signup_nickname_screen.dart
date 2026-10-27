@@ -34,8 +34,7 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
   bool _isRequestInProgress = false;
 
   bool get _canSubmit =>
-      AuthInputValidator.isNicknameValid(_nicknameController.text) &&
-      !_isRequestInProgress;
+      AuthInputValidator.isNicknameValid(_nicknameController.text);
 
   @override
   void initState() {
@@ -137,6 +136,7 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
       bottomAction: PrimaryFilledButton(
         label: '다음',
         onPressed: _canSubmit ? _submit : null,
+        isLoading: _isRequestInProgress,
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/signup_draft.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
@@ -133,12 +134,18 @@ void main() {
     final (authFlow, _) = await _pumpScreen(tester);
     await _enterNickname(tester, '티큐');
 
-    await tester.tap(find.text('다음'));
-    await tester.tap(find.text('다음'));
+    await tester.tap(find.byType(PrimaryFilledButton));
+    await tester.tap(find.byType(PrimaryFilledButton));
     await tester.pump();
 
     expect(authFlow.requestedNicknames, ['티큐']);
-    expect(_nextButtonOnPressed(tester), isNull);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
   });
 
   testWidgets('처음부터 안내 문구가 보인다', (tester) async {

@@ -8,6 +8,7 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
@@ -156,12 +157,18 @@ void main() {
     );
     await _enterName(tester, '티티');
 
-    await tester.tap(find.text('이 이름으로 시작하기'));
-    await tester.tap(find.text('이 이름으로 시작하기'));
+    await tester.tap(find.byType(PrimaryFilledButton));
+    await tester.tap(find.byType(PrimaryFilledButton));
     await tester.pump();
 
     expect(harness.repository.confirmedNames, ['티티']);
-    expect(_startButtonOnPressed(tester), isNull);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
 
     gate.complete();
