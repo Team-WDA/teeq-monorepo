@@ -76,4 +76,38 @@ void main() {
     await tester.tap(find.byType(AppBackButton));
     expect(backPressedCount, 1);
   });
+
+  testWidgets('isContentScrollable이 false이면 본문이 스크롤되지 않고 기본값에서는 스크롤된다', (
+    tester,
+  ) async {
+    Future<double> dragAndReadScrollPixels({required bool? scrollable}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: scrollable == null
+              ? const BottomActionScreenLayout(
+                  content: SizedBox(height: 2000),
+                  bottomAction: SizedBox(height: 40),
+                )
+              : BottomActionScreenLayout(
+                  isContentScrollable: scrollable,
+                  content: const SizedBox(height: 2000),
+                  bottomAction: const SizedBox(height: 40),
+                ),
+        ),
+      );
+      await tester.drag(
+        find.byType(SingleChildScrollView),
+        const Offset(0, -300),
+      );
+      await tester.pump();
+      return tester
+          .state<ScrollableState>(find.byType(Scrollable))
+          .position
+          .pixels;
+    }
+
+    expect(await dragAndReadScrollPixels(scrollable: false), 0);
+    expect(await dragAndReadScrollPixels(scrollable: null), greaterThan(0));
+  });
 }

@@ -318,4 +318,24 @@ void main() {
     expect(find.byType(WelcomeScreen), findsOneWidget);
     expect(errorHandler.handledErrors, isEmpty);
   });
+
+  testWidgets('본문을 드래그해도 스크롤되지 않고 320x480에서 오버플로가 없다', (tester) async {
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -300),
+    );
+    await tester.pump();
+
+    expect(
+      tester.state<ScrollableState>(find.byType(Scrollable)).position.pixels,
+      0,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

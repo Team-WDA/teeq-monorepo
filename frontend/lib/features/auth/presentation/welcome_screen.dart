@@ -35,6 +35,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   Widget build(BuildContext context) {
     final showsAppleButton = defaultTargetPlatform == TargetPlatform.iOS;
     return BottomActionScreenLayout(
+      isContentScrollable: false,
       content: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
