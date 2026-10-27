@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:teeq/features/my_page/domain/nickname_input_rule.dart';
+import 'package:teeq/features/auth/domain/nickname_input_rule.dart';
 
 void main() {
   group('NicknameInputRule.issueOf', () {
@@ -41,15 +41,29 @@ void main() {
       );
     });
 
-    test('공백은 허용되지 않는 문자다', () {
+    test('공백만 있거나 공백이 섞이면 whitespace', () {
+      for (final input in [' ', '소 연', '소연 ', '소연 이', ' 소연']) {
+        expect(
+          NicknameInputRule.issueOf(input),
+          NicknameInputIssue.whitespace,
+          reason: input,
+        );
+      }
+    });
+
+    test('공백이 섞여도 다른 허용 외 문자가 있으면 invalidCharacter가 우선한다', () {
       expect(
-        NicknameInputRule.issueOf('소연 이'),
+        NicknameInputRule.issueOf('소연A1!'),
         NicknameInputIssue.invalidCharacter,
       );
       expect(
-        NicknameInputRule.issueOf(' 소연'),
+        NicknameInputRule.issueOf('A b'),
         NicknameInputIssue.invalidCharacter,
       );
+    });
+
+    test('공백 위반이 길이 위반보다 우선한다', () {
+      expect(NicknameInputRule.issueOf('가 '), NicknameInputIssue.whitespace);
     });
 
     test('허용 문자 위반이 길이 위반보다 우선한다', () {
