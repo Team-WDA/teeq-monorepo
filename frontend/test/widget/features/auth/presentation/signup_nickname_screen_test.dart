@@ -50,6 +50,8 @@ class _FixedSignupDraftController extends SignupDraftController {
   );
 }
 
+const String _guidanceText = '한글만 2~10자 · 공백 없이 입력해줘';
+
 late ProviderContainer _container;
 
 Future<(_RecordingAuthFlow, _RecordingErrorHandler)> _pumpScreen(
@@ -127,9 +129,9 @@ void main() {
     }
   });
 
-  testWidgets('연속 탭해도 요청은 한 번이고 닉네임은 trim되어 전달된다', (tester) async {
+  testWidgets('연속 탭해도 요청은 한 번이다', (tester) async {
     final (authFlow, _) = await _pumpScreen(tester);
-    await _enterNickname(tester, ' 티큐 ');
+    await _enterNickname(tester, '티큐');
 
     await tester.tap(find.text('다음'));
     await tester.tap(find.text('다음'));
@@ -137,6 +139,60 @@ void main() {
 
     expect(authFlow.requestedNicknames, ['티큐']);
     expect(_nextButtonOnPressed(tester), isNull);
+  });
+
+  testWidgets('처음부터 안내 문구가 보인다', (tester) async {
+    await _pumpScreen(tester);
+
+    expect(find.text(_guidanceText), findsOneWidget);
+  });
+
+  testWidgets('1자는 짧다는 오류를 보이고 다음이 비활성이다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '소');
+
+    expect(find.text('2자 이상으로 입력해줘'), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNull);
+  });
+
+  testWidgets('11자는 길다는 오류를 보인다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '가나다라마바사아자차카');
+
+    expect(find.text('10자 이하로 입력해줘'), findsOneWidget);
+  });
+
+  testWidgets('한글이 아닌 문자는 한글만 입력하라는 오류를 보인다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '소연A1!');
+
+    expect(find.text('한글만 입력할 수 있어. 영문,숫자,특수문자는 빼줘.'), findsOneWidget);
+  });
+
+  testWidgets('중간 공백은 공백 없이 입력하라는 오류를 보인다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '소 연');
+
+    expect(find.text('공백 없이 입력해줘'), findsOneWidget);
+  });
+
+  testWidgets('끝 공백도 오류이고 다음이 비활성이다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '소연 ');
+
+    expect(find.text('공백 없이 입력해줘'), findsOneWidget);
+    expect(_nextButtonOnPressed(tester), isNull);
+  });
+
+  testWidgets('유효한 닉네임이면 오류가 없고 다음이 활성이다', (tester) async {
+    await _pumpScreen(tester);
+    await _enterNickname(tester, '소연');
+
+    expect(find.text('2자 이상으로 입력해줘'), findsNothing);
+    expect(find.text('10자 이하로 입력해줘'), findsNothing);
+    expect(find.text('공백 없이 입력해줘'), findsNothing);
+    expect(find.text('한글만 입력할 수 있어. 영문,숫자,특수문자는 빼줘.'), findsNothing);
+    expect(_nextButtonOnPressed(tester), isNotNull);
   });
 
   testWidgets('성공하면 온보딩으로 이동한다', (tester) async {
