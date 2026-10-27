@@ -113,6 +113,23 @@ void main() {
     expect(_privacyPolicyDetailTapCount, 0);
   });
 
+  testWidgets('체크박스 오른쪽 여백과 위아래 행 영역을 탭해도 체크 콜백만 불린다', (tester) async {
+    final (service, privacy) = await _pump(
+      tester,
+      isServiceTermsAgreed: false,
+      isPrivacyPolicyAgreed: false,
+    );
+    final box = tester.getRect(find.byType(RoundedSquareCheckbox).at(1));
+
+    await tester.tapAt(Offset(box.right + 5, box.center.dy));
+    await tester.tapAt(Offset(box.center.dx, box.top - 6));
+    await tester.tapAt(Offset(box.center.dx, box.bottom + 6));
+
+    expect(service, [true, true, true]);
+    expect(privacy, isEmpty);
+    expect(_serviceTermsDetailTapCount, 0);
+  });
+
   testWidgets('서비스 이용약관 문구를 탭하면 상세 콜백만 불린다', (tester) async {
     final (service, privacy) = await _pump(
       tester,

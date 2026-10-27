@@ -110,15 +110,24 @@ class _ConsentRow extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => onChanged(!isChecked),
-              child: IgnorePointer(
-                child: RoundedSquareCheckbox(
-                  isChecked: isChecked,
-                  onChanged: (_) {},
+              // 체크박스와 오른쪽 여백까지 행 높이 전체를 토글 영역으로 쓴다.
+              child: SizedBox(
+                height: AppLayout.consentRowHeight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: AppSpacing.space10),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: IgnorePointer(
+                      child: RoundedSquareCheckbox(
+                        isChecked: isChecked,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.space10),
           Expanded(
             child: Semantics(
               button: true,
