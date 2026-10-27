@@ -22,6 +22,9 @@ class _UpdateRequiredScreenState extends ConsumerState<UpdateRequiredScreen> {
   bool _isOpeningStore = false;
 
   Future<void> _openStore(String storeUrl) async {
+    if (_isOpeningStore) {
+      return;
+    }
     setState(() => _isOpeningStore = true);
     try {
       final isOpened = await ref.read(storeLauncherProvider).open(storeUrl);
@@ -44,14 +47,14 @@ class _UpdateRequiredScreenState extends ConsumerState<UpdateRequiredScreen> {
   @override
   Widget build(BuildContext context) {
     final storeUrl = ref.watch(appUpdateControllerProvider)?.storeUrl;
-    final canOpenStore = storeUrl != null && !_isOpeningStore;
     return PopScope(
       canPop: false,
       child: BottomActionScreenLayout(
         content: const UpdateRequiredContent(),
         bottomAction: PrimaryFilledButton(
           label: '업데이트하기',
-          onPressed: canOpenStore ? () => _openStore(storeUrl) : null,
+          onPressed: storeUrl != null ? () => _openStore(storeUrl) : null,
+          isLoading: _isOpeningStore,
         ),
       ),
     );
