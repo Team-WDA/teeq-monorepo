@@ -30,9 +30,7 @@ class _CharacterNameScreenState extends ConsumerState<CharacterNameScreen> {
   );
   bool _isRequestInProgress = false;
 
-  bool get _canSubmit =>
-      characterNamePattern.hasMatch(_nameController.text) &&
-      !_isRequestInProgress;
+  bool get _canSubmit => characterNamePattern.hasMatch(_nameController.text);
 
   @override
   void dispose() {
@@ -108,6 +106,7 @@ class _CharacterNameScreenState extends ConsumerState<CharacterNameScreen> {
         bottomAction: PrimaryFilledButton(
           label: '이 이름으로 시작하기',
           onPressed: _canSubmit ? _submit : null,
+          isLoading: _isRequestInProgress,
         ),
       ),
     );

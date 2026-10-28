@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/ui/button/neutral_filled_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/my_page/presentation/account_withdrawal_confirmation_dialog.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 
@@ -119,14 +120,16 @@ void main() {
     await tester.pump();
 
     expect(_continueButton(tester).onPressed, isNull);
-    expect(_withdrawButton(tester).onPressed, isNull);
+    expect(_withdrawButton(tester).isLoading, isTrue);
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
 
-    await tester.tap(find.text('탈퇴하기'));
+    await tester.tap(find.byType(PrimaryFilledButton), warnIfMissed: false);
     await tester.pump();
     expect(harness.repository.deleteAccountCount, 1);
 
     // 요청 중 스크림 탭으로는 닫히지 않는다.
-    await _tapScrim(tester);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('정말 탈퇴할까?'), findsOneWidget);
 
     gate.complete();

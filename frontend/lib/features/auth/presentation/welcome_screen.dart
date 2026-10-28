@@ -19,6 +19,9 @@ import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/widgets/apple_sign_in_button.dart';
 import 'package:teeq/features/auth/presentation/widgets/google_sign_in_button.dart';
 
+/// 진행 중인 소셜 로그인 종류. 눌린 버튼에만 로딩을 보여 주기 위해 구분한다.
+enum _SocialSignInProvider { apple, google }
+
 /// 로그아웃 상태로 앱을 열면 처음 보는 시작 화면.
 class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
@@ -28,13 +31,16 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 }
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
-  bool _isSignInInProgress = false;
+  _SocialSignInProvider? _signingInWith;
   bool _isPushedRouteOpen = false;
+
+  bool get _isSignInInProgress => _signingInWith != null;
 
   @override
   Widget build(BuildContext context) {
     final showsAppleButton = defaultTargetPlatform == TargetPlatform.iOS;
     return BottomActionScreenLayout(
+      isContentScrollable: false,
       content: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -53,11 +59,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           if (showsAppleButton) ...[
             AppleSignInButton(
               onPressed: _isSignInInProgress ? null : _signInWithApple,
+              isLoading: _signingInWith == _SocialSignInProvider.apple,
             ),
             const SizedBox(height: AppSpacing.space8),
           ],
           GoogleSignInButton(
             onPressed: _isSignInInProgress ? null : _signInWithGoogle,
+            isLoading: _signingInWith == _SocialSignInProvider.google,
           ),
           const SizedBox(height: AppSpacing.space8),
           PrimaryFilledButton(
@@ -106,20 +114,25 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     _isPushedRouteOpen = false;
   }
 
-  Future<void> _signInWithApple() =>
-      _signIn((authFlow) => authFlow.signInWithApple());
+  Future<void> _signInWithApple() => _signIn(
+    _SocialSignInProvider.apple,
+    (authFlow) => authFlow.signInWithApple(),
+  );
 
-  Future<void> _signInWithGoogle() =>
-      _signIn((authFlow) => authFlow.signInWithGoogle());
+  Future<void> _signInWithGoogle() => _signIn(
+    _SocialSignInProvider.google,
+    (authFlow) => authFlow.signInWithGoogle(),
+  );
 
   Future<void> _signIn(
+    _SocialSignInProvider provider,
     Future<SignInOutcome> Function(AuthFlow authFlow) signIn,
   ) async {
     // 리빌드 전에 들어오는 연속 탭도 막는다.
     if (_isSignInInProgress) {
       return;
     }
-    setState(() => _isSignInInProgress = true);
+    setState(() => _signingInWith = provider);
     // 화면이 먼저 사라져도 오류를 전달할 수 있게 await 전에 가져온다.
     final authFlow = ref.read(authFlowProvider);
     final errorHandler = ref.read(errorHandlerProvider);
@@ -133,7 +146,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       errorHandler.handle(error);
     } finally {
       if (mounted) {
-        setState(() => _isSignInInProgress = false);
+        setState(() => _signingInWith = null);
       }
     }
   }

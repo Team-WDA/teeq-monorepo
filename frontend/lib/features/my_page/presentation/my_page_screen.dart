@@ -78,7 +78,7 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
     if (_isLogoutInProgress) {
       return;
     }
-    _isLogoutInProgress = true;
+    setState(() => _isLogoutInProgress = true);
     ref.read(authFlowProvider).logout();
   }
 
@@ -179,7 +179,11 @@ class _MyPageScreenState extends ConsumerState<MyPageScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.space52),
-          DestructiveTonalButton(label: '로그아웃', onPressed: _logout),
+          DestructiveTonalButton(
+            label: '로그아웃',
+            isLoading: _isLogoutInProgress,
+            onPressed: _logout,
+          ),
           const SizedBox(height: AppSpacing.space4),
           DestructiveTonalButton(
             label: '회원 탈퇴',

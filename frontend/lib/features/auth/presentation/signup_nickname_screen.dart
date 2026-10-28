@@ -10,11 +10,14 @@ import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/heading/screen_title_with_description_heading.dart';
 import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
 import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
+import 'package:teeq/core/ui/text_field/committed_text_editing_value.dart';
 import 'package:teeq/core/ui/text_field/outlined_box_text_field.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/domain/auth_input_validator.dart';
+import 'package:teeq/features/auth/domain/nickname_input_rule.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/signup_draft_controller.dart';
+import 'package:teeq/features/auth/presentation/widgets/signup_nickname_guidance.dart';
 
 /// 가입 마지막 단계. 닉네임을 받아 가입을 마치고 온보딩으로 이동한다.
 /// 계정 준비 방식(현재 Firebase 세션 또는 이메일 가입)은 가입 입력값의 모드가 정한다.
@@ -31,12 +34,13 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
   bool _isRequestInProgress = false;
 
   bool get _canSubmit =>
-      AuthInputValidator.isNicknameValid(_nicknameController.text.trim()) &&
-      !_isRequestInProgress;
+      AuthInputValidator.isNicknameValid(_nicknameController.text);
 
   @override
   void initState() {
     super.initState();
+    // IME 조합이 끝나도 글자가 그대로면 onChanged가 오지 않으므로 컨트롤러 변경을 직접 듣는다.
+    _nicknameController.addListener(_rebuild);
     // 약관 동의 없이 이 화면에 들어오면 약관 화면으로 되돌린다.
     if (!ref.read(signupDraftControllerProvider).isAllRequiredConsentAgreed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,9 +53,13 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
 
   @override
   void dispose() {
-    _nicknameController.dispose();
+    _nicknameController
+      ..removeListener(_rebuild)
+      ..dispose();
     super.dispose();
   }
+
+  void _rebuild() => setState(() {});
 
   Future<void> _submit() async {
     // 리빌드 전에 들어오는 연속 탭도 막는다.
@@ -64,7 +72,7 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
     final errorHandler = ref.read(errorHandlerProvider);
     final draftController = ref.read(signupDraftControllerProvider.notifier);
     final draft = ref.read(signupDraftControllerProvider);
-    final nickname = _nicknameController.text.trim();
+    final nickname = _nicknameController.text;
     try {
       final outcome = await authFlow.completeSignup(
         draft: draft,
@@ -98,6 +106,9 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final nicknameIssue = NicknameInputRule.issueOf(
+      _nicknameController.value.committedText,
+    );
     return BottomActionScreenLayout(
       onBackPressed: context.pop,
       content: Column(
@@ -111,9 +122,11 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
           OutlinedBoxTextField(
             hintText: '너를 뭐라고 불러줄까?',
             controller: _nicknameController,
-            onChanged: (_) => setState(() {}),
+            hasError: nicknameIssue != null,
             textInputAction: TextInputAction.done,
           ),
+          const SizedBox(height: AppSpacing.space8),
+          SignupNicknameGuidance(issue: nicknameIssue),
           const SizedBox(height: AppSpacing.space12),
           const Center(
             child: AccentOutlineHintTag(message: '닉네임은 나중에 언제든지 변경 가능해.'),
@@ -123,6 +136,7 @@ class _SignupNicknameScreenState extends ConsumerState<SignupNicknameScreen> {
       bottomAction: PrimaryFilledButton(
         label: '다음',
         onPressed: _canSubmit ? _submit : null,
+        isLoading: _isRequestInProgress,
       ),
     );
   }

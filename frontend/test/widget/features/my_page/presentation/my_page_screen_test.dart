@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/login_type.dart';
 import 'package:teeq/core/config/app_version_provider.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
+import 'package:teeq/core/ui/button/destructive_tonal_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
@@ -148,7 +150,35 @@ void main() {
 
     final logoutButton = find.text('로그아웃');
     await tester.tap(logoutButton);
-    await tester.tap(logoutButton);
+    await tester.pump();
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(
+      find.byType(DestructiveTonalButton).first,
+      warnIfMissed: false,
+    );
+
+    expect(harness.repository.logoutCount, 1);
+    harness.repository.logoutGate!.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('logout screen guard blocks re-entry when callback is invoked', (
+    tester,
+  ) async {
+    final harness = MyPageHarness();
+    harness.repository.logoutGate = Completer<void>();
+    await _pumpMyPage(tester, harness);
+
+    await tester.tap(find.text('로그아웃'));
+    await tester.pump();
+    // 로딩 버튼은 탭을 무시하므로 화면의 재진입 방지를 보려면 콜백을 직접 호출한다.
+    final onPressed = tester
+        .widget<DestructiveTonalButton>(
+          find.byType(DestructiveTonalButton).first,
+        )
+        .onPressed!;
+    onPressed();
+    await tester.pump();
 
     expect(harness.repository.logoutCount, 1);
     harness.repository.logoutGate!.complete();

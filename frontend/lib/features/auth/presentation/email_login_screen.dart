@@ -29,8 +29,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
 
   bool get _canSubmit =>
       AuthInputValidator.isEmailFormatValid(_emailController.text.trim()) &&
-      _passwordController.text.isNotEmpty &&
-      !_isRequestInProgress;
+      _passwordController.text.isNotEmpty;
 
   @override
   void dispose() {
@@ -110,6 +109,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       bottomAction: PrimaryFilledButton(
         label: '다음',
         onPressed: _canSubmit ? _submit : null,
+        isLoading: _isRequestInProgress,
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
 
 import '../../../../support/my_page_harness.dart';
@@ -174,10 +175,40 @@ void main() {
     await _enterNickname(tester, '새닉네임');
     await tester.tap(find.text('저장하기'));
     await tester.pump();
-    await tester.tap(find.text('저장하기'), warnIfMissed: false);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(find.byType(PrimaryFilledButton), warnIfMissed: false);
     await tester.pump();
 
-    expect(_isSaveEnabled(tester), isFalse);
+    expect(harness.repository.changeNicknameCount, 1);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('screen guard blocks re-entry when callback is invoked', (
+    tester,
+  ) async {
+    final harness = MyPageHarness();
+    final gate = Completer<void>();
+    harness.repository.changeNicknameGate = gate;
+    await _openNicknameChange(tester, harness);
+
+    await _enterNickname(tester, '새닉네임');
+    await tester.tap(find.text('저장하기'));
+    await tester.pump();
+    // 로딩 버튼은 탭을 무시하므로 화면의 재진입 방지를 보려면 콜백을 직접 호출한다.
+    final onPressed = tester
+        .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+        .onPressed!;
+    onPressed();
+    await tester.pump();
+
     expect(harness.repository.changeNicknameCount, 1);
 
     gate.complete();

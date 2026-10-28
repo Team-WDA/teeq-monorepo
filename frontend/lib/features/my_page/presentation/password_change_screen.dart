@@ -39,7 +39,6 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
   bool _isCurrentPasswordMismatch = false;
 
   bool get _canSubmit =>
-      !_isRequestInProgress &&
       !_isCurrentPasswordMismatch &&
       PasswordChangeInputRule.canSubmit(
         current: _currentPasswordController.text,
@@ -176,6 +175,7 @@ class _PasswordChangeScreenState extends ConsumerState<PasswordChangeScreen> {
       ),
       bottomAction: PrimaryFilledButton(
         label: '비밀번호 변경',
+        isLoading: _isRequestInProgress,
         onPressed: _canSubmit ? _submit : null,
       ),
     );

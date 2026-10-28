@@ -1,16 +1,17 @@
 import 'package:teeq/features/auth/domain/auth_input_validator.dart';
 
 /// 닉네임 입력값이 규칙을 어긴 이유.
-enum NicknameInputIssue { invalidCharacter, tooShort, tooLong }
+enum NicknameInputIssue { invalidCharacter, whitespace, tooShort, tooLong }
 
 /// 닉네임 변경 입력 규칙. 최종 유효성은 [AuthInputValidator]가 판정하고,
 /// 이 클래스는 위반 이유 분류와 제출 가능 여부만 다룬다.
-/// 입력은 trim하지 않는다(공백은 허용되지 않는 문자다).
+/// 입력은 trim하지 않는다(공백은 허용되지 않으며 별도 위반으로 분류한다).
 abstract final class NicknameInputRule {
   static const int minLength = 2;
   static const int maxLength = 10;
 
-  static final RegExp _disallowedCharacterPattern = RegExp(r'[^가-힣]');
+  static final RegExp _disallowedCharacterPattern = RegExp(r'[^가-힣\s]');
+  static final RegExp _whitespacePattern = RegExp(r'\s');
 
   /// 빈 문자열이거나 위반이 없으면 null.
   static NicknameInputIssue? issueOf(String input) {
@@ -19,6 +20,9 @@ abstract final class NicknameInputRule {
     }
     if (_disallowedCharacterPattern.hasMatch(input)) {
       return NicknameInputIssue.invalidCharacter;
+    }
+    if (_whitespacePattern.hasMatch(input)) {
+      return NicknameInputIssue.whitespace;
     }
     if (input.length < minLength) {
       return NicknameInputIssue.tooShort;

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/app_update/data/url_store_launcher.dart';
 import 'package:teeq/features/app_update/domain/app_update_requirement.dart';
 import 'package:teeq/features/app_update/presentation/app_update_controller.dart';
@@ -91,7 +92,7 @@ void main() {
 
     await tester.tap(find.text('업데이트하기'));
     await tester.pump();
-    await tester.tap(find.text('업데이트하기'));
+    await tester.tap(find.byType(ButtonLoadingIndicator));
     await tester.pump();
     expect(launcher.openedUrls, hasLength(1));
 
@@ -102,6 +103,28 @@ void main() {
     await tester.pump();
 
     expect(launcher.openedUrls, hasLength(2));
+  });
+
+  testWidgets('스토어를 여는 동안 버튼에 로딩 표시를 하고 끝나면 원래대로 돌아온다', (tester) async {
+    final gate = Completer<void>();
+    final launcher = FakeStoreLauncher(gate: gate);
+    await _pumpScreen(tester, launcher: launcher);
+
+    await tester.tap(find.text('업데이트하기'));
+    await tester.pump();
+
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+
+    await tester.tap(find.byType(ButtonLoadingIndicator));
+    await tester.pump();
+    expect(launcher.openedUrls, hasLength(1));
+
+    gate.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(ButtonLoadingIndicator), findsNothing);
+    expect(find.text('업데이트하기'), findsOneWidget);
   });
 
   testWidgets('열기가 false를 돌려주면 ErrorHandler로 보낸다', (tester) async {

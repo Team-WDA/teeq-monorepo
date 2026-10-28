@@ -10,8 +10,11 @@ import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
+import 'package:teeq/features/auth/presentation/widgets/apple_sign_in_button.dart';
+import 'package:teeq/features/auth/presentation/widgets/google_sign_in_button.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 
 class _RecordingAuthFlow extends Fake implements AuthFlow {
@@ -23,9 +26,16 @@ class _RecordingAuthFlow extends Fake implements AuthFlow {
   /// 지정하면 Google 로그인이 이 값이 완료될 때까지 끝나지 않는다.
   Completer<SignInOutcome>? googleGate;
 
+  /// 지정하면 Apple 로그인이 이 값이 완료될 때까지 끝나지 않는다.
+  Completer<SignInOutcome>? appleGate;
+
   @override
   Future<SignInOutcome> signInWithApple() async {
     appleSignInCount++;
+    final gate = appleGate;
+    if (gate != null) {
+      return gate.future;
+    }
     final error = failure;
     if (error != null) {
       throw error;
@@ -295,13 +305,88 @@ void main() {
     await tester.tap(find.text('가입하기'));
     await tester.pump();
     await tester.tap(find.text('이미 계정이 있나요? 로그인하기'));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('가입 스텁'), findsNothing);
     expect(find.text('로그인 스텁'), findsNothing);
 
     gate.complete(SignInOutcome.signedIn);
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('Apple 로그인 중에는 Apple 버튼만 스피너이고 Google 버튼은 비활성이다', (tester) async {
+    await _withIosPlatform(() async {
+      final gate = Completer<SignInOutcome>();
+      final authFlow = _RecordingAuthFlow()..appleGate = gate;
+      await tester.pumpWidget(_buildScreen(authFlow: authFlow));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(AppleSignInButton));
+      await tester.tap(find.byType(AppleSignInButton));
+      await tester.pump();
+
+      expect(authFlow.appleSignInCount, 1);
+      final apple = tester.widget<AppleSignInButton>(
+        find.byType(AppleSignInButton),
+      );
+      final google = tester.widget<GoogleSignInButton>(
+        find.byType(GoogleSignInButton),
+      );
+      expect(apple.isLoading, isTrue);
+      expect(google.isLoading, isFalse);
+      expect(google.onPressed, isNull);
+      expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppleSignInButton),
+          matching: find.byType(ButtonLoadingIndicator),
+        ),
+        findsOneWidget,
+      );
+
+      gate.complete(SignInOutcome.signedIn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ButtonLoadingIndicator), findsNothing);
+      expect(
+        tester
+            .widget<GoogleSignInButton>(find.byType(GoogleSignInButton))
+            .onPressed,
+        isNotNull,
+      );
+    });
+  });
+
+  testWidgets('Google 로그인 중에는 Google 버튼만 스피너이고 요청은 한 번이다', (tester) async {
+    await _withIosPlatform(() async {
+      final gate = Completer<SignInOutcome>();
+      final authFlow = _RecordingAuthFlow()..googleGate = gate;
+      await tester.pumpWidget(_buildScreen(authFlow: authFlow));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(GoogleSignInButton));
+      await tester.tap(find.byType(GoogleSignInButton));
+      await tester.pump();
+
+      expect(authFlow.googleSignInCount, 1);
+      expect(
+        tester
+            .widget<GoogleSignInButton>(find.byType(GoogleSignInButton))
+            .isLoading,
+        isTrue,
+      );
+      final apple = tester.widget<AppleSignInButton>(
+        find.byType(AppleSignInButton),
+      );
+      expect(apple.isLoading, isFalse);
+      expect(apple.onPressed, isNull);
+      expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+
+      gate.complete(SignInOutcome.signedIn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ButtonLoadingIndicator), findsNothing);
+    });
   });
 
   testWidgets('취소하면 화면에 머물고 오류도 없다', (tester) async {
@@ -317,5 +402,27 @@ void main() {
 
     expect(find.byType(WelcomeScreen), findsOneWidget);
     expect(errorHandler.handledErrors, isEmpty);
+  });
+
+  testWidgets('본문을 드래그해도 스크롤되지 않고 320x480에서 오버플로가 없다', (tester) async {
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_buildScreen());
+    await tester.pumpAndSettle();
+    await tester.drag(
+      find.byType(SingleChildScrollView),
+      const Offset(0, -300),
+    );
+    await tester.pump();
+
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .position;
+    // 내용이 뷰포트를 넘쳐야 스크롤 제거 단언이 의미가 있다.
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(position.pixels, 0);
+    expect(tester.takeException(), isNull);
   });
 }

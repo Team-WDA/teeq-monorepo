@@ -3,7 +3,7 @@ import 'package:teeq/core/design/app_colors.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/ui/text_field/outlined_box_text_field.dart';
-import 'package:teeq/features/my_page/domain/nickname_input_rule.dart';
+import 'package:teeq/features/auth/domain/nickname_input_rule.dart';
 
 /// 닉네임 라벨, 입력 필드, 글자 수 카운터, 안내 문구와 오류 문구.
 /// 오류 문구가 있으면(규칙 위반이나 서버 중복 응답) 입력창과 문구를 오류 색으로 그린다.
@@ -32,8 +32,8 @@ class NicknameInputSection extends StatelessWidget {
   ];
 
   String? get _errorMessage => switch (issue) {
-    NicknameInputIssue.invalidCharacter =>
-      '한글만 입력할 수 있어. 영문, 숫자, 특수문자, 공백은 빼줘.',
+    NicknameInputIssue.invalidCharacter ||
+    NicknameInputIssue.whitespace => '한글만 입력할 수 있어. 영문, 숫자, 특수문자, 공백은 빼줘.',
     NicknameInputIssue.tooShort => '2자 이상으로 입력해줘',
     NicknameInputIssue.tooLong => '10자 이하로 입력해줘',
     null => duplicateErrorMessage,

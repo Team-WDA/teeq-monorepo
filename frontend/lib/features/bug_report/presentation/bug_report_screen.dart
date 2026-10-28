@@ -64,8 +64,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
     final isSubmitting = ref
         .watch(bugReportSubmissionControllerProvider)
         .isLoading;
-    final canSubmit =
-        !isSubmitting && _contentController.text.trim().isNotEmpty;
+    final canSubmit = _contentController.text.trim().isNotEmpty;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -117,6 +116,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
               child: PrimaryFilledButton(
                 label: '제보하기',
                 onPressed: canSubmit ? _submit : null,
+                isLoading: isSubmitting,
               ),
             ),
           ],

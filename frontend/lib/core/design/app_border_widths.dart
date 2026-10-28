@@ -3,4 +3,5 @@ abstract final class AppBorderWidths {
   static const double thin = 1;
   static const double regular = 1.2;
   static const double progress = 3;
+  static const double loadingIndicator = 2.5;
 }

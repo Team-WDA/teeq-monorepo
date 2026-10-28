@@ -98,6 +98,8 @@ void main() {
         AppRoutes.signup,
         AppRoutes.signupCompletion,
         AppRoutes.signupNickname,
+        AppRoutes.serviceTerms,
+        AppRoutes.privacyPolicy,
       ]) {
         expect(
           authRedirect(

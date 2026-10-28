@@ -23,10 +23,24 @@ class SignupCompletionConsentScreen extends ConsumerStatefulWidget {
 class _SignupCompletionConsentScreenState
     extends ConsumerState<SignupCompletionConsentScreen> {
   bool _isNicknameStepOpen = false;
+  bool _isDetailRouteOpen = false;
   bool _isServiceTermsAgreed = false;
   bool _isPrivacyPolicyAgreed = false;
 
   bool get _canProceed => _isServiceTermsAgreed && _isPrivacyPolicyAgreed;
+
+  Future<void> _openDetail(String path) async {
+    // 약관 상세가 열려 있는 동안 연속 탭으로 중복 이동하지 않는다.
+    if (_isDetailRouteOpen) {
+      return;
+    }
+    _isDetailRouteOpen = true;
+    try {
+      await context.push(path);
+    } finally {
+      _isDetailRouteOpen = false;
+    }
+  }
 
   Future<void> _proceed() async {
     // 닉네임 화면이 열려 있는 동안 연속 탭으로 중복 이동하지 않는다.
@@ -76,6 +90,9 @@ class _SignupCompletionConsentScreenState
                 setState(() => _isServiceTermsAgreed = isAgreed),
             onPrivacyPolicyChanged: (isAgreed) =>
                 setState(() => _isPrivacyPolicyAgreed = isAgreed),
+            onServiceTermsDetailTap: () => _openDetail(AppRoutes.serviceTerms),
+            onPrivacyPolicyDetailTap: () =>
+                _openDetail(AppRoutes.privacyPolicy),
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,6 +11,8 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/logging/app_log_entry.dart';
 import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/bug_report/data/bug_report_repository_impl.dart';
 import 'package:teeq/features/bug_report/data/image_picker_bug_report_image_picker.dart';
@@ -144,6 +148,33 @@ void main() {
     expect(submission.logSnapshot?.errorLogs, hasLength(1));
     expect(_contentField(), findsNothing);
     expect(harness.container.read(toastControllerProvider), '제보가 접수되었어요');
+    await tester.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('sheet_showsLoadingAndIgnoresRetapWhileSubmitting', (
+    tester,
+  ) async {
+    final completer = Completer<String>();
+    final harness = _Harness(
+      authStatus: AuthStatus.signedIn,
+      repository: FakeBugReportRepository(completer: completer),
+    );
+    await harness.pump(tester);
+    await tester.tap(_reportButton());
+    await tester.pump();
+    await tester.enterText(_contentField(), '통화가 끊겨요');
+    await tester.pump();
+
+    await tester.tap(_submitButton());
+    await tester.pump();
+
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
+    await tester.tap(find.byType(PrimaryFilledButton));
+    await tester.pump();
+    expect(harness.repository.submissions, hasLength(1));
+
+    completer.complete('bug-report-1');
+    await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 3));
   });
 

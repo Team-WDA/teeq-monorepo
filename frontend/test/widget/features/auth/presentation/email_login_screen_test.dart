@@ -8,6 +8,7 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
+import 'package:teeq/core/ui/progress/button_loading_indicator.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/email_login_screen.dart';
@@ -110,16 +111,22 @@ void main() {
     expect(_nextButtonOnPressed(tester), isNull);
   });
 
-  testWidgets('요청 중에는 다음이 비활성이고 전달된 이메일은 trim된다', (tester) async {
+  testWidgets('요청 중에는 다음이 로딩이고 전달된 이메일은 trim된다', (tester) async {
     final (authFlow, _) = await _pumpScreen(tester);
     await _enter(tester, ' a@b.co ', 'Abcdef12');
 
-    await tester.tap(find.text('다음'));
-    await tester.tap(find.text('다음'));
+    await tester.tap(find.byType(PrimaryFilledButton));
+    await tester.tap(find.byType(PrimaryFilledButton));
     await tester.pump();
 
     expect(authFlow.requestedEmails, ['a@b.co']);
-    expect(_nextButtonOnPressed(tester), isNull);
+    expect(
+      tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .isLoading,
+      isTrue,
+    );
+    expect(find.byType(ButtonLoadingIndicator), findsOneWidget);
   });
 
   testWidgets('실패하면 오류를 ErrorHandler로 넘기고 다음이 다시 활성화된다', (tester) async {

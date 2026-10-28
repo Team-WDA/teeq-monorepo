@@ -64,10 +64,7 @@ class DetailedFeedbackScreen extends ConsumerWidget {
     final controller = ref.read(feedbackFlowControllerProvider.notifier);
     final answers = state.detailedAnswers;
     // 제출이 끝난 뒤 화면이 바뀌는 동안 같은 응답이 다시 나가지 않게 막는다.
-    final canSubmit =
-        answers.isComplete &&
-        !state.isRequestInProgress &&
-        !state.detailedSubmitted;
+    final canSubmit = answers.isComplete && !state.detailedSubmitted;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -83,6 +80,7 @@ class DetailedFeedbackScreen extends ConsumerWidget {
             onPressed: canSubmit
                 ? () => unawaited(_submit(context, ref))
                 : null,
+            isLoading: state.isRequestInProgress,
           ),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

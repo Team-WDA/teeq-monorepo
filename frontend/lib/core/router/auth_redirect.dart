@@ -55,6 +55,8 @@ const _signedOutLocations = {
   AppRoutes.signup,
   AppRoutes.signupCompletion,
   AppRoutes.signupNickname,
+  AppRoutes.serviceTerms,
+  AppRoutes.privacyPolicy,
 };
 
 /// 로그인한 완료 회원이 머물 필요가 없어 홈으로 보내는 진입 위치.

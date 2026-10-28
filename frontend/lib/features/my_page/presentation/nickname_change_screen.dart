@@ -11,8 +11,9 @@ import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/error/error_messages.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
+import 'package:teeq/core/ui/text_field/committed_text_editing_value.dart';
+import 'package:teeq/features/auth/domain/nickname_input_rule.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
-import 'package:teeq/features/my_page/domain/nickname_input_rule.dart';
 import 'package:teeq/features/my_page/presentation/widgets/back_button_with_centered_title_header.dart';
 import 'package:teeq/features/my_page/presentation/widgets/nickname_helper_with_speech_bubble.dart';
 import 'package:teeq/features/my_page/presentation/widgets/nickname_input_section.dart';
@@ -33,28 +34,13 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
 
   String get _input => _nicknameController.text;
 
-  /// IME가 조합 중인 글자(예: 'ㅅ')는 빼고 확정된 입력만 돌려준다.
-  /// 조합 중인 자모를 그대로 검사하면 음절마다 문자 오류가 깜빡인다.
-  String get _committedInput {
-    final value = _nicknameController.value;
-    final composing = value.composing;
-    if (!composing.isValid || composing.isCollapsed) {
-      return value.text;
-    }
-    return composing.textBefore(value.text) + composing.textAfter(value.text);
-  }
-
-  bool get _canSubmit =>
-      !_isRequestInProgress &&
-      NicknameInputRule.isSubmittable(
-        _input,
-        ref.watch(
-              currentMemberControllerProvider.select(
-                (member) => member?.nickname,
-              ),
-            ) ??
-            '',
-      );
+  bool get _canSubmit => NicknameInputRule.isSubmittable(
+    _input,
+    ref.watch(
+          currentMemberControllerProvider.select((member) => member?.nickname),
+        ) ??
+        '',
+  );
 
   @override
   void initState() {
@@ -162,7 +148,9 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
                           controller: _nicknameController,
                           onChanged: _onNicknameChanged,
                           enabled: !_isRequestInProgress,
-                          issue: NicknameInputRule.issueOf(_committedInput),
+                          issue: NicknameInputRule.issueOf(
+                            _nicknameController.value.committedText,
+                          ),
                           duplicateErrorMessage: _isDuplicateNickname
                               ? ErrorCode.duplicateNickname.userMessage
                               : null,
@@ -180,6 +168,7 @@ class _NicknameChangeScreenState extends ConsumerState<NicknameChangeScreen> {
                   ),
                   child: PrimaryFilledButton(
                     label: '저장하기',
+                    isLoading: _isRequestInProgress,
                     onPressed: _canSubmit ? _submit : null,
                   ),
                 ),
