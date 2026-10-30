@@ -82,12 +82,12 @@ abstract final class AppLayout {
   // 스플래시 화면 중앙에 놓는 브랜드 로고. 네이티브 시작 화면의 로고와 같은 크기다.
   static const double splashLogoWidth = 118;
   static const double splashLogoHeight = 44.294;
-  static const double homeCharacterWidth = 297;
   static const double homeCharacterHeight = 255.576;
+  // 홈 캐릭터 이미지 정사각형 한 변. Figma 393폭 기준이다.
+  static const double homeCharacterIllustrationSize = 320;
   static const double homeGlowWidth = editResultGlowWidth;
   static const double homeGlowHeight = editResultGlowHeight;
-  // 홈 일러스트 왼쪽 위를 원점으로 한 캐릭터와 빛 번짐의 위치.
-  static const double homeCharacterOffsetX = 43;
+  // 홈 일러스트 왼쪽 위를 원점으로 한 빛 번짐의 위치.
   static const double homeGlowOffsetX = -174;
   static const double homeGlowOffsetY = -115;
   static const double profileCardHeight = 104;

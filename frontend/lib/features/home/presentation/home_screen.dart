@@ -155,7 +155,10 @@ class _HomeContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                const HomeCharacterIllustration(),
+                HomeCharacterIllustration(
+                  characterType: summary.characterType,
+                  characterMood: summary.characterMood,
+                ),
                 Padding(
                   padding: horizontalPadding.copyWith(
                     top: AppSpacing.space12,
