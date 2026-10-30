@@ -5,6 +5,7 @@ import kr.co.teeq.api.aicharacter.application.service.AiCharacterService;
 import kr.co.teeq.api.call.application.service.CallLimitService;
 import kr.co.teeq.api.feedback.application.service.CallFeedbackService;
 import kr.co.teeq.api.home.application.dto.response.HomeResponse;
+import kr.co.teeq.api.home.core.port.GreetingResult;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.service.OnboardingPersonaService;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +29,9 @@ public class HomeService {
         // 캐릭터나 온보딩 제출이 없으면 AI_CHARACTER_NOT_FOUND가 그대로 전파된다
         AiCharacterResponse character = aiCharacterService.get(member);
         String personaId = onboardingPersonaService.getCurrentPersonaId(member);
-        String greeting = greetingService.greet(member, character, personaId);
-        return new HomeResponse(character.name(), character.personalityTags(), greeting,
-            callLimitService.getTodayStatus(member),
+        GreetingResult greeting = greetingService.greet(member, character, personaId);
+        return new HomeResponse(character.name(), character.characterType(), greeting.mood(),
+            character.personalityTags(), greeting.message(), callLimitService.getTodayStatus(member),
             callFeedbackService.findPendingFeedback(member).orElse(null));
     }
 

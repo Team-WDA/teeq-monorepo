@@ -19,8 +19,10 @@ import kr.co.teeq.api.auth.infrastructure.config.JwtProvider;
 import kr.co.teeq.api.auth.infrastructure.config.SecurityConfig;
 import kr.co.teeq.api.call.application.dto.response.CallLimitStatusResponse;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
+import kr.co.teeq.api.common.core.constant.CharacterType;
 import kr.co.teeq.api.home.application.dto.response.HomeResponse;
 import kr.co.teeq.api.home.application.service.HomeService;
+import kr.co.teeq.api.home.core.constant.CharacterMood;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import org.junit.jupiter.api.Test;
@@ -94,12 +96,15 @@ class HomeControllerTest {
     void getHome_returns200() throws Exception {
         String bearer = bearer();
         given(homeService.getHome(member)).willReturn(new HomeResponse("티큐",
+            CharacterType.CHARACTER_3, CharacterMood.CURIOUS,
             List.of("다정한", "차분한", "든든한"), "소연아,\n오늘 하루 어땠어?",
             new CallLimitStatusResponse(300, 1500, 1200, true), null));
 
         mockMvc.perform(get("/api/home").header(HttpHeaders.AUTHORIZATION, bearer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.characterName").value("티큐"))
+            .andExpect(jsonPath("$.characterType").value("CHARACTER_3"))
+            .andExpect(jsonPath("$.characterMood").value("CURIOUS"))
             .andExpect(jsonPath("$.personalityTags[0]").value("다정한"))
             .andExpect(jsonPath("$.greeting").value("소연아,\n오늘 하루 어땠어?"))
             .andExpect(jsonPath("$.callLimit.canStart").value(true))
