@@ -1,3 +1,6 @@
+import 'package:teeq/features/home/domain/character_mood.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
+
 /// 번들 에셋 경로. 경로 문자열은 이 파일에서만 정의한다.
 abstract final class AppAssets {
   static const String _icons = 'assets/icons';
@@ -64,6 +67,13 @@ abstract final class AppAssets {
   static const String defaultAvatarIllustration =
       '$_images/default_avatar_illustration.png';
   static const String homeCharacterWink = '$_images/home_character_wink.png';
+
+  /// 홈 캐릭터 이미지. 외형 5종 × 표정 5종이며, [CharacterType]의 선언 순서(`character1`~`character5`)가 파일 번호와 같다.
+  static String characterMoodIllustration(
+    CharacterType characterType,
+    CharacterMood characterMood,
+  ) =>
+      '$_images/character_${characterType.index + 1}_mood_${characterMood.name}.png';
   static const String glowHome = glowEdit;
 
   // 피드백 플로우 마스코트와 빛 번짐. 확정 전 임시 에셋이다.
