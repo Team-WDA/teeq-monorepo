@@ -15,8 +15,10 @@ import kr.co.teeq.api.aicharacter.application.dto.response.AiCharacterResponse;
 import kr.co.teeq.api.common.core.constant.CharacterType;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.home.core.constant.CharacterMood;
 import kr.co.teeq.api.home.core.port.GreetingGenerationPort;
 import kr.co.teeq.api.home.core.port.GreetingRequest;
+import kr.co.teeq.api.home.core.port.GreetingResult;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
@@ -56,18 +58,29 @@ class GreetingServiceTest {
     @Test
     void greet_AI_정상_응답이면_그_문구를_돌려주고_인사_시각을_기록한다() {
         givenMember(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL, LAST_GREETED_AT);
-        given(greetingGenerationPort.generate(any())).willReturn("소연아, 안녕");
+        given(greetingGenerationPort.generate(any()))
+            .willReturn(new GreetingResult("소연아, 안녕", CharacterMood.CURIOUS));
 
-        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID)).isEqualTo("소연아, 안녕");
+        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID).message()).isEqualTo("소연아, 안녕");
 
         verify(lastGreetedAtCommandService).record(MEMBER_ID);
         verifyNoInteractions(settingConfigService);
     }
 
     @Test
+    void greet_AI_정상_응답이면_AI의_mood를_돌려준다() {
+        givenMember(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL, LAST_GREETED_AT);
+        given(greetingGenerationPort.generate(any()))
+            .willReturn(new GreetingResult("소연아, 안녕", CharacterMood.EXCITED));
+
+        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID).mood()).isEqualTo(CharacterMood.EXCITED);
+    }
+
+    @Test
     void greet_요청에_갱신_이전의_인사_시각과_persona를_담는다() {
         givenMember(OnboardingOption.SPEECH_STYLE_GENTLE_POLITE, LAST_GREETED_AT);
-        given(greetingGenerationPort.generate(any())).willReturn("소연 님, 안녕하세요");
+        given(greetingGenerationPort.generate(any()))
+            .willReturn(new GreetingResult("소연 님, 안녕하세요", CharacterMood.WELCOME));
 
         greetingService.greet(member, CHARACTER, PERSONA_ID);
 
@@ -78,7 +91,8 @@ class GreetingServiceTest {
     @Test
     void greet_처음_인사면_요청의_인사_시각은_null이다() {
         givenMember(OnboardingOption.SPEECH_STYLE_GENTLE_POLITE, null);
-        given(greetingGenerationPort.generate(any())).willReturn("소연 님, 안녕하세요");
+        given(greetingGenerationPort.generate(any()))
+            .willReturn(new GreetingResult("소연 님, 안녕하세요", CharacterMood.WELCOME));
 
         greetingService.greet(member, CHARACTER, PERSONA_ID);
 
@@ -92,9 +106,10 @@ class GreetingServiceTest {
             .willThrow(new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE));
         given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL)).willReturn(CASUAL_DEFAULT);
 
-        String result = greetingService.greet(member, CHARACTER, PERSONA_ID);
+        GreetingResult result = greetingService.greet(member, CHARACTER, PERSONA_ID);
 
-        assertThat(result).isEqualTo("소연아,\n오늘 하루 어땠어?\n무슨 일 있었는지 궁금한데...");
+        assertThat(result.message()).isEqualTo("소연아,\n오늘 하루 어땠어?\n무슨 일 있었는지 궁금한데...");
+        assertThat(result.mood()).isEqualTo(CharacterMood.WELCOME);
         verify(lastGreetedAtCommandService, never()).record(any());
     }
 
@@ -106,7 +121,8 @@ class GreetingServiceTest {
         given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_POLITE))
             .willReturn("{호칭}, 오늘 어떠셨어요?");
 
-        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID)).isEqualTo("소연 님, 오늘 어떠셨어요?");
+        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID).message())
+            .isEqualTo("소연 님, 오늘 어떠셨어요?");
     }
 
     @Test
@@ -118,11 +134,15 @@ class GreetingServiceTest {
             given(member.getNickname()).willReturn("민지");
             given(onboardingAnswerService.getSpeechStyle(member))
                 .willReturn(OnboardingOption.SPEECH_STYLE_CLOSE_FRIEND_CASUAL);
-            given(greetingGenerationPort.generate(any())).willReturn(invalid);
+            given(greetingGenerationPort.generate(any()))
+                .willReturn(new GreetingResult(invalid, CharacterMood.WORRIED));
             given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL))
                 .willReturn(CASUAL_DEFAULT);
 
-            assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID)).startsWith("민지야,");
+            GreetingResult result = greetingService.greet(member, CHARACTER, PERSONA_ID);
+
+            assertThat(result.message()).startsWith("민지야,");
+            assertThat(result.mood()).isEqualTo(CharacterMood.WELCOME);
         }
         verify(lastGreetedAtCommandService, never()).record(any());
     }
@@ -134,7 +154,7 @@ class GreetingServiceTest {
             .willThrow(new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE));
         given(settingConfigService.getString(SettingKey.GREETING_DEFAULT_MESSAGE_CASUAL)).willReturn("안녕");
 
-        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID)).isEqualTo("안녕");
+        assertThat(greetingService.greet(member, CHARACTER, PERSONA_ID).message()).isEqualTo("안녕");
     }
 
     @Test

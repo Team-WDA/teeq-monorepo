@@ -19,6 +19,7 @@ public interface HomeControllerDocs {
         description = """
             캐릭터 이름과 성향 태그, 오늘의 한마디, 오늘 통화 한도, 필수 피드백이 남은 통화를 한 번에 반환한다.
             오늘의 한마디는 홈 진입마다 AI 서버에서 새로 받으며, 생성에 실패하거나 문구 규칙에 맞지 않으면 말투별 기본 문구로 대체되므로 오류가 되지 않는다.
+            캐릭터 유형과 표정(`characterType`, `characterMood`)도 함께 내려 주며, 한마디가 기본 문구로 대체되면 표정은 `WELCOME`이다.
             필수 피드백이 남은 통화가 없으면 `pendingFeedback`은 null이다.""")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "조회 성공"),

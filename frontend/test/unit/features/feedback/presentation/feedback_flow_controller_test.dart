@@ -19,8 +19,10 @@ import 'package:teeq/features/feedback/domain/start_reason.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_state.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_feedback_repository.dart';
 import '../../../../support/fake_home_repository.dart';
@@ -78,6 +80,8 @@ _SetUp _setUp(FakeFeedbackRepository feedbackRepository) {
   final homeRepository = FakeHomeRepository(
     summary: const HomeSummary(
       characterName: '티티',
+      characterType: CharacterType.character1,
+      characterMood: CharacterMood.welcome,
       personalityTags: ['다정함', '차분함', '유쾌함'],
       greeting: '안녕',
     ),

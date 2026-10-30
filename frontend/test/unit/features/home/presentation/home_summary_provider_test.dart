@@ -1,13 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_home_repository.dart';
 
 const _summary = HomeSummary(
   characterName: '티큐',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정한', '차분한', '든든한'],
   greeting: '안녕',
 );

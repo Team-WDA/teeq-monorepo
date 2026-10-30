@@ -17,6 +17,7 @@ import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
@@ -61,6 +62,8 @@ const _namedCharacter = AiCharacter(
 
 const _homeSummary = HomeSummary(
   characterName: '티티',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정함', '차분함', '유쾌함'],
   greeting: '안녕',
 );

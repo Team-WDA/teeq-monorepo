@@ -38,6 +38,7 @@ import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_co
 import 'package:teeq/features/feedback/presentation/screens/detailed_feedback_screen.dart';
 import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
 import 'package:teeq/features/my_page/data/legal_document_loader.dart';
@@ -268,6 +269,8 @@ Widget _feedbackScreen(
         FakeHomeRepository(
           summary: const HomeSummary(
             characterName: _longCharacterName,
+            characterType: CharacterType.character1,
+            characterMood: CharacterMood.welcome,
             personalityTags: ['다정함', '차분함', '유쾌함'],
             greeting: '안녕',
           ),

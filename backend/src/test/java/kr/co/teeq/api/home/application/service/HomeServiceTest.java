@@ -17,6 +17,8 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.feedback.application.dto.response.PendingFeedbackResponse;
 import kr.co.teeq.api.feedback.application.service.CallFeedbackService;
 import kr.co.teeq.api.home.application.dto.response.HomeResponse;
+import kr.co.teeq.api.home.core.constant.CharacterMood;
+import kr.co.teeq.api.home.core.port.GreetingResult;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.service.OnboardingPersonaService;
 import org.junit.jupiter.api.Test;
@@ -59,21 +61,23 @@ class HomeServiceTest {
         PendingFeedbackResponse pendingFeedback = new PendingFeedbackResponse("call-session-1", 3);
         given(aiCharacterService.get(member)).willReturn(CHARACTER);
         given(onboardingPersonaService.getCurrentPersonaId(member)).willReturn(PERSONA_ID);
-        given(greetingService.greet(member, CHARACTER, PERSONA_ID)).willReturn("소연아,\n오늘 어땠어?");
+        given(greetingService.greet(member, CHARACTER, PERSONA_ID))
+            .willReturn(new GreetingResult("소연아,\n오늘 어땠어?", CharacterMood.CURIOUS));
         given(callLimitService.getTodayStatus(member)).willReturn(CALL_LIMIT);
         given(callFeedbackService.findPendingFeedback(member)).willReturn(Optional.of(pendingFeedback));
 
         HomeResponse response = homeService.getHome(member);
 
-        assertThat(response).isEqualTo(new HomeResponse("티큐", List.of("다정한", "차분한", "든든한"),
-            "소연아,\n오늘 어땠어?", CALL_LIMIT, pendingFeedback));
+        assertThat(response).isEqualTo(new HomeResponse("티큐", CharacterType.CHARACTER_3, CharacterMood.CURIOUS,
+            List.of("다정한", "차분한", "든든한"), "소연아,\n오늘 어땠어?", CALL_LIMIT, pendingFeedback));
     }
 
     @Test
     void 대기_피드백이_없으면_pendingFeedback은_null이다() {
         given(aiCharacterService.get(member)).willReturn(CHARACTER);
         given(onboardingPersonaService.getCurrentPersonaId(member)).willReturn(PERSONA_ID);
-        given(greetingService.greet(member, CHARACTER, PERSONA_ID)).willReturn("안녕");
+        given(greetingService.greet(member, CHARACTER, PERSONA_ID))
+            .willReturn(new GreetingResult("안녕", CharacterMood.WELCOME));
         given(callLimitService.getTodayStatus(member)).willReturn(CALL_LIMIT);
         given(callFeedbackService.findPendingFeedback(member)).willReturn(Optional.empty());
 

@@ -15,10 +15,13 @@ import java.util.UUID;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.common.infrastructure.properties.AiServerProperties;
+import kr.co.teeq.api.home.core.constant.CharacterMood;
 import kr.co.teeq.api.home.core.port.GreetingRequest;
+import kr.co.teeq.api.home.core.port.GreetingResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -45,7 +48,7 @@ class AiServerGreetingGenerationAdapterTest {
     }
 
     @Test
-    void 정상_응답이면_message만_돌려주고_요청_본문을_camelCase로_보낸다() {
+    void 정상_응답이면_message와_mood를_돌려주고_요청_본문을_camelCase로_보낸다() {
         UUID memberId = UUID.randomUUID();
         server.expect(requestTo(BASE_URL + "/greetings"))
             .andExpect(method(HttpMethod.POST))
@@ -56,12 +59,13 @@ class AiServerGreetingGenerationAdapterTest {
             .andExpect(jsonPath("$.characterName").value("티큐"))
             // 서버 Jackson 시간대 설정과 무관하게 UTC Z 문자열이어야 한다
             .andExpect(jsonPath("$.lastGreetedAt").value("2026-10-20T15:00:00Z"))
-            .andRespond(withSuccess("{\"message\":\"소연 님,\\n오늘 어땠어요?\",\"mood\":\"HAPPY\"}",
+            .andRespond(withSuccess("{\"message\":\"소연 님,\\n오늘 어땠어요?\",\"mood\":\"CURIOUS\"}",
                 MediaType.APPLICATION_JSON));
 
-        String message = adapter.generate(request(memberId, LAST_GREETED_AT));
+        GreetingResult result = adapter.generate(request(memberId, LAST_GREETED_AT));
 
-        assertThat(message).isEqualTo("소연 님,\n오늘 어땠어요?");
+        assertThat(result.message()).isEqualTo("소연 님,\n오늘 어땠어요?");
+        assertThat(result.mood()).isEqualTo(CharacterMood.CURIOUS);
         server.verify();
     }
 
@@ -71,8 +75,40 @@ class AiServerGreetingGenerationAdapterTest {
             .andExpect(jsonPath("$.lastGreetedAt").value(nullValue()))
             .andRespond(withSuccess("{\"message\":\"안녕\"}", MediaType.APPLICATION_JSON));
 
-        assertThat(adapter.generate(request(UUID.randomUUID(), null))).isEqualTo("안녕");
+        GreetingResult result = adapter.generate(request(UUID.randomUUID(), null));
+
+        assertThat(result.message()).isEqualTo("안녕");
+        assertThat(result.mood()).isEqualTo(CharacterMood.WELCOME);
         server.verify();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"message\":\"안녕\"}",
+        "{\"message\":\"안녕\",\"mood\":null}",
+        "{\"message\":\"안녕\",\"mood\":123}",
+        "{\"message\":\"안녕\",\"mood\":\"HAPPY\"}",
+        // 소문자는 모르는 값이다. 대소문자를 무시하는 구현을 막는다
+        "{\"message\":\"안녕\",\"mood\":\"curious\"}"
+    })
+    void mood가_없거나_모르는_값이면_문구는_유지하고_WELCOME으로_대체한다(String responseBody) {
+        server.expect(requestTo(BASE_URL + "/greetings"))
+            .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+        GreetingResult result = adapter.generate(request(UUID.randomUUID(), LAST_GREETED_AT));
+
+        assertThat(result.message()).isEqualTo("안녕");
+        assertThat(result.mood()).isEqualTo(CharacterMood.WELCOME);
+    }
+
+    @ParameterizedTest
+    @EnumSource(CharacterMood.class)
+    void 다섯_가지_mood를_그대로_읽는다(CharacterMood mood) {
+        server.expect(requestTo(BASE_URL + "/greetings"))
+            .andRespond(withSuccess("{\"message\":\"안녕\",\"mood\":\"" + mood.name() + "\"}",
+                MediaType.APPLICATION_JSON));
+
+        assertThat(adapter.generate(request(UUID.randomUUID(), LAST_GREETED_AT)).mood()).isEqualTo(mood);
     }
 
     @Test

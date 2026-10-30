@@ -18,8 +18,10 @@ import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../support/fake_auth_status_controller.dart';
 import '../../../support/fake_splash_minimum_display_controller.dart';
@@ -55,6 +57,8 @@ Future<ProviderContainer> _pumpApp(
           FakeHomeRepository(
             summary: const HomeSummary(
               characterName: '티티',
+              characterType: CharacterType.character1,
+              characterMood: CharacterMood.welcome,
               personalityTags: ['다정함', '차분함', '유쾌함'],
               greeting: '안녕',
             ),

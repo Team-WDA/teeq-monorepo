@@ -6,13 +6,17 @@ import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/error/app_exception.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_repository.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_token_storage.dart';
 import '../../../../support/scripted_http_client_adapter.dart';
 
 const _homeJson = {
   'characterName': '티큐',
+  'characterType': 'CHARACTER_3',
+  'characterMood': 'CURIOUS',
   'personalityTags': ['다정한', '차분한', '든든한'],
   'greeting': '소연아,\n오늘 하루 어땠어?',
   'callLimit': {'remainingSeconds': 600},
@@ -43,8 +47,32 @@ void main() {
 
     expect(adapter.requestsTo('/api/home').single.method, 'GET');
     expect(summary.characterName, '티큐');
+    expect(summary.characterType, CharacterType.character3);
+    expect(summary.characterMood, CharacterMood.curious);
     expect(summary.personalityTags, ['다정한', '차분한', '든든한']);
     expect(summary.greeting, '소연아,\n오늘 하루 어땠어?');
+  });
+
+  test('fetchHome_mapsUnknownCharacterMoodToWelcome', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/home', [
+      ScriptedReply.json(200, {..._homeJson, 'characterMood': 'HAPPY'}),
+    ]);
+
+    final summary = await repository.fetchHome();
+
+    expect(summary.characterMood, CharacterMood.welcome);
+  });
+
+  test('fetchHome_mapsLowerCaseCharacterMoodToWelcome', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/home', [
+      ScriptedReply.json(200, {..._homeJson, 'characterMood': 'curious'}),
+    ]);
+
+    final summary = await repository.fetchHome();
+
+    expect(summary.characterMood, CharacterMood.welcome);
   });
 
   test('fetchHome_propagatesFailure', () async {
