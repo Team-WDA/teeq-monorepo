@@ -29,8 +29,10 @@ import 'package:teeq/features/feedback/presentation/screens/call_closing_screen.
 import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/feedback/presentation/widgets/feedback_star_rating.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_feedback_repository.dart';
 import '../../../../support/fake_home_repository.dart';
@@ -88,6 +90,8 @@ const _member = Member(
 
 const _summary = HomeSummary(
   characterName: '티티',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정함', '차분함', '유쾌함'],
   greeting: '안녕',
 );

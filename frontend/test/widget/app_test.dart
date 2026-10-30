@@ -13,8 +13,10 @@ import 'package:teeq/features/app_update/presentation/update_required_screen.dar
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +32,8 @@ import '../support/fake_token_storage.dart';
 
 const _homeSummary = HomeSummary(
   characterName: '티티',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정함', '차분함', '유쾌함'],
   greeting: '소연아,\n오늘 하루 어땠어?',
 );

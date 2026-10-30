@@ -13,11 +13,13 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_close_button.dart';
 import 'package:teeq/features/feedback/domain/pending_feedback.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
 import 'package:teeq/features/home/presentation/widgets/character_edit_entry_card.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_home_repository.dart';
 import '../../../../support/viewport_cases.dart';
@@ -40,6 +42,8 @@ const _member = Member(
 
 const _summary = HomeSummary(
   characterName: '티티',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정함', '차분함', '유쾌함'],
   greeting: '소연아,\n오늘 하루 어땠어?',
 );
@@ -49,6 +53,8 @@ const _returnHomeButtonText = '홈으로 돌아가기';
 
 const _pendingSummary = HomeSummary(
   characterName: '티티',
+  characterType: CharacterType.character1,
+  characterMood: CharacterMood.welcome,
   personalityTags: ['다정함', '차분함', '유쾌함'],
   greeting: '소연아,\n오늘 하루 어땠어?',
   pendingFeedback: PendingFeedback(
@@ -380,6 +386,8 @@ void main() {
       testWidgets('has no exception at ${viewport.label}', (tester) async {
         final longSummary = HomeSummary(
           characterName: '가나다라마바사아자차',
+          characterType: CharacterType.character1,
+          characterMood: CharacterMood.welcome,
           personalityTags: ['가' * 50, '나' * 50, '다' * 50],
           greeting: List.filled(4, '가' * 45).join('\n'),
         );
