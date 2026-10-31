@@ -21,6 +21,7 @@ abstract final class AppRoutes {
   static const String bugReport = '/my-page/bug-report';
   static const String error = '/error';
   static const String updateRequired = '/update-required';
+  static const String call = '/calls/current';
   static const String feedbackClosing = '/calls/:callSessionId/feedback';
   static const String feedbackCompletion =
       '/calls/:callSessionId/feedback/completion';
