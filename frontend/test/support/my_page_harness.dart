@@ -18,6 +18,9 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/data/auth_repository_impl.dart';
 import 'package:teeq/features/auth/data/firebase_auth_credential_provider.dart';
 import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
+import 'package:teeq/features/home/data/home_repository_impl.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
+import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/my_page/data/image_picker_profile_image_picker.dart';
 import 'package:teeq/features/my_page/domain/legal_document.dart';
 import 'package:teeq/features/my_page/domain/profile_image_picker.dart';
@@ -26,8 +29,10 @@ import 'package:teeq/features/my_page/presentation/my_page_screen.dart';
 import 'package:teeq/features/my_page/presentation/nickname_change_screen.dart';
 import 'package:teeq/features/my_page/presentation/password_change_completion_screen.dart';
 import 'package:teeq/features/my_page/presentation/password_change_screen.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import 'fake_auth_repository.dart';
+import 'fake_home_repository.dart';
 import 'fake_developer_mode_storage.dart';
 import 'fake_auth_credential_provider.dart';
 import 'fake_token_storage.dart';
@@ -122,6 +127,18 @@ class MyPageHarness {
         tokenStorageProvider.overrideWithValue(tokenStorage),
         developerModeStorageProvider.overrideWithValue(developerModeStorage),
         errorHandlerProvider.overrideWithValue(errorHandler),
+        // 닉네임 변경 화면의 마스코트가 홈 요약을 읽으므로 실제 네트워크 대신 가짜 저장소를 쓴다.
+        homeRepositoryProvider.overrideWithValue(
+          FakeHomeRepository(
+            summary: const HomeSummary(
+              characterName: '티티',
+              characterType: CharacterType.character1,
+              characterMood: CharacterMood.welcome,
+              personalityTags: ['다정함', '차분함', '유쾌함'],
+              greeting: '안녕',
+            ),
+          ),
+        ),
         if (profileImagePicker != null)
           profileImagePickerProvider.overrideWithValue(profileImagePicker),
       ],

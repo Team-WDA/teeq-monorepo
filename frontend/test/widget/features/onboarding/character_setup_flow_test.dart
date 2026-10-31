@@ -178,6 +178,7 @@ void main() {
     showCharacterEditConfirmationDialog(
       tester.element(find.byType(HomeScreen)),
       characterName: '티티',
+      characterType: CharacterType.character3,
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('다시 설정하기'));

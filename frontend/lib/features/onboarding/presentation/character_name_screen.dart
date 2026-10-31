@@ -12,6 +12,7 @@ import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
 import 'package:teeq/core/ui/text_field/outlined_box_text_field.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/character_name_rule.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/widgets/character_naming_illustration.dart';
 
@@ -82,7 +83,16 @@ class _CharacterNameScreenState extends ConsumerState<CharacterNameScreen> {
               description: '너의 답변을 바탕으로 너와 잘 맞는 친구가 탄생했어.\n이제 너만의 별명을 붙여줘.',
             ),
             const SizedBox(height: AppSpacing.space40),
-            const Center(child: CharacterNamingIllustration()),
+            Center(
+              child: CharacterNamingIllustration(
+                characterType:
+                    ref
+                        .watch(characterSetupFlowControllerProvider)
+                        .character
+                        ?.characterType ??
+                    CharacterType.character1,
+              ),
+            ),
             const SizedBox(height: AppSpacing.space8),
             const Center(
               child: AccentOutlineHintTag(message: '너의 티크 친구가 완성됐어!'),

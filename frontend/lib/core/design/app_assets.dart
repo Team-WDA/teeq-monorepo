@@ -48,14 +48,6 @@ abstract final class AppAssets {
   static const String generationOrbStageThree =
       '$_images/generation_orb_stage_three.png';
 
-  // 캐릭터 생성 흐름의 캐릭터 일러스트. characterWelcome은 이미 최종 방향이라 화면에서 회전하지 않는다.
-  static const String characterNaming = '$_images/character_naming.png';
-  static const String characterWelcome = '$_images/character_welcome.png';
-  static const String characterEditPrompt =
-      '$_images/character_edit_prompt.png';
-  static const String characterEditResult =
-      '$_images/character_edit_result.png';
-
   // 캐릭터 생성 흐름의 빛 번짐. 블러 번짐 영역까지 포함한 이미지다.
   static const String glowGeneration = '$_images/glow_generation.png';
   static const String glowNaming = '$_images/glow_naming.png';
@@ -66,9 +58,8 @@ abstract final class AppAssets {
   static const String brandLogo = '$_images/brand_logo.svg';
   static const String defaultAvatarIllustration =
       '$_images/default_avatar_illustration.png';
-  static const String homeCharacterWink = '$_images/home_character_wink.png';
 
-  /// 홈 캐릭터 이미지. 외형 5종 × 표정 5종이며, [CharacterType]의 선언 순서(`character1`~`character5`)가 파일 번호와 같다.
+  /// 캐릭터 이미지(모든 화면 공용). 외형 5종 × 표정 5종이며, [CharacterType]의 선언 순서(`character1`~`character5`)가 파일 번호와 같다.
   static String characterMoodIllustration(
     CharacterType characterType,
     CharacterMood characterMood,
@@ -76,12 +67,7 @@ abstract final class AppAssets {
       '$_images/character_${characterType.index + 1}_mood_${characterMood.name}.png';
   static const String glowHome = glowEdit;
 
-  // 피드백 플로우 마스코트와 빛 번짐. 확정 전 임시 에셋이다.
-  static const String teeqBunnyWink = '$_images/teeq_bunny_wink.png';
-  static const String teeqBunnyJoyfulJump =
-      '$_images/teeq_bunny_joyful_jump.png';
-  static const String teeqBunnyCelebration =
-      '$_images/teeq_bunny_celebration.png';
+  // 피드백 플로우 빛 번짐.
   static const String feedbackGlowEllipse =
       '$_images/feedback_glow_ellipse.png';
   static const String closingGlow = '$_images/closing_glow.png';

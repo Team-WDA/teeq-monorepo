@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 
@@ -25,6 +26,7 @@ Future<ProviderContainer> _pumpHost(WidgetTester tester) async {
             onPressed: () => showCharacterEditConfirmationDialog(
               context,
               characterName: '티티',
+              characterType: CharacterType.character3,
             ),
             child: const Text(_openDialogLabel),
           ),

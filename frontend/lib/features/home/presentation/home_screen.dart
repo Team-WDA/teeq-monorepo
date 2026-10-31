@@ -18,6 +18,7 @@ import 'package:teeq/features/home/presentation/widgets/character_edit_entry_car
 import 'package:teeq/features/home/presentation/widgets/greeting_message_card.dart';
 import 'package:teeq/features/home/presentation/widgets/home_character_illustration.dart';
 import 'package:teeq/features/home/presentation/widgets/personality_tag_row.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
 
 /// 홈 화면. 하단 탭 바는 탭 셸이 제공하므로 여기서는 본문만 그린다.
@@ -33,7 +34,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isCallFlowOpening = false;
 
   /// 팝업이 떠 있는 동안 같은 카드가 다시 눌려도 팝업을 또 띄우지 않는다.
-  Future<void> _openEditDialog(String characterName) async {
+  Future<void> _openEditDialog(
+    String characterName,
+    CharacterType characterType,
+  ) async {
     if (_isEditDialogOpen) {
       return;
     }
@@ -42,6 +46,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await showCharacterEditConfirmationDialog(
         context,
         characterName: characterName,
+        characterType: characterType,
       );
     } finally {
       if (mounted) {
@@ -106,7 +111,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onStartCall: pendingFeedback == null
           ? null
           : () => _openFeedbackFlow(pendingFeedback.callSessionId),
-      onEditCharacter: () => _openEditDialog(summary.characterName),
+      onEditCharacter: () =>
+          _openEditDialog(summary.characterName, summary.characterType),
     );
   }
 }

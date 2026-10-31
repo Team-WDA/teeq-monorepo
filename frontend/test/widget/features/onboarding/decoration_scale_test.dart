@@ -14,6 +14,7 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/features/auth/domain/auth_flow.dart';
 import 'package:teeq/features/auth/presentation/auth_flow_provider.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
@@ -85,6 +86,7 @@ Future<void> _pumpDialogHost(
             onPressed: () => showCharacterEditConfirmationDialog(
               context,
               characterName: '티티',
+              characterType: CharacterType.character3,
             ),
             child: const Text(_openDialogLabel),
           ),
@@ -132,12 +134,16 @@ Future<void> _pumpGeneratingScreen(
   await tester.pump(AppAnimationDurations.generationStage * 4);
 }
 
-Finder _namingCharacterImage() => find.byWidgetPredicate(
+/// 테스트 컨테이너가 기록한 캐릭터(character3)의 [mood] 표정 이미지.
+Finder _characterImage(CharacterMood mood) => find.byWidgetPredicate(
   (widget) =>
       widget is Image &&
       widget.image is AssetImage &&
-      (widget.image as AssetImage).assetName == AppAssets.characterNaming,
+      (widget.image as AssetImage).assetName ==
+          AppAssets.characterMoodIllustration(CharacterType.character3, mood),
 );
+
+Finder _namingCharacterImage() => _characterImage(CharacterMood.welcome);
 
 Future<Size> _namingCharacterSizeAt(WidgetTester tester, double width) async {
   final container = _createContainer(character: _unnamedCharacter);
@@ -170,6 +176,8 @@ void main() {
           _buildApp(_createContainer(), const CharacterResultScreen()),
         );
         expect(tester.takeException(), isNull);
+        // 가입 결과는 흐름 상태 캐릭터의 신남 표정을 그린다.
+        expect(_characterImage(CharacterMood.excited), findsOneWidget);
       });
 
       testWidgets('edit result screen renders without exception', (
@@ -184,6 +192,8 @@ void main() {
           ),
         );
         expect(tester.takeException(), isNull);
+        // 수정 결과는 흐름 상태 캐릭터의 축하 표정을 그린다.
+        expect(_characterImage(CharacterMood.celebrate), findsOneWidget);
       });
 
       testWidgets('character name screen renders without exception', (
@@ -212,6 +222,8 @@ void main() {
       ) async {
         await _pumpDialogHost(tester, viewport, _createContainer());
         expect(tester.takeException(), isNull);
+        // 수정 확인 팝업은 호출한 쪽이 넘긴 캐릭터의 궁금 표정을 그린다.
+        expect(_characterImage(CharacterMood.curious), findsOneWidget);
       });
 
       testWidgets('welcome screen renders without exception', (tester) async {
@@ -243,17 +255,14 @@ void main() {
 
     expect(
       sizeAtDesignWidth.width,
-      closeTo(AppLayout.characterNamingIllustrationWidth, 0.01),
+      closeTo(AppLayout.characterNamingIllustrationSize, 0.01),
     );
     expect(
       sizeAtWide.width / sizeAtNarrow.width,
       closeTo((430 - 48) / (320 - 48), (430 - 48) / (320 - 48) * 0.01),
     );
-    const designAspectRatio =
-        AppLayout.characterNamingIllustrationWidth /
-        AppLayout.characterNamingIllustrationHeight;
     for (final size in [sizeAtDesignWidth, sizeAtWide, sizeAtNarrow]) {
-      expect(size.width / size.height, closeTo(designAspectRatio, 0.001));
+      expect(size.width / size.height, closeTo(1, 0.001));
     }
   });
 

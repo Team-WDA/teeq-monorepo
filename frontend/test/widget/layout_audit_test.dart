@@ -335,7 +335,22 @@ final Map<String, _ScreenBuilder> _screens = {
   '약관 동의': () =>
       _hostPlain(_newContainer(), const SignupCompletionConsentScreen()),
   '닉네임 변경': () {
-    final container = _newContainer();
+    // 마스코트가 홈 요약을 읽으므로 실제 네트워크 대신 가짜 저장소를 쓴다.
+    final container = _newContainer(
+      overrides: [
+        homeRepositoryProvider.overrideWithValue(
+          FakeHomeRepository(
+            summary: const HomeSummary(
+              characterName: '티티',
+              characterType: CharacterType.character1,
+              characterMood: CharacterMood.welcome,
+              personalityTags: ['다정함', '차분함', '유쾌함'],
+              greeting: '안녕',
+            ),
+          ),
+        ),
+      ],
+    );
     container.read(currentMemberControllerProvider.notifier).update(_member);
     return _hostRouted(
       container,
@@ -490,6 +505,7 @@ final Map<String, _ScreenBuilder> _screens = {
             onPressed: () => showCharacterEditConfirmationDialog(
               context,
               characterName: _longCharacterName,
+              characterType: CharacterType.character1,
             ),
             child: const Text('팝업 열기'),
           ),
