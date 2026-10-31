@@ -15,7 +15,7 @@ public record AuthResponse(
     @Schema(description = "회원 id(UUID)", example = "0192f3a4-5b6c-7d8e-9f01-23456789abcd")
     UUID memberId,
 
-    @Schema(description = "닉네임", example = "티큐")
+    @Schema(description = "닉네임", example = "티크")
     String nickname,
 
     @Schema(description = "AI 캐릭터 보유 여부. false면 앱이 온보딩 화면으로 보낸다", example = "true")

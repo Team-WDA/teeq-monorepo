@@ -8,7 +8,7 @@ import kr.co.teeq.api.aicharacter.core.constant.AiCharacterValidation;
 public record RenameAiCharacterRequest(
     @NotBlank(message = "캐릭터 이름을 입력해 주세요.")
     @Pattern(regexp = AiCharacterValidation.NAME_REGEX, message = AiCharacterValidation.NAME_MESSAGE)
-    @Schema(description = "캐릭터 이름. 한글만 사용해 2~10자. 다른 회원과 같아도 된다", example = "티큐")
+    @Schema(description = "캐릭터 이름. 한글만 사용해 2~10자. 다른 회원과 같아도 된다", example = "티크")
     String name
 ) {
 
