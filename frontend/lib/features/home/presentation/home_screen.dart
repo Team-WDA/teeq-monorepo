@@ -10,9 +10,14 @@ import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
+import 'package:teeq/core/logging/app_log_level.dart';
+import 'package:teeq/core/logging/app_logger.dart';
+import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/progress/full_screen_loading_indicator.dart';
+import 'package:teeq/features/home/domain/feedback_flow_path.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
+import 'package:teeq/features/home/domain/pending_feedback_auto_open_policy.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
 import 'package:teeq/features/home/presentation/widgets/character_edit_entry_card.dart';
@@ -35,6 +40,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isCallFlowOpening = false;
   GoRouterDelegate? _routerDelegate;
   String? _previousPath;
+
+  /// 피드백 흐름을 닫고 홈으로 돌아온 직후, 그 흐름의 통화 세션 id. 다른 경로로 홈에 오면 null이다.
+  String? _lastClosedFeedbackCallSessionId;
 
   /// 팝업이 떠 있는 동안 같은 카드가 다시 눌려도 팝업을 또 띄우지 않는다.
   Future<void> _openEditDialog(
@@ -68,6 +76,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _previousPath = _currentPath(routerDelegate);
       routerDelegate.addListener(_refetchWhenReturningToHome);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _requestMicrophonePermissionOnce();
+    });
+  }
+
+  /// 홈 첫 표시 때 마이크 권한을 한 번 묻는다. 실패해도 홈은 그대로 두고 로그만 남긴다.
+  void _requestMicrophonePermissionOnce() {
+    final logger = ref.read(appLoggerProvider);
+    unawaited(
+      ref
+          .read(microphonePermissionPromptProvider)
+          .requestOnceIfNeeded()
+          .catchError((Object error, StackTrace stackTrace) {
+            logger.log(
+              '마이크 권한 요청 실패',
+              name: 'HomeScreen',
+              level: AppLogLevel.warning,
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+    );
   }
 
   @override
@@ -94,6 +127,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (path != AppRoutes.home || previousPath == AppRoutes.home) {
       return;
     }
+    // 탭 셸 안의 홈은 위 화면이 `context.go`로 끝나도 isCurrent가 바뀌지 않고 push Future도 끝나지 않으므로,
+    // 다른 경로에서 홈으로 돌아오는 순간 흐름 진입 잠금을 푼다.
+    _releaseCallFlowOpening();
+    // 피드백 흐름에서 돌아왔으면 같은 피드백을 바로 다시 열지 않고, 다른 경로에서 왔으면 다시 열 수 있게 한다.
+    _lastClosedFeedbackCallSessionId = previousPath == null
+        ? null
+        : callSessionIdFromFeedbackPath(previousPath);
     final memberId = ref.read(currentMemberControllerProvider)?.memberId;
     if (memberId == null) {
       return;
@@ -112,20 +152,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // 흐름이 스택을 교체하며 끝나 홈 라우트가 다시 맨 위가 되면, 홈 데이터가 그대로여도 다시 열 수 있어야 한다.
     if (ModalRoute.of(context)?.isCurrent ?? false) {
       _releaseCallFlowOpening();
+      // 빌드 도중 이동하지 않도록 프레임 뒤에 대기 피드백을 열지 판단한다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _openPendingFeedbackIfNeeded();
+        }
+      });
     }
   }
 
-  /// 피드백 흐름을 연다. 흐름은 `context.go`로 스택을 교체하며 끝나 push의 Future가 끝나지 않을 수 있으므로
+  /// 대기 피드백이 있고 홈이 맨 위 화면이면 피드백 흐름을 자동으로 연다.
+  /// 홈 요약이 다시 조회 중이면 이전 값으로 판단하지 않고 새 값이 도착할 때 다시 판단한다.
+  void _openPendingFeedbackIfNeeded() {
+    final routerDelegate = _routerDelegate;
+    // 라우터가 없는 하네스에서는 이동하지 않는다.
+    // 캐릭터 수정 팝업은 루트 Navigator에 떠서 홈이 현재 화면으로 남으므로 따로 막는다.
+    if (routerDelegate == null || _isCallFlowOpening || _isEditDialogOpen) {
+      return;
+    }
+    // 탭 셸 안의 홈은 위에 다른 화면이 쌓여도 자기 Navigator에서는 현재 화면이므로 경로도 함께 확인한다.
+    final isHomeOnTop =
+        (ModalRoute.of(context)?.isCurrent ?? false) &&
+        _currentPath(routerDelegate) == AppRoutes.home;
+    if (!isHomeOnTop) {
+      return;
+    }
+    final memberId = ref.read(currentMemberControllerProvider)?.memberId;
+    if (memberId == null) {
+      return;
+    }
+    final summaryState = ref.read(homeSummaryProvider(memberId));
+    if (summaryState.isLoading) {
+      return;
+    }
+    final pendingFeedback = summaryState.value?.pendingFeedback;
+    if (pendingFeedback == null ||
+        !shouldAutoOpenPendingFeedback(
+          pendingFeedback: pendingFeedback,
+          lastClosedFeedbackCallSessionId: _lastClosedFeedbackCallSessionId,
+        )) {
+      return;
+    }
+    _openFeedbackFlow(pendingFeedback.callSessionId);
+  }
+
+  void _openCallFlow() => _pushCallFlowRoute(AppRoutes.call);
+
+  void _openFeedbackFlow(String callSessionId) =>
+      _pushCallFlowRoute(AppRoutes.feedbackClosingLocation(callSessionId));
+
+  /// 통화·피드백 흐름을 연다. 흐름은 `context.go`로 스택을 교체하며 끝나 push의 Future가 끝나지 않을 수 있으므로
   /// await하지 않고, 플래그는 Future 완료와 홈 요약 데이터 변경 두 곳에서 내린다.
-  void _openFeedbackFlow(String callSessionId) {
+  void _pushCallFlowRoute(String location) {
     if (_isCallFlowOpening) {
       return;
     }
     _isCallFlowOpening = true;
     unawaited(
-      context
-          .push<void>(AppRoutes.feedbackClosingLocation(callSessionId))
-          .whenComplete(_releaseCallFlowOpening),
+      context.push<void>(location).whenComplete(_releaseCallFlowOpening),
     );
   }
 
@@ -151,6 +235,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (next case AsyncData(:final value) when value != previous?.value) {
         _releaseCallFlowOpening();
       }
+      // 새 홈 요약이 도착하면 대기 피드백을 열지 판단한다.
+      if (next is AsyncData) {
+        _openPendingFeedbackIfNeeded();
+      }
     });
     final summaryState = ref.watch(homeSummaryProvider(memberId));
     if (summaryState.isLoading) {
@@ -160,12 +248,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (summary == null) {
       return const SizedBox.shrink();
     }
-    final pendingFeedback = summary.pendingFeedback;
     return _HomeContent(
       summary: summary,
-      onStartCall: pendingFeedback == null
-          ? null
-          : () => _openFeedbackFlow(pendingFeedback.callSessionId),
+      onStartCall: _openCallFlow,
       onEditCharacter: () =>
           _openEditDialog(summary.characterName, summary.characterType),
     );
@@ -180,7 +265,7 @@ class _HomeContent extends StatelessWidget {
   });
 
   final HomeSummary summary;
-  final VoidCallback? onStartCall;
+  final VoidCallback onStartCall;
   final VoidCallback onEditCharacter;
 
   @override

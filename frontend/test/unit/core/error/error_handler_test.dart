@@ -13,6 +13,7 @@ import 'package:teeq/core/error/error_messages.dart';
 import 'package:teeq/core/logging/app_log_entry.dart';
 import 'package:teeq/core/logging/app_log_level.dart';
 import 'package:teeq/core/logging/app_logger.dart';
+import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/core/router/app_router.dart';
 import 'package:teeq/core/router/error_page_arguments.dart';
 import 'package:teeq/core/ui/toast/toast_controller.dart';
@@ -23,6 +24,7 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 
+import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_auth_status_controller.dart';
 import '../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../support/fake_home_repository.dart';
@@ -44,6 +46,9 @@ Future<ProviderContainer> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        microphonePermissionPromptProvider.overrideWithValue(
+          FakeMicrophonePermissionPrompt(),
+        ),
         splashMinimumDisplayControllerProvider.overrideWith(
           () => FakeSplashMinimumDisplayController(true),
         ),
@@ -199,6 +204,9 @@ void main() {
     ProviderContainer containerLoggingTo(List<AppLogEntry> entries) {
       final container = ProviderContainer(
         overrides: [
+          microphonePermissionPromptProvider.overrideWithValue(
+            FakeMicrophonePermissionPrompt(),
+          ),
           appLoggerProvider.overrideWithValue(AppLogger(onEntry: entries.add)),
         ],
       );

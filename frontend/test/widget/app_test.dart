@@ -1,3 +1,4 @@
+import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
@@ -22,6 +23,7 @@ import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_app_permission_gateway.dart';
 import '../support/fake_app_update_controller.dart';
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
@@ -42,6 +44,9 @@ Future<void> _pumpSignedInApp(WidgetTester tester, Member member) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        microphonePermissionPromptProvider.overrideWithValue(
+          FakeMicrophonePermissionPrompt(),
+        ),
         splashMinimumDisplayControllerProvider.overrideWith(
           () => FakeSplashMinimumDisplayController(true),
         ),
@@ -66,6 +71,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          microphonePermissionPromptProvider.overrideWithValue(
+            FakeMicrophonePermissionPrompt(),
+          ),
           splashMinimumDisplayControllerProvider.overrideWith(
             () => FakeSplashMinimumDisplayController(true),
           ),
@@ -136,6 +144,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          microphonePermissionPromptProvider.overrideWithValue(
+            FakeMicrophonePermissionPrompt(),
+          ),
           tokenStorageProvider.overrideWithValue(tokenStorage),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
@@ -164,6 +175,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          microphonePermissionPromptProvider.overrideWithValue(
+            FakeMicrophonePermissionPrompt(),
+          ),
           appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
           tokenStorageProvider.overrideWithValue(
             FakeTokenStorage(
@@ -212,6 +226,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          microphonePermissionPromptProvider.overrideWithValue(
+            FakeMicrophonePermissionPrompt(),
+          ),
           tokenStorageProvider.overrideWithValue(tokenStorage),
           authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
           appUpdateControllerProvider.overrideWith(() {

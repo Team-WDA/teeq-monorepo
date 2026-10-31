@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
@@ -27,6 +28,7 @@ import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
+import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_auth_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
 import '../../../support/fake_splash_minimum_display_controller.dart';
@@ -78,6 +80,9 @@ Future<ProviderContainer> _pumpApp(
     // 실패 응답이 재시도되지 않도록 한다.
     retry: (retryCount, error) => null,
     overrides: [
+      microphonePermissionPromptProvider.overrideWithValue(
+        FakeMicrophonePermissionPrompt(),
+      ),
       splashMinimumDisplayControllerProvider.overrideWith(
         () => FakeSplashMinimumDisplayController(true),
       ),
