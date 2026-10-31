@@ -20,7 +20,8 @@ val hasReleaseKey = releaseStoreFile != null && releaseStoreFile.exists() && rel
 
 android {
     namespace = "kr.co.teeq.app"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android 14.1.x가 compileSdk 37 이상을 요구해서 Flutter 기본값(36) 대신 37로 고정한다.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

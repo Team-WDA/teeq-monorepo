@@ -16,6 +16,7 @@ import 'package:teeq/features/auth/presentation/signup_completion_consent_screen
 import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/bug_report/presentation/bug_report_screen.dart';
+import 'package:teeq/features/call/presentation/call_screen.dart';
 import 'package:teeq/features/error/presentation/error_screen.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_redirect.dart';
@@ -232,6 +233,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: AppRoutes.updateRequired,
         builder: (context, state) => const UpdateRequiredScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.call,
+        builder: (context, state) => const CallScreen(),
       ),
       GoRoute(
         path: AppRoutes.error,

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -68,5 +69,69 @@ void main() {
 
   test('falls back to the string form for other objects', () {
     expect(BodyPreviewBuilder.fromData(42)!.text, '42');
+  });
+
+  group('token masking', () {
+    test('masks token values in nested maps and keeps other values', () {
+      final text = BodyPreviewBuilder.fromData({
+        'connection': {'token': 'secret', 'livekitUrl': 'wss://x'},
+      })!.text;
+
+      expect(text, isNot(contains('secret')));
+      expect(text, contains('"token": "***"'));
+      expect(text, contains('"livekitUrl": "wss://x"'));
+    });
+
+    test('masks keys containing token regardless of case', () {
+      final text = BodyPreviewBuilder.fromData({
+        'Token': 'a1',
+        'accessToken': 'b2',
+        'refreshToken': 'c3',
+      })!.text;
+
+      expect(text, isNot(contains('a1')));
+      expect(text, isNot(contains('b2')));
+      expect(text, isNot(contains('c3')));
+    });
+
+    test('masks maps inside lists', () {
+      final text = BodyPreviewBuilder.fromData([
+        {'token': 'secret'},
+      ])!.text;
+
+      expect(text, isNot(contains('secret')));
+      expect(text, contains('***'));
+    });
+
+    test('masks a JSON string body', () {
+      final text = BodyPreviewBuilder.fromData(
+        '{"connection":{"token":"secret","livekitUrl":"wss://x"}}',
+      )!.text;
+
+      expect(text, isNot(contains('secret')));
+      expect(text, contains('wss://x'));
+    });
+
+    test('returns a string without token keys byte for byte', () {
+      const original = '{"a":1,  "b" : [2]}';
+
+      expect(BodyPreviewBuilder.fromData(original)!.text, original);
+    });
+
+    test('returns a non-JSON string unchanged', () {
+      expect(BodyPreviewBuilder.fromData('token=secret')!.text, 'token=secret');
+    });
+
+    test('keeps a map without token keys identical to the plain output', () {
+      final data = {
+        'nickname': '철수',
+        'tags': [1, 2],
+      };
+
+      expect(
+        BodyPreviewBuilder.fromData(data)!.text,
+        const JsonEncoder.withIndent('  ').convert(data),
+      );
+    });
   });
 }

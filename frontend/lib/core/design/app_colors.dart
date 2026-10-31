@@ -19,4 +19,11 @@ abstract final class AppColors {
   static const Color tabBarBackground = Color(0xFFF7F7F7);
   static const Color destructiveSurface = Color(0xFFFFF6F5);
   static const Color destructiveText = Color(0xFFFF3B30);
+
+  // 통화 화면. 어두운 배경 위에 그리는 색이다.
+  // 화면 바탕(시안 프레임 채움이 text-primary 변수라 같은 값이다). 캐릭터 정보를 불러오는 동안에도 보인다.
+  static const Color callScreenBackground = Color(0xFF1A1A1A);
+  static const Color textOnDarkSubtle = Color(0x80FFFFFF);
+  static const Color callBackgroundScrim = Color(0xD92C2C2C);
+  static const Color callSlideTrack = Color(0x73D9D9D9);
 }

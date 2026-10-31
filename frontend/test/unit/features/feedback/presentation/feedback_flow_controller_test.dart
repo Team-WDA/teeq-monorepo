@@ -18,6 +18,7 @@ import 'package:teeq/features/feedback/domain/revisit_intention.dart';
 import 'package:teeq/features/feedback/domain/start_reason.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_state.dart';
+import 'package:teeq/features/feedback/presentation/feedback_status_retry_policy.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
@@ -59,6 +60,27 @@ typedef _SetUp = ({
   _RecordingErrorHandler errorHandler,
 });
 
+/// 처음 [failureCount]번의 상태 조회만 실패하고 이후에는 성공하는 저장소.
+class _FailsNTimesFeedbackRepository extends FakeFeedbackRepository {
+  _FailsNTimesFeedbackRepository(
+    FeedbackStatus status,
+    this._error,
+    this._failureCount,
+  ) : super(status: status);
+
+  final Object _error;
+  final int _failureCount;
+
+  @override
+  Future<FeedbackStatus> fetchStatus(String callSessionId) {
+    if (fetchStatusCount < _failureCount) {
+      fetchStatusCount += 1;
+      return Future.error(_error);
+    }
+    return super.fetchStatus(callSessionId);
+  }
+}
+
 /// 첫 상태 조회만 실패하고 이후에는 성공하는 저장소.
 class _FailsOnceFeedbackRepository extends FakeFeedbackRepository {
   _FailsOnceFeedbackRepository(FeedbackStatus status, this._error)
@@ -94,6 +116,9 @@ _SetUp _setUp(FakeFeedbackRepository feedbackRepository) {
       feedbackRepositoryProvider.overrideWithValue(feedbackRepository),
       homeRepositoryProvider.overrideWithValue(homeRepository),
       errorHandlerProvider.overrideWithValue(errorHandler),
+      feedbackStatusRetryPolicyProvider.overrideWithValue(
+        const FeedbackStatusRetryPolicy(interval: Duration.zero),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -218,6 +243,100 @@ void main() {
     expect(setUp.homeRepository.fetchCount, 2);
   });
 
+  group('loadStatus 재시도', () {
+    final notFeedbackable = apiFailure(
+      ErrorCode.callNotFeedbackable,
+      httpStatus: 409,
+    );
+
+    test('callNotFeedbackableThenSuccess_retriesAndReturnsReady', () async {
+      final repository = _FailsNTimesFeedbackRepository(
+        _status,
+        notFeedbackable,
+        3,
+      );
+      final setUp = _setUp(repository);
+      setUp.controller.start(_callSessionId);
+
+      final result = await setUp.controller.loadStatus();
+
+      expect(result, FeedbackStatusLoadResult.ready);
+      expect(repository.fetchStatusCount, 4);
+      expect(setUp.errorHandler.handledErrors, isEmpty);
+      expect(_stateOf(setUp).status, _status);
+      expect(_stateOf(setUp).isRequestInProgress, isFalse);
+    });
+
+    test('callNotFeedbackableAlways_stopsAtMaxAttemptsAsUnavailable', () async {
+      final repository = FakeFeedbackRepository(
+        status: _status,
+        statusError: notFeedbackable,
+      );
+      final setUp = _setUp(repository);
+      setUp.controller.start(_callSessionId);
+
+      final result = await setUp.controller.loadStatus();
+
+      expect(result, FeedbackStatusLoadResult.unavailable);
+      expect(repository.fetchStatusCount, 10);
+      expect(setUp.errorHandler.handledErrors, isEmpty);
+      expect(_stateOf(setUp).isRequestInProgress, isFalse);
+    });
+
+    test('newGenerationDuringRetryWait_oldCallStopsAndIsIgnored', () async {
+      final repository = FakeFeedbackRepository(
+        status: _status,
+        statusError: notFeedbackable,
+      );
+      final setUp = _setUp(repository);
+      setUp.controller.start(_callSessionId);
+
+      final oldRequest = setUp.controller.loadStatus();
+      // 첫 시도가 실패하고 대기에 들어간 뒤 흐름을 다시 시작한다.
+      await Future<void>.delayed(Duration.zero);
+      setUp.controller.start('call-2');
+      final result = await oldRequest;
+
+      expect(result, FeedbackStatusLoadResult.ignored);
+      expect(repository.fetchStatusCount, lessThan(10));
+      expect(setUp.errorHandler.handledErrors, isEmpty);
+      expect(_stateOf(setUp).callSessionId, 'call-2');
+      expect(_stateOf(setUp).isRequestInProgress, isFalse);
+    });
+
+    test('callSessionNotFound_doesNotRetry', () async {
+      final error = apiFailure(ErrorCode.callSessionNotFound, httpStatus: 404);
+      final repository = FakeFeedbackRepository(
+        status: _status,
+        statusError: error,
+      );
+      final setUp = _setUp(repository);
+      setUp.controller.start(_callSessionId);
+
+      final result = await setUp.controller.loadStatus();
+
+      expect(result, FeedbackStatusLoadResult.unavailable);
+      expect(repository.fetchStatusCount, 1);
+      expect(setUp.errorHandler.handledErrors, [error]);
+    });
+
+    test('otherError_doesNotRetryAndUsesCentralHandling', () async {
+      final error = apiFailure(ErrorCode.internalServerError, httpStatus: 500);
+      final repository = FakeFeedbackRepository(
+        status: _status,
+        statusError: error,
+      );
+      final setUp = _setUp(repository);
+      setUp.controller.start(_callSessionId);
+
+      final result = await setUp.controller.loadStatus();
+
+      expect(result, FeedbackStatusLoadResult.failed);
+      expect(repository.fetchStatusCount, 1);
+      expect(setUp.errorHandler.handledErrors, [error]);
+    });
+  });
+
   test('submitRequired_alreadySubmittedInvalidatesHome', () async {
     final setUp = _setUp(
       FakeFeedbackRepository(
@@ -261,7 +380,7 @@ void main() {
   });
 
   test('loadStatus_failureCallsErrorHandlerAndKeepsStateRetryable', () async {
-    final error = apiFailure(ErrorCode.callNotFeedbackable);
+    final error = apiFailure(ErrorCode.internalServerError, httpStatus: 500);
     final repository = _FailsOnceFeedbackRepository(_status, error);
     final setUp = _setUp(repository);
     setUp.controller.start(_callSessionId);

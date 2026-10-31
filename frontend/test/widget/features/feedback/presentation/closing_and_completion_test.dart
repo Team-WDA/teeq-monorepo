@@ -25,6 +25,7 @@ import 'package:teeq/features/feedback/domain/required_feedback_submission.dart'
 import 'package:teeq/features/feedback/domain/revisit_intention.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_controller.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_state.dart';
+import 'package:teeq/features/feedback/presentation/feedback_status_retry_policy.dart';
 import 'package:teeq/features/feedback/presentation/screens/call_closing_screen.dart';
 import 'package:teeq/features/feedback/presentation/screens/feedback_completion_screen.dart';
 import 'package:teeq/features/feedback/presentation/widgets/feedback_star_rating.dart';
@@ -138,6 +139,9 @@ _Harness _buildHarness(
         homeRepository ?? FakeHomeRepository(summary: _summary),
       ),
       errorHandlerProvider.overrideWithValue(errorHandler),
+      feedbackStatusRetryPolicyProvider.overrideWithValue(
+        const FeedbackStatusRetryPolicy(interval: Duration.zero),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -396,7 +400,7 @@ void main() {
       expect(harness.errorHandler.handledErrors, hasLength(1));
     });
 
-    testWidgets('closingScreen_callNotFeedbackableStaysAndRetries', (
+    testWidgets('closingScreen_callNotFeedbackableExhaustedGoesHomeSilently', (
       tester,
     ) async {
       final harness = await _pumpClosing(
@@ -409,13 +413,9 @@ void main() {
 
       await _tapOpinionButton(tester);
 
-      expect(find.byType(CallClosingScreen), findsOneWidget);
-      expect(find.text(_homePageText), findsNothing);
-      expect(harness.errorHandler.handledErrors, hasLength(1));
-      final button = tester.widget<PrimaryFilledButton>(
-        find.widgetWithText(PrimaryFilledButton, '의견 남기기'),
-      );
-      expect(button.onPressed, isNotNull);
+      expect(find.text(_homePageText), findsOneWidget);
+      expect(find.byType(CallClosingScreen), findsNothing);
+      expect(harness.errorHandler.handledErrors, isEmpty);
     });
 
     testWidgets('closingScreen_homeRefetchErrorWithCachedValueIsNonBlocking', (

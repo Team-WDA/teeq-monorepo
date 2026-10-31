@@ -8,16 +8,18 @@ import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/features/feedback/data/feedback_repository_impl.dart';
 import 'package:teeq/features/feedback/domain/awkward_moment.dart';
 import 'package:teeq/features/feedback/domain/detailed_feedback_question.dart';
+import 'package:teeq/features/feedback/domain/feedback_status.dart';
 import 'package:teeq/features/feedback/domain/previous_call_recall.dart';
 import 'package:teeq/features/feedback/domain/revisit_intention.dart';
 import 'package:teeq/features/feedback/domain/start_reason.dart';
 import 'package:teeq/features/feedback/presentation/feedback_flow_state.dart';
+import 'package:teeq/features/feedback/presentation/feedback_status_retry_policy.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 
 part 'feedback_flow_controller.g.dart';
 
 /// 피드백 상태 조회 결과. [ignored]는 이미 요청 중이라 아무것도 보내지 않았다는 뜻이고,
-/// [unavailable]은 통화 세션이 없어 다시 시도해도 소용없다는 뜻이다.
+/// [unavailable]은 통화 세션이 없거나 재시도 끝에도 피드백을 받을 수 없어 더 시도해도 소용없다는 뜻이다.
 enum FeedbackStatusLoadResult {
   ready,
   alreadySubmitted,
@@ -67,6 +69,8 @@ class FeedbackFlowController extends _$FeedbackFlowController {
   }
 
   /// 통화의 피드백 상태를 불러온다. 실패해도 상태는 그대로라 같은 입력으로 다시 시도할 수 있다.
+  /// AI 서버가 끝난 통화를 아직 보고하지 않아 `CALL_NOT_FEEDBACKABLE`이 오면 정책만큼 재시도하고,
+  /// 끝내 받을 수 없으면 오류 표시 없이 [FeedbackStatusLoadResult.unavailable]을 돌려준다.
   Future<FeedbackStatusLoadResult> loadStatus() async {
     final callSessionId = state.callSessionId;
     if (state.isRequestInProgress || callSessionId == null) {
@@ -75,10 +79,8 @@ class FeedbackFlowController extends _$FeedbackFlowController {
     final generation = _generation;
     state = state.copyWith(isRequestInProgress: true);
     try {
-      final status = await ref
-          .read(feedbackRepositoryProvider)
-          .fetchStatus(callSessionId);
-      if (generation != _generation) {
+      final status = await _fetchStatusWithRetry(callSessionId, generation);
+      if (status == null || generation != _generation) {
         return FeedbackStatusLoadResult.ignored;
       }
       state = state.copyWith(status: status);
@@ -89,6 +91,9 @@ class FeedbackFlowController extends _$FeedbackFlowController {
       }
       return FeedbackStatusLoadResult.ready;
     } catch (error) {
+      if (_hasErrorCode(error, ErrorCode.callNotFeedbackable)) {
+        return FeedbackStatusLoadResult.unavailable;
+      }
       ref.read(errorHandlerProvider).handle(error);
       if (_isCallSessionNotFound(error)) {
         _invalidateHomeSummary();
@@ -97,6 +102,33 @@ class FeedbackFlowController extends _$FeedbackFlowController {
       return FeedbackStatusLoadResult.failed;
     } finally {
       _releaseRequest(generation);
+    }
+  }
+
+  /// `CALL_NOT_FEEDBACKABLE`일 때만 정책의 간격·횟수대로 다시 조회한다.
+  /// 대기 중 흐름이 바뀌면 `null`을 돌려주고, 횟수를 다 쓰면 마지막 오류를 그대로 던진다.
+  Future<FeedbackStatus?> _fetchStatusWithRetry(
+    String callSessionId,
+    int generation,
+  ) async {
+    final policy = ref.read(feedbackStatusRetryPolicyProvider);
+    for (var attempt = 1; ; attempt += 1) {
+      try {
+        return await ref
+            .read(feedbackRepositoryProvider)
+            .fetchStatus(callSessionId);
+      } on Object catch (error) {
+        final retryable =
+            _hasErrorCode(error, ErrorCode.callNotFeedbackable) &&
+            attempt < policy.maxAttempts;
+        if (!retryable) {
+          rethrow;
+        }
+      }
+      await Future<void>.delayed(policy.interval);
+      if (generation != _generation) {
+        return null;
+      }
     }
   }
 

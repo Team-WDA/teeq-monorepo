@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/app.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
@@ -24,6 +25,7 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_state
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
+import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_ai_character_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
 import '../../../support/fake_onboarding_catalog_repository.dart';
@@ -76,6 +78,9 @@ Future<ProviderContainer> _pumpApp(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      microphonePermissionPromptProvider.overrideWithValue(
+        FakeMicrophonePermissionPrompt(),
+      ),
       splashMinimumDisplayControllerProvider.overrideWith(
         () => FakeSplashMinimumDisplayController(true),
       ),
