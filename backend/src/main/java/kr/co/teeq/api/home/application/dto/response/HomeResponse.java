@@ -8,7 +8,7 @@ import kr.co.teeq.api.feedback.application.dto.response.PendingFeedbackResponse;
 import kr.co.teeq.api.home.core.constant.CharacterMood;
 
 public record HomeResponse(
-    @Schema(description = "캐릭터 이름", example = "티큐")
+    @Schema(description = "캐릭터 이름", example = "티크")
     String characterName,
 
     @Schema(description = "AI 서버가 정한 캐릭터 유형. 홈 캐릭터 이미지의 외형을 고른다", example = "CHARACTER_3")

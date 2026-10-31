@@ -7,11 +7,19 @@ import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/neutral_filled_button.dart';
 import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/option_card/selectable_option_card.dart';
+import 'package:teeq/features/onboarding/data/onboarding_catalog_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
+
+import '../../../../support/fake_onboarding_catalog_repository.dart';
+
+final _relationship = testOnboardingQuestion('RELATIONSHIP');
+final _personality = testOnboardingQuestion('PERSONALITY');
+final _closeFriend = testOnboardingOption('RELATIONSHIP_CLOSE_FRIEND');
+final _interrupting = testOnboardingOption('AVOID_BEHAVIOR_INTERRUPTING');
 
 Future<ProviderContainer> _pumpScreen(
   WidgetTester tester, {
@@ -33,8 +41,15 @@ Future<ProviderContainer> _pumpScreen(
     ],
   );
   addTearDown(router.dispose);
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+    overrides: [
+      onboardingCatalogRepositoryProvider.overrideWithValue(
+        FakeOnboardingCatalogRepository(),
+      ),
+    ],
+  );
   addTearDown(container.dispose);
+  await container.read(onboardingCatalogProvider.future);
   final controller = container.read(
     characterSetupFlowControllerProvider.notifier,
   )..start(mode);
@@ -79,13 +94,13 @@ void main() {
     (tester) async {
       await _pumpScreen(tester);
 
-      await _tapOption(tester, OnboardingOption.relationshipCloseFriend);
+      await _tapOption(tester, _closeFriend);
       expect(_nextOnPressed(tester), isNotNull);
 
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();
 
-      expect(find.text(OnboardingQuestion.personality.title), findsOneWidget);
+      expect(find.text(_personality.title), findsOneWidget);
       expect(_nextOnPressed(tester), isNull);
     },
   );
@@ -94,7 +109,7 @@ void main() {
     'multiple choice question enables next with one selection and disables again after deselecting',
     (tester) async {
       await _pumpScreen(tester, startIndex: 6);
-      const option = OnboardingOption.avoidBehaviorInterrupting;
+      final option = _interrupting;
 
       expect(find.textContaining('(복수 선택)'), findsOneWidget);
       await _tapOption(tester, option);
@@ -109,7 +124,7 @@ void main() {
     tester,
   ) async {
     await _pumpScreen(tester, startIndex: 6);
-    await _tapOption(tester, OnboardingOption.avoidBehaviorInterrupting);
+    await _tapOption(tester, _interrupting);
 
     await tester.tap(find.text('다음'));
     await tester.pumpAndSettle();
@@ -121,20 +136,20 @@ void main() {
     'system back on second question returns to first and keeps selection',
     (tester) async {
       final container = await _pumpScreen(tester);
-      await _tapOption(tester, OnboardingOption.relationshipCloseFriend);
+      await _tapOption(tester, _closeFriend);
       await tester.tap(find.text('다음'));
       await tester.pumpAndSettle();
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text(OnboardingQuestion.relationship.title), findsOneWidget);
+      expect(find.text(_relationship.title), findsOneWidget);
       expect(
         container
             .read(characterSetupFlowControllerProvider)
             .selections
-            .selectedFor(OnboardingQuestion.relationship),
-        {OnboardingOption.relationshipCloseFriend},
+            .selectedFor(_relationship),
+        {_closeFriend},
       );
       expect(_nextOnPressed(tester), isNotNull);
     },
@@ -158,21 +173,21 @@ void main() {
     tester,
   ) async {
     final container = await _pumpScreen(tester);
-    await _tapOption(tester, OnboardingOption.relationshipCloseFriend);
+    await _tapOption(tester, _closeFriend);
     await tester.tap(find.text('다음'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('이전'));
     await tester.pumpAndSettle();
 
-    expect(find.text(OnboardingQuestion.relationship.title), findsOneWidget);
+    expect(find.text(_relationship.title), findsOneWidget);
     expect(find.text('이전'), findsNothing);
     expect(
       container
           .read(characterSetupFlowControllerProvider)
           .selections
-          .selectedFor(OnboardingQuestion.relationship),
-      {OnboardingOption.relationshipCloseFriend},
+          .selectedFor(_relationship),
+      {_closeFriend},
     );
     expect(_nextOnPressed(tester), isNotNull);
   });
@@ -196,7 +211,7 @@ void main() {
         tester,
         mode: CharacterSetupMode.edit,
       );
-      await _tapOption(tester, OnboardingOption.relationshipCloseFriend);
+      await _tapOption(tester, _closeFriend);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -204,10 +219,7 @@ void main() {
       expect(find.text('홈 스텁'), findsOneWidget);
       final state = container.read(characterSetupFlowControllerProvider);
       expect(state.mode, CharacterSetupMode.firstTime);
-      expect(
-        state.selections.isAnswered(OnboardingQuestion.relationship),
-        isFalse,
-      );
+      expect(state.selections.isAnswered(_relationship), isFalse);
     },
   );
 }

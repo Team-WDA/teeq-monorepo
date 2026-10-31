@@ -2,6 +2,7 @@ package kr.co.teeq.api.onboarding.application.service;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,8 @@ import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionsResponse;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingQuestion;
 import kr.co.teeq.api.onboarding.core.entity.OnboardingAnswer;
@@ -62,6 +65,14 @@ public class OnboardingAnswerService {
     // 저장하지 않고 검증만 한다. 다른 호출(AI 서버 등) 전에 잘못된 답변을 걸러낼 때 쓴다
     public void validateAnswers(List<OnboardingAnswerGroupRequest> groups) {
         validate(groups);
+    }
+
+    // 질문 구조는 코드 enum이 원천이라 DB 접근이 없다. 문구는 내려주지 않고 FE가 코드로 매핑한다
+    public OnboardingQuestionsResponse getQuestions() {
+        return new OnboardingQuestionsResponse(Arrays.stream(OnboardingQuestion.values())
+            .map(question -> new OnboardingQuestionResponse(question, question.minSelections(),
+                question.maxSelections(), OnboardingOption.of(question)))
+            .toList());
     }
 
     @Transactional(readOnly = true)

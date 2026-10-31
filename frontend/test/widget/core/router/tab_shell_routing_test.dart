@@ -119,7 +119,7 @@ void main() {
     expect(find.byType(MainBottomTabBar), findsOneWidget);
   });
 
-  testWidgets('tapping my tab shows my page and keeps home state', (
+  testWidgets('tapping my tab shows my page and refetches home on return', (
     tester,
   ) async {
     final homeRepository = FakeHomeRepository(summary: _homeSummary);
@@ -136,7 +136,8 @@ void main() {
     await tester.tap(find.text('홈'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(homeRepository.fetchCount, 1);
+    // 홈 탭으로 돌아오면 홈 요약을 다시 조회한다.
+    expect(homeRepository.fetchCount, 2);
   });
 
   testWidgets('repeated taps on same tab do not throw or duplicate pages', (

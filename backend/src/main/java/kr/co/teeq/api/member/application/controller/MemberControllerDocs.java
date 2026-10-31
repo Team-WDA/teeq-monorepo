@@ -35,7 +35,7 @@ public interface MemberControllerDocs {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<NicknameAvailabilityResponse> checkNicknameAvailability(
-        @Parameter(description = "확인할 닉네임. 한글만 사용해 2~10자", example = "티큐")
+        @Parameter(description = "확인할 닉네임. 한글만 사용해 2~10자", example = "티크")
         @Pattern(regexp = MemberValidation.NICKNAME_REGEX, message = MemberValidation.NICKNAME_MESSAGE)
         String nickname);
 

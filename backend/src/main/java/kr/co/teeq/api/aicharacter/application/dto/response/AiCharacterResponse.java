@@ -6,7 +6,7 @@ import kr.co.teeq.api.aicharacter.core.entity.AiCharacter;
 import kr.co.teeq.api.common.core.constant.CharacterType;
 
 public record AiCharacterResponse(
-    @Schema(description = "캐릭터 이름", example = "티큐")
+    @Schema(description = "캐릭터 이름", example = "티크")
     String name,
 
     @Schema(description = "AI 서버가 정한 캐릭터 유형", example = "CHARACTER_3")

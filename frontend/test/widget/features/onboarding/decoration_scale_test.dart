@@ -24,9 +24,11 @@ import 'package:teeq/features/onboarding/presentation/character_generating_scree
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
 import '../../../support/fake_ai_character_repository.dart';
+import '../../../support/fake_onboarding_catalog_repository.dart';
 import '../../../support/viewport_cases.dart';
 
 class _StubAuthFlow extends Fake implements AuthFlow {}
@@ -56,6 +58,9 @@ ProviderContainer _createContainer({
       ),
       authFlowProvider.overrideWithValue(_StubAuthFlow()),
       errorHandlerProvider.overrideWithValue(_StubErrorHandler()),
+      onboardingCatalogProvider.overrideWithValue(
+        AsyncData(testOnboardingCatalog),
+      ),
     ],
   );
   addTearDown(container.dispose);

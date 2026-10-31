@@ -10,20 +10,44 @@ import 'package:teeq/core/design/app_text_styles.dart';
 enum StageProgressStatus { completed, inProgress, pending }
 
 /// 단계 원과 연결선, 라벨을 가로로 나열하는 단계 표시기. 각 단계는 같은 폭의 열을 차지한다.
+/// [progress](0.0~1.0)에 따라 단계 상태와 연결선 채움이 이어서 바뀐다. 첫 단계는 항상 완료다.
 class StageProgressStepper extends StatelessWidget {
-  // 목록 길이 assert는 const 표현식이 아니어서 const 생성자로 만들 수 없다.
-  // ignore: prefer_const_constructors_in_immutables
-  StageProgressStepper({
+  const StageProgressStepper({
     super.key,
     required this.labels,
-    required this.statuses,
-  }) : assert(
-         labels.length == statuses.length,
-         'labels and statuses must have the same length',
-       );
+    required this.progress,
+  });
 
   final List<String> labels;
-  final List<StageProgressStatus> statuses;
+  final double progress;
+
+  /// 단계 k는 progress가 k/n 이상이면 완료, (k-1)/n 이상이면 진행 중, 아니면 대기다.
+  StageProgressStatus _statusAt(int stageIndex) {
+    if (stageIndex == 0) {
+      return StageProgressStatus.completed;
+    }
+    final stageCount = labels.length;
+    if (progress >= stageIndex / stageCount) {
+      return StageProgressStatus.completed;
+    }
+    if (progress >= (stageIndex - 1) / stageCount) {
+      return StageProgressStatus.inProgress;
+    }
+    return StageProgressStatus.pending;
+  }
+
+  /// 연결선 j(단계 j와 j+1 사이)의 채움 비율. 첫 연결선은 항상 가득 차고,
+  /// 나머지는 단계 j+1이 진행 중인 구간(j/n~(j+1)/n)에 비례해 찬다.
+  double _connectorFillAt(int connectorIndex) {
+    if (connectorIndex == 0) {
+      return 1;
+    }
+    final stageCount = labels.length;
+    return ((progress - connectorIndex / stageCount) * stageCount).clamp(
+      0.0,
+      1.0,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +74,7 @@ class StageProgressStepper extends StatelessWidget {
                               AppLayout.stageConnectorThickness) /
                           2,
                       child: _StageConnector(
-                        leadingStatus: statuses[index],
-                        trailingStatus: statuses[index + 1],
+                        fillFraction: _connectorFillAt(index),
                       ),
                     ),
                 ],
@@ -66,7 +89,7 @@ class StageProgressStepper extends StatelessWidget {
               Expanded(
                 child: _StageColumn(
                   label: labels[index],
-                  status: statuses[index],
+                  status: _statusAt(index),
                 ),
               ),
           ],
@@ -145,29 +168,27 @@ class _StageIndicator extends StatelessWidget {
 }
 
 class _StageConnector extends StatelessWidget {
-  const _StageConnector({
-    required this.leadingStatus,
-    required this.trailingStatus,
-  });
+  const _StageConnector({required this.fillFraction});
 
-  final StageProgressStatus leadingStatus;
-  final StageProgressStatus trailingStatus;
-
-  List<Color> get _colors {
-    if (leadingStatus != StageProgressStatus.completed) {
-      return const [AppColors.background, AppColors.neutralSurface];
-    }
-    return trailingStatus == StageProgressStatus.completed
-        ? const [AppColors.accentStrong, AppColors.accentStrong]
-        : const [AppColors.accentStrong, AppColors.background];
-  }
+  /// 왼쪽부터 강조색으로 채울 비율(0.0~1.0). 나머지는 대기 연결선 색으로 둔다.
+  final double fillFraction;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: AppLayout.stageConnectorThickness,
       child: DecoratedBox(
-        decoration: BoxDecoration(gradient: LinearGradient(colors: _colors)),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.background, AppColors.neutralSurface],
+          ),
+        ),
+        child: FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: fillFraction,
+          heightFactor: 1,
+          child: const ColoredBox(color: AppColors.accentStrong),
+        ),
       ),
     );
   }

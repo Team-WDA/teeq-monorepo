@@ -21,6 +21,20 @@ class AiServerPropertiesTest {
     }
 
     @Test
+    void apiBaseUrl_호스트만_있으면_접두사를_붙인다() {
+        AiServerProperties properties = new AiServerProperties("https://ai.example", HEADER_NAME, HEADER_VALUE);
+
+        assertThat(properties.apiBaseUrl()).isEqualTo("https://ai.example/internal/v1");
+    }
+
+    @Test
+    void apiBaseUrl_끝_슬래시를_중복하지_않는다() {
+        AiServerProperties properties = new AiServerProperties("https://ai.example/", HEADER_NAME, HEADER_VALUE);
+
+        assertThat(properties.apiBaseUrl()).isEqualTo("https://ai.example/internal/v1");
+    }
+
+    @Test
     void baseUrl이_null이거나_공백이면_예외() {
         assertThatThrownBy(() -> new AiServerProperties(null, HEADER_NAME, HEADER_VALUE))
             .isInstanceOf(IllegalStateException.class);

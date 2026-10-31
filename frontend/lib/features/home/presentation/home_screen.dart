@@ -11,6 +11,7 @@ import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/core/ui/progress/full_screen_loading_indicator.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
@@ -32,6 +33,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isEditDialogOpen = false;
   bool _isCallFlowOpening = false;
+  GoRouterDelegate? _routerDelegate;
+  String? _previousPath;
 
   /// 팝업이 떠 있는 동안 같은 카드가 다시 눌려도 팝업을 또 띄우지 않는다.
   Future<void> _openEditDialog(
@@ -53,6 +56,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         setState(() => _isEditDialogOpen = false);
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 라우터가 없는 하네스에서는 구독하지 않는다.
+    final routerDelegate = GoRouter.maybeOf(context)?.routerDelegate;
+    if (routerDelegate != null) {
+      _routerDelegate = routerDelegate;
+      _previousPath = _currentPath(routerDelegate);
+      routerDelegate.addListener(_refetchWhenReturningToHome);
+    }
+  }
+
+  @override
+  void dispose() {
+    _routerDelegate?.removeListener(_refetchWhenReturningToHome);
+    super.dispose();
+  }
+
+  /// 명령형 push로 쌓인 화면까지 반영한 가장 위 경로. `uri`는 push된 화면을 반영하지 않는다.
+  String? _currentPath(GoRouterDelegate routerDelegate) {
+    final configuration = routerDelegate.currentConfiguration;
+    return configuration.isEmpty ? null : configuration.last.matchedLocation;
+  }
+
+  /// 홈이 아닌 위치에서 홈으로 돌아오는 순간에만 홈 요약을 다시 조회한다(홈→홈은 무시).
+  void _refetchWhenReturningToHome() {
+    final routerDelegate = _routerDelegate;
+    if (routerDelegate == null) {
+      return;
+    }
+    final previousPath = _previousPath;
+    final path = _currentPath(routerDelegate);
+    _previousPath = path;
+    if (path != AppRoutes.home || previousPath == AppRoutes.home) {
+      return;
+    }
+    final memberId = ref.read(currentMemberControllerProvider)?.memberId;
+    if (memberId == null) {
+      return;
+    }
+    final provider = homeSummaryProvider(memberId);
+    // 피드백 흐름 종료 등이 이미 다시 조회 중이면 중복 호출하지 않는다.
+    if (ref.read(provider).isLoading) {
+      return;
+    }
+    ref.invalidate(provider);
   }
 
   @override
@@ -101,7 +152,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _releaseCallFlowOpening();
       }
     });
-    final summary = ref.watch(homeSummaryProvider(memberId)).value;
+    final summaryState = ref.watch(homeSummaryProvider(memberId));
+    if (summaryState.isLoading) {
+      return const FullScreenLoadingIndicator();
+    }
+    final summary = summaryState.value;
     if (summary == null) {
       return const SizedBox.shrink();
     }

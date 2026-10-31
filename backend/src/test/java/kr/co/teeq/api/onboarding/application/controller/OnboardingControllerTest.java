@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +22,8 @@ import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.member.core.repository.MemberRepository;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswerGroupResponse;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionsResponse;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingQuestion;
@@ -113,6 +116,28 @@ class OnboardingControllerTest {
         mockMvc.perform(get(PATH).header(HttpHeaders.AUTHORIZATION, bearer))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.answers").isEmpty());
+    }
+
+    @Test
+    void getQuestions_serializesQuestionStructure() throws Exception {
+        String bearer = bearer();
+        given(onboardingAnswerService.getQuestions()).willReturn(new OnboardingQuestionsResponse(
+            Arrays.stream(OnboardingQuestion.values())
+                .map(question -> new OnboardingQuestionResponse(question, question.minSelections(),
+                    question.maxSelections(), OnboardingOption.of(question)))
+                .toList()));
+
+        mockMvc.perform(get("/api/onboarding/questions").header(HttpHeaders.AUTHORIZATION, bearer))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.questions.length()").value(7))
+            .andExpect(jsonPath("$.questions[0].questionCode").value("RELATIONSHIP"))
+            .andExpect(jsonPath("$.questions[6].optionCodes[0]").value("AVOID_BEHAVIOR_RAPID_QUESTIONS"));
+    }
+
+    @Test
+    void getQuestions_noToken_returns401() throws Exception {
+        mockMvc.perform(get("/api/onboarding/questions"))
+            .andExpect(status().isUnauthorized());
     }
 
     @TestConfiguration(proxyBeanMethods = false)

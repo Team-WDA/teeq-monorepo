@@ -22,7 +22,7 @@ public class CharacterRestClientConfig {
                 new JdkClientHttpRequestFactory(HttpClient.newBuilder().connectTimeout(TIMEOUT).build());
         requestFactory.setReadTimeout(TIMEOUT);
         return RestClient.builder()
-                .baseUrl(properties.baseUrl())
+                .baseUrl(properties.apiBaseUrl())
                 .requestFactory(requestFactory)
                 .build();
     }

@@ -15,16 +15,18 @@ import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart';
+import 'package:teeq/features/onboarding/data/onboarding_catalog_repository_impl.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_state.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
 import '../../../support/fake_ai_character_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
+import '../../../support/fake_onboarding_catalog_repository.dart';
 import '../../../support/fake_splash_minimum_display_controller.dart';
 import '../../../support/fake_home_repository.dart';
 
@@ -84,6 +86,9 @@ Future<ProviderContainer> _pumpApp(
         () => _FakeCurrentMemberController(member),
       ),
       aiCharacterRepositoryProvider.overrideWithValue(repository),
+      onboardingCatalogRepositoryProvider.overrideWithValue(
+        FakeOnboardingCatalogRepository(),
+      ),
       homeRepositoryProvider.overrideWithValue(
         FakeHomeRepository(summary: _homeSummary),
       ),
@@ -105,14 +110,21 @@ Future<void> _tapText(WidgetTester tester, String text) async {
 }
 
 /// 질문 7개를 각 첫 선택지로 채운다(7번은 2개 선택). 마지막 "다음" 뒤 생성 중 화면까지 간다.
+/// 생성 중 화면은 연출 애니메이션이 끝날 때까지 settle하지 않으므로 화면 전환만 흘려보낸다.
 Future<void> _answerAllQuestions(WidgetTester tester) async {
-  for (final question in OnboardingQuestion.values) {
+  final questions = testOnboardingCatalog.questions;
+  for (final question in questions) {
     final selectionCount = question.isMultipleChoice ? 2 : 1;
     for (final option in question.options.take(selectionCount)) {
       await _tapText(tester, option.label);
     }
     await _tapText(tester, '다음');
-    await tester.pumpAndSettle();
+    if (question == questions.last) {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    } else {
+      await tester.pumpAndSettle();
+    }
   }
 }
 
@@ -134,9 +146,9 @@ void main() {
     expect(find.text('우리,\n어떤 사이로 지낼까?'), findsOneWidget);
 
     await _answerAllQuestions(tester);
-    expect(find.text('거의 다 왔어.\n너의 티큐 친구가 태어나고 있어!'), findsOneWidget);
+    expect(find.text('거의 다 왔어.\n너의 티크 친구가 태어나고 있어!'), findsOneWidget);
 
-    await tester.pump(const Duration(milliseconds: 4500));
+    await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
     expect(find.text('마지막으로,\n이 친구의 이름을 정해줘.'), findsOneWidget);
     expect(repository.generateCalls, hasLength(1));
@@ -186,7 +198,7 @@ void main() {
     expect(find.text('우리,\n어떤 사이로 지낼까?'), findsOneWidget);
 
     await _answerAllQuestions(tester);
-    await tester.pump(const Duration(milliseconds: 4500));
+    await tester.pump(const Duration(seconds: 9));
     await tester.pumpAndSettle();
 
     expect(find.text('마지막으로,\n이 친구의 이름을 정해줘.'), findsOneWidget);
@@ -254,11 +266,27 @@ void main() {
         member: _memberWithCharacter,
         repository: FakeAiCharacterRepository(),
       );
+      await container.read(onboardingCatalogProvider.future);
 
       container.read(appRouterProvider).go(AppRoutes.onboardingGenerating);
       await tester.pumpAndSettle();
 
       expect(find.text('우리,\n어떤 사이로 지낼까?'), findsOneWidget);
+    });
+
+    testWidgets('generating without loaded catalog goes to intro', (
+      tester,
+    ) async {
+      final container = await _pumpApp(
+        tester,
+        member: _memberWithoutCharacter,
+        repository: FakeAiCharacterRepository(),
+      );
+
+      container.read(appRouterProvider).go(AppRoutes.onboardingGenerating);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OnboardingIntroductionScreen), findsOneWidget);
     });
 
     testWidgets(

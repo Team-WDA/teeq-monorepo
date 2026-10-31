@@ -24,6 +24,8 @@ import kr.co.teeq.api.member.core.entity.Member;
 import kr.co.teeq.api.onboarding.application.dto.request.OnboardingAnswerGroupRequest;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswerGroupResponse;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionsResponse;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingOption;
 import kr.co.teeq.api.onboarding.core.constant.OnboardingQuestion;
 import kr.co.teeq.api.onboarding.core.entity.OnboardingAnswer;
@@ -341,6 +343,35 @@ class OnboardingAnswerServiceTest {
 
         assertThatThrownBy(() -> onboardingAnswerService.getSpeechStyle(member))
             .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void getQuestions_질문_7개를_선언_순서로_반환한다() {
+        OnboardingQuestionsResponse response = onboardingAnswerService.getQuestions();
+
+        assertThat(response.questions()).hasSize(7);
+        assertThat(response.questions().get(0).questionCode()).isEqualTo(OnboardingQuestion.RELATIONSHIP);
+        OnboardingQuestionResponse last = response.questions().get(6);
+        assertThat(last.questionCode()).isEqualTo(OnboardingQuestion.AVOID_BEHAVIOR);
+        assertThat(last.maxSelections()).isEqualTo(5);
+    }
+
+    @Test
+    void getQuestions_모든_질문의_선택_수가_선택지_수_이하다() {
+        for (OnboardingQuestionResponse question : onboardingAnswerService.getQuestions().questions()) {
+            assertThat(question.minSelections()).isGreaterThanOrEqualTo(1);
+            assertThat(question.maxSelections()).isGreaterThanOrEqualTo(question.minSelections());
+            assertThat(question.maxSelections()).isLessThanOrEqualTo(question.optionCodes().size());
+        }
+    }
+
+    @Test
+    void getQuestions_선택지_합계는_27개다() {
+        int optionCount = onboardingAnswerService.getQuestions().questions().stream()
+            .mapToInt(question -> question.optionCodes().size())
+            .sum();
+
+        assertThat(optionCount).isEqualTo(27);
     }
 
 }

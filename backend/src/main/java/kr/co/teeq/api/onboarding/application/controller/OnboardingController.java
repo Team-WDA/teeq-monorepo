@@ -3,6 +3,7 @@ package kr.co.teeq.api.onboarding.application.controller;
 import com.chuseok22.logging.annotation.LogMonitoring;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionsResponse;
 import kr.co.teeq.api.onboarding.application.service.OnboardingAnswerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class OnboardingController implements OnboardingControllerDocs {
 
     private final OnboardingAnswerService onboardingAnswerService;
+
+    @LogMonitoring
+    @GetMapping("/questions")
+    public ResponseEntity<OnboardingQuestionsResponse> getQuestions() {
+        return ResponseEntity.ok(onboardingAnswerService.getQuestions());
+    }
 
     @LogMonitoring
     @GetMapping("/answers")

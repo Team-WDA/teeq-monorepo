@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/ai_character_repository.dart';
+import 'package:teeq/features/onboarding/domain/onboarding_catalog.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_selections.dart';
 
 /// 호출을 기록하고 미리 정한 결과 또는 오류를 돌려주는 테스트용 저장소.
@@ -30,14 +31,16 @@ class FakeAiCharacterRepository implements AiCharacterRepository {
   /// 지정하면 [confirmName]이 이 게이트가 완료될 때까지 기다린다(응답 지연 재현용).
   final Completer<void>? confirmNameGate;
 
-  final List<OnboardingSelections> generateCalls = [];
+  final List<({OnboardingCatalog catalog, OnboardingSelections selections})>
+  generateCalls = [];
   final List<String> confirmedNames = [];
 
   @override
   Future<AiCharacter> generate({
+    required OnboardingCatalog catalog,
     required OnboardingSelections selections,
   }) async {
-    generateCalls.add(selections);
+    generateCalls.add((catalog: catalog, selections: selections));
     await generateGate?.future;
     final error = generateError;
     if (error != null) {
