@@ -21,6 +21,12 @@ class FakeCallRoomGateway implements CallRoomGateway {
   /// true면 [connect] 직후 [CallRoomAgentPresent]를 방출한다.
   final bool agentPresentOnConnect;
 
+  /// 지정하면 [setMicrophoneMuted]가 이 오류를 던진다(테스트 중 바꿀 수 있다).
+  Object? microphoneMutedError;
+
+  /// 지정하면 [setSpeakerOutputPreferred]가 이 오류를 던진다(테스트 중 바꿀 수 있다).
+  Object? speakerPreferredError;
+
   final StreamController<CallRoomEvent> _controller =
       StreamController<CallRoomEvent>.broadcast();
 
@@ -32,6 +38,9 @@ class FakeCallRoomGateway implements CallRoomGateway {
   int disposeCount = 0;
   final List<bool> microphoneMutedCalls = <bool>[];
   final List<bool> speakerPreferredCalls = <bool>[];
+
+  /// 연결·끊기 호출 순서. 순서 검증용이다.
+  final List<String> operations = <String>[];
 
   /// 테스트가 방 이벤트를 흘려보낸다.
   void emit(CallRoomEvent event) => _controller.add(event);
@@ -45,6 +54,7 @@ class FakeCallRoomGateway implements CallRoomGateway {
     required String accessToken,
   }) async {
     connectCount += 1;
+    operations.add('connect');
     _isLocalHangupEmitted = false;
     final failure = connectError;
     if (failure != null) {
@@ -64,16 +74,25 @@ class FakeCallRoomGateway implements CallRoomGateway {
   @override
   Future<void> setMicrophoneMuted(bool isMuted) async {
     microphoneMutedCalls.add(isMuted);
+    final failure = microphoneMutedError;
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   @override
   Future<void> setSpeakerOutputPreferred(bool isPreferred) async {
     speakerPreferredCalls.add(isPreferred);
+    final failure = speakerPreferredError;
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   @override
   Future<void> disconnect() async {
     disconnectCount += 1;
+    operations.add('disconnect');
     // 실제 구현처럼 연결 한 번에 직접 끊음 이벤트는 한 번만 방출한다.
     if (_isLocalHangupEmitted) {
       return;

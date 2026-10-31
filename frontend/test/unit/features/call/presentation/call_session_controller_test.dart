@@ -531,6 +531,97 @@ void main() {
     );
   });
 
+  group('audio setup failure after connect releases the room', () {
+    void expectReleasedWithFailedNotice(_Harness harness) {
+      final failedNotice = _notice(
+        CallConnectionNoticeKind.connectionFailed,
+        callStarted: false,
+      );
+      expect(harness.phase, failedNotice);
+      expect(harness.gateway.connectCount, 1);
+      expect(harness.gateway.disconnectCount, greaterThanOrEqualTo(1));
+      expect(harness.keepAlive.startedBodies, isEmpty);
+
+      // 방을 정리하며 생긴 끊김 이벤트나 늦은 이벤트가 카드를 덮지 않는다.
+      harness.emit(const CallRoomDisconnected(CallDisconnectCause.localHangup));
+      harness.emit(const CallRoomAgentPresent());
+      expect(harness.phase, failedNotice);
+      expect(harness.keepAlive.startedBodies, isEmpty);
+    }
+
+    test('마이크 켜기 실패면 방을 나가고 연결 실패 카드를 보인다', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          expectReleasedWithFailedNotice(harness);
+        },
+        gateway: FakeCallRoomGateway()..microphoneMutedError = StateError('x'),
+      );
+    });
+
+    test('수화기 출력 실패면 방을 나가고 연결 실패 카드를 보인다', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          expectReleasedWithFailedNotice(harness);
+        },
+        gateway: FakeCallRoomGateway()..speakerPreferredError = StateError('x'),
+      );
+    });
+
+    test('카드의 다시 연결하기는 이전 방을 정리한 뒤 새 통화를 시작한다', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          harness.gateway.microphoneMutedError = null;
+
+          harness.controller.retryConnection();
+          harness.flush();
+
+          final operations = harness.gateway.operations;
+          expect(harness.repository.startCallCount, 2);
+          expect(operations.where((operation) => operation == 'connect'), [
+            'connect',
+            'connect',
+          ]);
+          // 첫 연결과 새 연결 사이에 이전 방을 정리한다.
+          expect(
+            operations.indexOf('disconnect'),
+            inInclusiveRange(1, operations.lastIndexOf('connect') - 1),
+          );
+          expect(harness.phase, isA<CallConnecting>());
+
+          harness.emit(const CallRoomAgentPresent());
+          expect(harness.phase, _inProgress());
+        },
+        gateway: FakeCallRoomGateway()..microphoneMutedError = StateError('x'),
+      );
+    });
+  });
+
+  test('retry from connection failed notice disconnects the previous room '
+      'before requesting a new session', () {
+    _runWithHarness((harness) {
+      harness.answerAndJoinAgent();
+      harness.emit(
+        const CallRoomMetadataChanged('{"v":1,"end_reason":"agent_error"}'),
+      );
+      harness.emit(const CallRoomDisconnected(CallDisconnectCause.roomDeleted));
+      expect(
+        harness.phase,
+        _notice(CallConnectionNoticeKind.connectionFailed, callStarted: true),
+      );
+      expect(harness.gateway.operations, ['connect']);
+
+      harness.controller.retryConnection();
+      harness.flush();
+
+      expect(harness.gateway.operations, ['connect', 'disconnect', 'connect']);
+      expect(harness.repository.startCallCount, 2);
+      expect(harness.phase, isA<CallConnecting>());
+    });
+  });
+
   test('connect enables microphone and prefers earpiece', () {
     _runWithHarness((harness) {
       harness.answer();

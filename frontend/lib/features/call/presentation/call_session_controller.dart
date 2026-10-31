@@ -228,6 +228,12 @@ class CallSessionController extends _$CallSessionController {
     final current = state;
     if (current is CallConnectionNotice) {
       if (current.kind == CallConnectionNoticeKind.connectionFailed) {
+        // 새 세션을 요청하기 전에 이전 방이 남아 있지 않게 먼저 나간다.
+        await _disconnectLoggingFailure();
+        // 기다리는 사이 카드가 닫혔거나 다른 다시 연결하기가 먼저 진행됐으면 멈춘다.
+        if (!ref.mounted || !identical(state, current)) {
+          return;
+        }
         // 이미 시작된 통화였다면 새 세션이 생기고, 이전 세션의 피드백은 홈 안전망이 연다.
         await _startCall();
       } else {
@@ -318,11 +324,13 @@ class CallSessionController extends _$CallSessionController {
       return;
     }
     _callSessionId = startInfo.callSessionId;
+    var isRoomConnected = false;
     try {
       await _gateway.connect(
         serverUrl: startInfo.serverUrl,
         accessToken: startInfo.accessToken,
       );
+      isRoomConnected = true;
       await _gateway.setMicrophoneMuted(false);
       await _gateway.setSpeakerOutputPreferred(false);
     } on CallRoomConnectionCancelledException {
@@ -332,6 +340,11 @@ class CallSessionController extends _$CallSessionController {
       if (!_isStale(attempt)) {
         _logWarning('통화 방 연결 실패', error);
         _showNotice(CallConnectionNoticeKind.connectionFailed);
+        // 연결된 방은 마이크가 켜져 있으므로 실패 카드 뒤에 남기지 않는다.
+        // 카드를 먼저 띄워 이어지는 직접 끊음 이벤트는 무시된다.
+        if (isRoomConnected) {
+          unawaited(_disconnectLoggingFailure());
+        }
       }
       return;
     }
