@@ -50,12 +50,12 @@ import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart'
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_edit_confirmation_dialog.dart';
 import 'package:teeq/features/onboarding/presentation/character_generating_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
@@ -68,6 +68,7 @@ import '../support/fake_ai_character_repository.dart';
 import '../support/fake_app_update_controller.dart';
 import '../support/fake_feedback_repository.dart';
 import '../support/fake_home_repository.dart';
+import '../support/fake_onboarding_catalog_repository.dart';
 import '../support/fake_profile_image_picker.dart';
 import '../support/fake_store_launcher.dart';
 import '../support/viewport_cases.dart';
@@ -150,6 +151,9 @@ ProviderContainer _newContainer({
       errorHandlerProvider.overrideWithValue(_NoopErrorHandler()),
       authFlowProvider.overrideWithValue(authFlow ?? _NoopAuthFlow()),
       appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),
+      onboardingCatalogProvider.overrideWithValue(
+        AsyncData(testOnboardingCatalog),
+      ),
       ...overrides,
     ],
   );
@@ -379,7 +383,10 @@ final Map<String, _ScreenBuilder> _screens = {
   },
   '질문(복수 선택 마지막 질문)': () {
     final container = _newContainer();
-    _startFlow(container, questionIndex: OnboardingQuestion.values.length - 1);
+    _startFlow(
+      container,
+      questionIndex: testOnboardingCatalog.questions.length - 1,
+    );
     return _hostRouted(
       container,
       AppRoutes.onboardingQuestions,
@@ -401,8 +408,8 @@ final Map<String, _ScreenBuilder> _screens = {
     final controller = container.read(
       characterSetupFlowControllerProvider.notifier,
     );
-    for (final question in OnboardingQuestion.values) {
-      controller.toggleOption(question.options.first);
+    for (final question in testOnboardingCatalog.questions) {
+      controller.toggleOption(question, question.options.first);
     }
     return _hostRouted(
       container,

@@ -4,7 +4,7 @@ import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/onboarding/data/dto/ai_character_response_dto.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/ai_character_repository.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
+import 'package:teeq/features/onboarding/domain/onboarding_catalog.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_selections.dart';
 
 part 'ai_character_repository_impl.g.dart';
@@ -17,13 +17,14 @@ final class AiCharacterRepositoryImpl implements AiCharacterRepository {
 
   @override
   Future<AiCharacter> generate({
+    required OnboardingCatalog catalog,
     required OnboardingSelections selections,
   }) async {
     final response = await _dio.put<Map<String, dynamic>>(
       '/api/ai-characters/me',
       data: {
         'onboardingAnswers': [
-          for (final question in OnboardingQuestion.values)
+          for (final question in catalog.questions)
             {
               'questionCode': question.code,
               'optionCodes': [

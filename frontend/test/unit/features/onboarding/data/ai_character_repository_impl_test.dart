@@ -9,10 +9,10 @@ import 'package:teeq/features/onboarding/data/ai_character_repository_impl.dart'
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/ai_character_repository.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
+import 'package:teeq/features/onboarding/domain/onboarding_catalog.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_selections.dart';
 
+import '../../../../support/fake_onboarding_catalog_repository.dart';
 import '../../../../support/fake_token_storage.dart';
 import '../../../../support/scripted_http_client_adapter.dart';
 
@@ -41,22 +41,28 @@ _setUp() {
   );
 }
 
+/// 각 질문의 첫 선택지를 고르고, 마지막 질문은 다섯 번째를 먼저 고른 뒤 첫 번째를 더한다.
 OnboardingSelections _allQuestionsAnswered() {
-  var selections = const OnboardingSelections.empty();
-  for (final question in OnboardingQuestion.values) {
-    selections = selections.toggle(question.options.first);
+  final avoidBehavior = testOnboardingQuestion('AVOID_BEHAVIOR');
+  var selections = const OnboardingSelections.empty().toggle(
+    avoidBehavior,
+    testOnboardingOption('AVOID_BEHAVIOR_INTERRUPTING'),
+  );
+  for (final question in testOnboardingCatalog.questions) {
+    selections = selections.toggle(question, question.options.first);
   }
-  return selections.toggle(OnboardingOption.avoidBehaviorInterrupting);
+  return selections;
 }
 
 void main() {
-  test('generate_sendsAnswersInQuestionOrder', () async {
+  test('generate_sendsAnswersInCatalogAndOptionOrder', () async {
     final (:repository, :adapter) = _setUp();
     adapter.on('/api/ai-characters/me', [
       ScriptedReply.json(201, _characterJson),
     ]);
 
     final character = await repository.generate(
+      catalog: testOnboardingCatalog,
       selections: _allQuestionsAnswered(),
     );
 
@@ -107,6 +113,30 @@ void main() {
     );
   });
 
+  test('generate_followsGivenCatalogQuestionOrder', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/ai-characters/me', [
+      ScriptedReply.json(201, _characterJson),
+    ]);
+    final reversedCatalog = OnboardingCatalog(
+      testOnboardingCatalog.questions.reversed.toList(),
+    );
+
+    await repository.generate(
+      catalog: reversedCatalog,
+      selections: _allQuestionsAnswered(),
+    );
+
+    final request = adapter.requestsTo('/api/ai-characters/me').single;
+    final answers =
+        (request.data as Map<String, dynamic>)['onboardingAnswers']
+            as List<Object?>;
+    expect(
+      answers.map((answer) => (answer! as Map)['questionCode']).toList(),
+      reversedCatalog.questions.map((question) => question.code).toList(),
+    );
+  });
+
   test('generate_existingNamedCharacter_returnsName', () async {
     final (:repository, :adapter) = _setUp();
     adapter.on('/api/ai-characters/me', [
@@ -114,6 +144,7 @@ void main() {
     ]);
 
     final character = await repository.generate(
+      catalog: testOnboardingCatalog,
       selections: _allQuestionsAnswered(),
     );
 
@@ -144,7 +175,10 @@ void main() {
     ]);
 
     await expectLater(
-      repository.generate(selections: _allQuestionsAnswered()),
+      repository.generate(
+        catalog: testOnboardingCatalog,
+        selections: _allQuestionsAnswered(),
+      ),
       throwsA(
         isA<DioException>().having(
           (exception) => exception.error,

@@ -34,6 +34,7 @@ import 'package:teeq/features/onboarding/presentation/character_generating_scree
 import 'package:teeq/features/onboarding/presentation/character_name_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_result_screen.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
 import 'package:teeq/features/splash/presentation/splash_screen.dart';
@@ -114,10 +115,18 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: AppRoutes.onboardingGenerating,
-        redirect: (context, state) =>
-            ref.read(characterSetupFlowControllerProvider).selections.isComplete
-            ? null
-            : AppRoutes.onboardingQuestions,
+        redirect: (context, state) {
+          final catalog = ref.read(onboardingCatalogProvider).value;
+          if (catalog == null) {
+            return AppRoutes.onboarding;
+          }
+          return ref
+                  .read(characterSetupFlowControllerProvider)
+                  .selections
+                  .isComplete(catalog)
+              ? null
+              : AppRoutes.onboardingQuestions;
+        },
         builder: (context, state) => const CharacterGeneratingScreen(),
       ),
       GoRoute(

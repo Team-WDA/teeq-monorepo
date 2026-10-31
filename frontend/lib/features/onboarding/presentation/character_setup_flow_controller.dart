@@ -6,6 +6,7 @@ import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_state.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 
 part 'character_setup_flow_controller.g.dart';
 
@@ -28,13 +29,17 @@ class CharacterSetupFlowController extends _$CharacterSetupFlowController {
     state = CharacterSetupFlowState.initial.copyWith(mode: mode);
   }
 
-  void toggleOption(OnboardingOption option) {
-    state = state.copyWith(selections: state.selections.toggle(option));
+  void toggleOption(OnboardingQuestion question, OnboardingOption option) {
+    state = state.copyWith(
+      selections: state.selections.toggle(question, option),
+    );
   }
 
-  /// 다음 질문으로 넘어간다. 마지막 질문이면 넘어가지 않고 false를 돌려준다.
+  /// 다음 질문으로 넘어간다. 마지막 질문이거나 카탈로그가 아직 없으면 넘어가지 않고 false를 돌려준다.
   bool goToNextQuestion() {
-    if (state.questionIndex >= OnboardingQuestion.values.length - 1) {
+    final catalog = ref.read(onboardingCatalogProvider).value;
+    if (catalog == null ||
+        state.questionIndex >= catalog.questions.length - 1) {
       return false;
     }
     state = state.copyWith(questionIndex: state.questionIndex + 1);

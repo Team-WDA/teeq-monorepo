@@ -11,10 +11,10 @@ import 'package:teeq/core/ui/layout/bottom_action_screen_layout.dart';
 import 'package:teeq/core/ui/option_card/selectable_option_card.dart';
 import 'package:teeq/core/ui/progress/step_progress_bar.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
-import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
+import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 
-/// 온보딩 질문 7개를 한 화면에서 인덱스로 전환하며 보여 주는 화면.
+/// 온보딩 카탈로그의 질문들을 한 화면에서 인덱스로 전환하며 보여 주는 화면.
 class OnboardingQuestionScreen extends ConsumerWidget {
   const OnboardingQuestionScreen({super.key});
 
@@ -22,10 +22,15 @@ class OnboardingQuestionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(characterSetupFlowControllerProvider);
     final controller = ref.read(characterSetupFlowControllerProvider.notifier);
-    final question = OnboardingQuestion.values[state.questionIndex];
+    // 진입점이 카탈로그를 기다린 뒤에 이동하므로 null은 방어용이다.
+    final catalog = ref.watch(onboardingCatalogProvider).value;
+    if (catalog == null) {
+      return const SizedBox.shrink();
+    }
+    final questionCount = catalog.questions.length;
+    final question = catalog.questions[state.questionIndex];
     final selected = state.selections.selectedFor(question);
-    final isLastQuestion =
-        state.questionIndex == OnboardingQuestion.values.length - 1;
+    final isLastQuestion = state.questionIndex == questionCount - 1;
     final selectionGuide = question.isMultipleChoice ? '(복수 선택)' : '(단일 선택)';
 
     final nextButton = PrimaryFilledButton(
@@ -65,7 +70,7 @@ class OnboardingQuestionScreen extends ConsumerWidget {
               ),
               child: StepProgressBar(
                 currentStep: state.questionIndex + 1,
-                totalSteps: OnboardingQuestion.values.length,
+                totalSteps: questionCount,
               ),
             ),
             const SizedBox(height: AppSpacing.space40),
@@ -78,7 +83,7 @@ class OnboardingQuestionScreen extends ConsumerWidget {
               SelectableOptionCard(
                 label: option.label,
                 isSelected: selected.contains(option),
-                onTap: () => controller.toggleOption(option),
+                onTap: () => controller.toggleOption(question, option),
               ),
               const SizedBox(height: AppSpacing.space8),
             ],
