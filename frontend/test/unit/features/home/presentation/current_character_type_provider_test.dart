@@ -100,4 +100,24 @@ void main() {
       CharacterType.character1,
     );
   });
+
+  test('재조회_중에도_이전_캐릭터_유형을_유지한다', () async {
+    final repository = FakeHomeRepository(summary: _summary);
+    final container = _newContainer(member: _member, repository: repository);
+    container.listen(currentCharacterTypeProvider, (_, _) {});
+    await container.read(homeSummaryProvider(_member.memberId).future);
+
+    repository.gate = Completer<void>();
+    container.invalidate(homeSummaryProvider(_member.memberId));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      container.read(homeSummaryProvider(_member.memberId)).isLoading,
+      isTrue,
+    );
+    expect(
+      container.read(currentCharacterTypeProvider),
+      CharacterType.character4,
+    );
+  });
 }

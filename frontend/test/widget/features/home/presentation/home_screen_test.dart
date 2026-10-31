@@ -11,6 +11,7 @@ import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_close_button.dart';
+import 'package:teeq/core/ui/progress/full_screen_loading_indicator.dart';
 import 'package:teeq/features/feedback/domain/pending_feedback.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
 import 'package:teeq/features/home/domain/character_mood.dart';
@@ -147,6 +148,78 @@ Future<void> _pumpHome(
   ),
 }) => pumpAtViewport(tester, viewport, _app(container));
 
+const _otherTabText = 'OTHER-TAB';
+const _otherTabPath = '/other';
+
+/// 홈 탭과 다른 탭을 가진 라우터. 탭 전환은 `goBranch`로 한다.
+GoRouter _tabbedRouter() {
+  final router = GoRouter(
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => Scaffold(
+          body: Column(
+            children: [
+              Expanded(child: navigationShell),
+              TextButton(
+                onPressed: () => navigationShell.goBranch(0),
+                child: const Text('tab-home'),
+              ),
+              TextButton(
+                onPressed: () => navigationShell.goBranch(1),
+                child: const Text('tab-other'),
+              ),
+            ],
+          ),
+        ),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (context, state) =>
+                    const SafeArea(child: HomeScreen()),
+                routes: [
+                  GoRoute(
+                    path: 'pushed',
+                    builder: (context, state) =>
+                        const Scaffold(body: Text('PUSHED')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: _otherTabPath,
+                builder: (context, state) => const Text(_otherTabText),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+  return router;
+}
+
+Future<GoRouter> _pumpTabbedHome(
+  WidgetTester tester,
+  ProviderContainer container,
+) async {
+  final router = _tabbedRouter();
+  await pumpAtViewport(
+    tester,
+    const ViewportCase(width: 393, height: 852, textScale: 1.0),
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ),
+  );
+  return router;
+}
+
 void main() {
   testWidgets('shows greeting name and tags', (tester) async {
     final setUp = _setUp(FakeHomeRepository(summary: _summary));
@@ -181,20 +254,116 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('renders nothing while loading', (tester) async {
+  testWidgets('첫_진입은_로딩_표시_뒤_본문을_그린다', (tester) async {
     final gate = Completer<void>();
     final setUp = _setUp(FakeHomeRepository(summary: _summary, gate: gate));
-    await _pumpHome(tester, setUp.container);
-    // 응답이 오기 전에는 스피너 없이 비어 있다.
+    // 스피너가 계속 도는 동안에는 pumpAndSettle이 끝나지 않으므로 직접 pump한다.
+    await tester.pumpWidget(_app(setUp.container));
     await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(FullScreenLoadingIndicator), findsOneWidget);
     expect(find.text('통화하기'), findsNothing);
     expect(find.text('티티'), findsNothing);
 
     gate.complete();
     await tester.pumpAndSettle();
+    expect(find.byType(FullScreenLoadingIndicator), findsNothing);
     expect(find.text('티티'), findsOneWidget);
+  });
+
+  group('재진입 재조회', () {
+    testWidgets('다른_탭에_갔다_홈_탭으로_돌아오면_다시_조회하고_그동안_로딩을_보인다', (tester) async {
+      final gate = Completer<void>();
+      final repository = FakeHomeRepository(summary: _summary);
+      final setUp = _setUp(repository);
+      await _pumpTabbedHome(tester, setUp.container);
+      expect(repository.fetchCount, 1);
+
+      await tester.tap(find.text('tab-other'));
+      await tester.pumpAndSettle();
+      expect(find.text(_otherTabText), findsOneWidget);
+      expect(repository.fetchCount, 1);
+
+      repository.gate = gate;
+      await tester.tap(find.text('tab-home'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(repository.fetchCount, 2);
+      expect(find.byType(FullScreenLoadingIndicator), findsOneWidget);
+      expect(find.text('소연아,\n오늘 하루 어땠어?'), findsNothing);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('소연아,\n오늘 하루 어땠어?'), findsOneWidget);
+    });
+
+    testWidgets('홈_위에_올린_화면에서_돌아오면_다시_조회한다', (tester) async {
+      final repository = FakeHomeRepository(summary: _summary);
+      final setUp = _setUp(repository);
+      final router = await _pumpTabbedHome(tester, setUp.container);
+
+      unawaited(router.push<void>('/pushed'));
+      await tester.pumpAndSettle();
+      expect(find.text('PUSHED'), findsOneWidget);
+      expect(repository.fetchCount, 1);
+
+      router.pop();
+      await tester.pumpAndSettle();
+
+      expect(repository.fetchCount, 2);
+    });
+
+    testWidgets('홈_탭_재탭은_다시_조회하지_않는다', (tester) async {
+      final repository = FakeHomeRepository(summary: _summary);
+      final setUp = _setUp(repository);
+      await _pumpTabbedHome(tester, setUp.container);
+
+      await tester.tap(find.text('tab-home'));
+      await tester.pumpAndSettle();
+
+      expect(repository.fetchCount, 1);
+    });
+
+    testWidgets('이미_재조회_중이면_복귀해도_중복_조회하지_않는다', (tester) async {
+      final repository = FakeHomeRepository(summary: _summary);
+      final setUp = _setUp(repository);
+      await _pumpTabbedHome(tester, setUp.container);
+
+      await tester.tap(find.text('tab-other'));
+      await tester.pumpAndSettle();
+      repository.gate = Completer<void>();
+      setUp.container.invalidate(homeSummaryProvider(_member.memberId));
+      await tester.pump();
+      expect(repository.fetchCount, 2);
+
+      await tester.tap(find.text('tab-home'));
+      await tester.pump();
+
+      expect(repository.fetchCount, 2);
+    });
+
+    testWidgets('재조회가_실패하면_이전_본문을_유지한다', (tester) async {
+      final failure = Exception('refetch failed');
+      final repository = FakeHomeRepository(
+        summary: _summary,
+        errorAfterFirstFetch: failure,
+      );
+      final setUp = _setUp(repository);
+      await _pumpTabbedHome(tester, setUp.container);
+
+      await tester.tap(find.text('tab-other'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('tab-home'));
+      await tester.pumpAndSettle();
+
+      expect(repository.fetchCount, 2);
+      expect(find.byType(FullScreenLoadingIndicator), findsNothing);
+      expect(find.text('소연아,\n오늘 하루 어땠어?'), findsOneWidget);
+      expect(setUp.errorHandler.handledErrors, hasLength(1));
+      expect(setUp.errorHandler.handledErrors.single.error, failure);
+      expect(setUp.errorHandler.handledErrors.single.blocking, isFalse);
+    });
   });
 
   testWidgets('reports error with blocking true when load fails', (
