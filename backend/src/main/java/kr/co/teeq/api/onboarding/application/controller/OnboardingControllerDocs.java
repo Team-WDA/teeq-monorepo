@@ -10,10 +10,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.co.teeq.api.common.application.exception.ErrorResponse;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import kr.co.teeq.api.onboarding.application.dto.response.OnboardingAnswersResponse;
+import kr.co.teeq.api.onboarding.application.dto.response.OnboardingQuestionsResponse;
 import org.springframework.http.ResponseEntity;
 
-@Tag(name = "온보딩", description = "온보딩 답변 조회")
+@Tag(name = "온보딩", description = "온보딩 질문 구조와 답변 조회")
 public interface OnboardingControllerDocs {
+
+    @Operation(summary = "온보딩 질문 구조 조회",
+        description = """
+            온보딩 질문을 질문 순서대로 반환한다. 질문마다 최소·최대 선택 개수와 선택지 코드 목록(선언 순서)을 담는다.
+            질문과 선택지의 문구는 내려주지 않으며 FE가 코드로 매핑한다.""")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "401",
+            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않거나 삭제된 회원임. `EXPIRED_TOKEN`: Access Token이 만료됨(토큰 재발급 후 재시도)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<OnboardingQuestionsResponse> getQuestions();
 
     @Operation(summary = "온보딩 답변 조회",
         description = """
