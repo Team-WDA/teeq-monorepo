@@ -12,6 +12,7 @@ abstract final class AppLayout {
   static const double iconSize = 24;
   static const double smallIconSize = 20;
   static const double buttonLoadingIndicatorSize = 20;
+  static const double screenLoadingIndicatorSize = 40;
   static const double minimumTapTarget = 48;
   static const double stepCardHeight = 69.4;
   static const double stepProgressBarHeight = 5.246;
@@ -19,6 +20,9 @@ abstract final class AppLayout {
   static const double stageIndicatorDotSize = 10;
   static const double stageConnectorThickness = 2;
   static const double generationGlowSize = 349;
+  // 생성 중 화면 구체 영역. 단계별 구체 이미지 세 장 중 가장 큰 폭과 높이다.
+  static const double generationOrbWidth = 326;
+  static const double generationOrbHeight = 294;
   static const double maxTextScaleFactor = 1.2;
 
   // 피드백 위젯. Figma 393폭 프레임 기준 값이다.
