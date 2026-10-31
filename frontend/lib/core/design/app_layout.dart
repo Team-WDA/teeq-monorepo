@@ -180,4 +180,31 @@ abstract final class AppLayout {
   static const double glowIntroductionBottomHeight = 501;
   static const double glowIntroductionBottomLeft = -309;
   static const double glowIntroductionBottomTop = 512;
+
+  // 통화 화면. Figma 393폭 프레임 기준 값이다.
+  // 배경 캐릭터는 시안 상자(730.6x797, 왼쪽 -69, 위 142)의 가로 중심과 바닥에 맞춘다.
+  // 이미지 한 변은 가장 큰 표정 콘텐츠 높이 비율(0.906)로 시안 높이 797을 나눈 값이다.
+  static const double callBackgroundCharacterSize = 880;
+  static const double callBackgroundCharacterCenterX = 296.3;
+  static const double callBackgroundCharacterGroundY = 939;
+  static const double callSlideToAnswerHeight = 92;
+  static const double callSlideHandleSize = 68;
+  static const double callControlButtonSize = 80;
+  // 통화 버튼 원 안에서 글리프를 가운데 놓는 상자.
+  static const double callControlIconBoxSize = 40;
+  // 슬라이더 손잡이 원 안에서 글리프를 가운데 놓는 상자.
+  static const double callSlideHandleIconBoxSize = 40;
+  // 통화 안내 카드 버튼 높이. 글자 줄 높이 22 + 위아래 여백 16이다.
+  static const double callCardButtonHeight = 54;
+  static const double callLimitInfoChipHeight = 44;
+  // 통화 화면 배치. 시안(393x852) 값에서 위는 상태 표시줄 59, 아래는 홈 인디케이터 34를 뺀
+  // 안전 영역 기준 거리다. 뒤로가기는 아이콘(left 16, top 76) 둘레 48 탭 영역의 왼쪽 위다.
+  static const double callBackButtonLeftOffset = 4;
+  static const double callBackButtonTopOffset = 5;
+  static const double callIdentityHeaderTopOffset = 45;
+  static const double callSlideToAnswerHorizontalInset = 30;
+  static const double callSlideToAnswerBottomOffset = 39;
+  static const double callControlsHorizontalInset = 31;
+  // 컨트롤 줄 아래쪽(버튼 80 + 간격 12 + 문구 16) 기준이다.
+  static const double callControlsBottomOffset = 32;
 }

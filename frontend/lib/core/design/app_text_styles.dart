@@ -41,6 +41,15 @@ abstract final class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
+  static const TextStyle heading20Regular = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w400,
+    height: 28 / 20,
+    letterSpacing: 20 * letterSpacingRatio,
+    color: AppColors.textPrimary,
+  );
+
   static const TextStyle heading20Medium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 20,

@@ -84,4 +84,16 @@ abstract final class AppAssets {
   static const String radioCircleIcon = '$_icons/radio_circle.svg';
   static const String radioCircleCheckedIcon =
       '$_icons/radio_circle_checked.svg';
+
+  // 통화 화면 아이콘. 글리프와 원형 배경은 Figma 원본 SVG이며 색이 고정돼 있다.
+  static const String callAnswerIcon = '$_icons/call_answer_icon.svg';
+  static const String callSlideHandleBackground =
+      '$_icons/call_slide_handle_background.svg';
+  static const String callSpeakerIcon = '$_icons/call_speaker_icon.svg';
+  static const String callMuteIcon = '$_icons/call_mute_icon.svg';
+  static const String callEndIcon = '$_icons/call_end_icon.svg';
+  static const String callControlBackground =
+      '$_icons/call_control_background.svg';
+  static const String callEndControlBackground =
+      '$_icons/call_end_control_background.svg';
 }
