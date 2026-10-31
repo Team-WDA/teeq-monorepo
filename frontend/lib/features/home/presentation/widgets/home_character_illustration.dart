@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/ui/decoration/soft_glow_decoration.dart';
+import 'package:teeq/core/ui/illustration/character_illustration.dart';
 import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
 import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
@@ -48,20 +49,18 @@ class HomeCharacterIllustration extends StatelessWidget {
                   ],
                 ),
               ),
+              // 바닥 기준선이 영역 바닥에 닿고 이미지는 투명한 아래쪽 여백만큼 아래로 나간다.
               Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Center(
-                  child: Image.asset(
-                    AppAssets.characterMoodIllustration(
-                      characterType,
-                      characterMood,
-                    ),
-                    width: illustrationSize,
-                    height: illustrationSize,
-                    fit: BoxFit.contain,
-                  ),
+                left:
+                    (AppLayout.homeCharacterCenterX -
+                        AppLayout.homeCharacterIllustrationSize / 2) *
+                    scale,
+                bottom:
+                    -(1 - AppLayout.characterGroundFraction) * illustrationSize,
+                child: CharacterIllustration(
+                  characterType: characterType,
+                  characterMood: characterMood,
+                  size: illustrationSize,
                 ),
               ),
             ],

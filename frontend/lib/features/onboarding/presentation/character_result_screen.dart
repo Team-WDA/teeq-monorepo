@@ -19,10 +19,12 @@ class CharacterResultScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 홈으로 이동하며 흐름을 비워도 떠나는 화면이 다시 그려지지 않게 watch하지 않는다.
     final flowState = ref.read(characterSetupFlowControllerProvider);
-    final name = flowState.character?.name;
-    if (name == null) {
+    final character = flowState.character;
+    final name = character?.name;
+    if (character == null || name == null) {
       return const SizedBox.shrink();
     }
+    final characterType = character.characterType;
     final isFirstTime = flowState.mode == CharacterSetupMode.firstTime;
     return PopScope(
       canPop: false,
@@ -33,7 +35,9 @@ class CharacterResultScreen extends ConsumerWidget {
               hintMessage: '홈에서 바로 대화를 시작할 수 있어.',
               buttonLabel: '대화 시작하기',
               onButtonPressed: () => _startConversation(context, ref),
-              decoration: const FirstTimeCharacterResultDecoration(),
+              decoration: FirstTimeCharacterResultDecoration(
+                characterType: characterType,
+              ),
             )
           : CharacterResultScreenLayout(
               title: '${withSubjectParticle(name)}\n이렇게 바뀌었어!',
@@ -41,7 +45,9 @@ class CharacterResultScreen extends ConsumerWidget {
               hintMessage: '수정한 사항들이 모두 반영되었어!',
               buttonLabel: '홈으로 돌아가기',
               onButtonPressed: () => _returnHome(context, ref),
-              decoration: const EditCharacterResultDecoration(),
+              decoration: EditCharacterResultDecoration(
+                characterType: characterType,
+              ),
             ),
     );
   }

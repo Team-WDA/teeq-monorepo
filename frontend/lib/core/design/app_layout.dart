@@ -82,9 +82,15 @@ abstract final class AppLayout {
   // 스플래시 화면 중앙에 놓는 브랜드 로고. 네이티브 시작 화면의 로고와 같은 크기다.
   static const double splashLogoWidth = 118;
   static const double splashLogoHeight = 44.294;
-  static const double homeCharacterHeight = 255.576;
+  // 정렬된 이미지의 가장 큰 표정 콘텐츠 높이 0.906 × 300 ≈ 272가 인사 카드와 겹치지 않는 최소 영역 높이다.
+  static const double homeCharacterHeight = 272;
   // 홈 캐릭터 이미지 정사각형 한 변. Figma 393폭 기준이다.
-  static const double homeCharacterIllustrationSize = 320;
+  static const double homeCharacterIllustrationSize = 300;
+  // 홈 캐릭터 콘텐츠의 가로 중심. 옛 left 43 + 보이는 중심 146이다.
+  static const double homeCharacterCenterX = 189;
+  // 모든 캐릭터 이미지의 바닥 그림자 기준선. 이미지 한 변에 곱한 값이
+  // 이미지 맨 위에서 바닥 기준선까지의 거리다.
+  static const double characterGroundFraction = 0.9663;
   static const double homeGlowWidth = editResultGlowWidth;
   static const double homeGlowHeight = editResultGlowHeight;
   // 홈 일러스트 왼쪽 위를 원점으로 한 빛 번짐의 위치.
@@ -116,24 +122,31 @@ abstract final class AppLayout {
   static const double nicknameGlowCenterOffsetY = 152;
 
   // 캐릭터 생성 흐름 일러스트와 빛 번짐 크기. Figma 393폭 프레임 기준 값이다.
-  static const double characterNamingIllustrationWidth = 310.275;
+  // 이름 입력 캐릭터 한 변과 바닥 기준선(상자 위쪽 기준). 옛 보이는 바닥 240 × 상자 배율 1.0447에서 환산했다.
+  static const double characterNamingIllustrationSize = 310;
+  static const double characterNamingBaselineY = 250.7;
   static const double characterNamingIllustrationHeight = 267;
   static const double namingGlowSize = 472;
-  static const double welcomeCharacterSize = 552.396;
+  static const double welcomeCharacterSize = 500;
   static const double welcomeGlowSize = 789.3;
-  static const double welcomeCharacterOffsetX = 123.2;
-  static const double welcomeCharacterOffsetY = 70.3;
+  // 가입 결과 캐릭터 중심 오프셋. 옛 보이는 영역 중심에 새 콘텐츠 중심·기준선을 맞춰 환산했다.
+  static const double welcomeCharacterOffsetX = 104.6;
+  static const double welcomeCharacterOffsetY = 24;
   static const double welcomeGlowOffsetX = 54.5;
   static const double welcomeGlowOffsetY = 73;
-  static const double editResultCharacterWidth = 353;
-  static const double editResultCharacterHeight = 366.776;
+  // 수정 결과 캐릭터 한 변과 중심 오프셋. 옛 보이는 영역 중심에 새 콘텐츠 중심·기준선을 맞춰 환산했다.
+  static const double editResultCharacterSize = 371;
+  static const double editResultCharacterOffsetX = 3.5;
   static const double editResultGlowWidth = 660;
   static const double editResultGlowHeight = 569;
-  static const double editResultCharacterOffsetY = 46.4;
+  static const double editResultCharacterOffsetY = 17;
   static const double editResultGlowOffsetY = 23.5;
   static const double dialogHorizontalInset = 16;
   static const double dialogIllustrationWidth = 267.494;
   static const double dialogIllustrationHeight = 270;
+  // 수정 확인 팝업 캐릭터 한 변과 바닥 기준선(상자 위쪽 기준). 옛 보이는 바닥 244에서 환산했다.
+  static const double dialogIllustrationSize = 272;
+  static const double dialogCharacterBaselineY = 244;
   static const double dialogCloseIconSize = 24;
   // 좌우 여백 안쪽 본문 폭. 여백 안에 놓이는 장식의 배율 기준이다.
   static const double designContentWidth =

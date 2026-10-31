@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:teeq/core/design/app_assets.dart';
 import 'package:teeq/core/design/app_colors.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_radius.dart';
@@ -12,19 +11,25 @@ import 'package:teeq/core/ui/button/app_close_button.dart';
 import 'package:teeq/core/ui/button/rounded_pill_button.dart';
 import 'package:teeq/core/ui/layout/design_frame_scale_builder.dart';
 import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
+import 'package:teeq/features/home/domain/character_mood.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
+import 'package:teeq/features/onboarding/domain/character_type.dart';
+import 'package:teeq/features/onboarding/presentation/widgets/offset_character_illustration.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 
 /// 캐릭터 성향을 다시 설정할지 묻는 팝업을 띄운다. 이름은 호출하는 홈이 넘긴다.
 Future<void> showCharacterEditConfirmationDialog(
   BuildContext context, {
   required String characterName,
+  required CharacterType characterType,
 }) {
   return showDialog<void>(
     context: context,
     barrierColor: AppColors.scrim,
-    builder: (_) =>
-        CharacterEditConfirmationDialog(characterName: characterName),
+    builder: (_) => CharacterEditConfirmationDialog(
+      characterName: characterName,
+      characterType: characterType,
+    ),
   );
 }
 
@@ -33,9 +38,20 @@ class CharacterEditConfirmationDialog extends ConsumerWidget {
   const CharacterEditConfirmationDialog({
     super.key,
     required this.characterName,
+    required this.characterType,
   });
 
   final String characterName;
+  final CharacterType characterType;
+
+  static const CharacterMood _characterMood = CharacterMood.curious;
+
+  /// 바닥 기준선을 상자 위쪽 기준 [AppLayout.dialogCharacterBaselineY]에 맞추는 이미지 중심의 세로 이동량(상자 중심 기준).
+  static const double _centerOffsetY =
+      AppLayout.dialogCharacterBaselineY -
+      AppLayout.characterGroundFraction * AppLayout.dialogIllustrationSize +
+      AppLayout.dialogIllustrationSize / 2 -
+      AppLayout.dialogIllustrationHeight / 2;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,11 +81,15 @@ class CharacterEditConfirmationDialog extends ConsumerWidget {
                     designWidth: AppLayout.dialogContentWidth,
                     builder: (context, scale) => FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Image.asset(
-                        AppAssets.characterEditPrompt,
+                      child: SizedBox(
                         width: AppLayout.dialogIllustrationWidth * scale,
                         height: AppLayout.dialogIllustrationHeight * scale,
-                        fit: BoxFit.fill,
+                        child: OffsetCharacterIllustration(
+                          characterType: characterType,
+                          characterMood: _characterMood,
+                          size: AppLayout.dialogIllustrationSize * scale,
+                          offset: Offset(0, _centerOffsetY * scale),
+                        ),
                       ),
                     ),
                   ),
