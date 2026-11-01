@@ -83,6 +83,8 @@
 	<string>프로필 사진으로 쓸 사진을 고르기 위해 사진 보관함을 사용해.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>통화 중 내 목소리를 전달하기 위해 마이크를 사용해.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>TeeQ는 카메라를 사용하지 않아. 통화 엔진에 카메라 접근 기능이 포함되어 있어 안내 문구를 함께 둬.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
