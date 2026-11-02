@@ -581,7 +581,7 @@ void main() {
     final harness = await _pumpCallScreen(tester);
     await harness.slideToAnswer();
 
-    await tester.pump(const Duration(seconds: 21));
+    await tester.pump(const Duration(seconds: 41));
     await tester.pump();
 
     expect(find.text('연결이 지연되고 있어'), findsOneWidget);
@@ -610,7 +610,7 @@ void main() {
     await tester.tap(find.text('다시 연결하기'));
     await tester.pump();
     await tester.pump();
-    await tester.pump(const Duration(seconds: 21));
+    await tester.pump(const Duration(seconds: 41));
     await tester.pump();
 
     expect(find.text('연결이 지연되고 있어'), findsOneWidget);

@@ -1,7 +1,7 @@
 /// 통화 화면의 대기 시간 설정. 테스트에서 짧게 바꿀 수 있도록 값으로 분리한다.
 final class CallTiming {
   const CallTiming({
-    this.agentWaitTimeout = const Duration(seconds: 20),
+    this.agentWaitTimeout = const Duration(seconds: 40),
     this.reconnectNoticeGrace = const Duration(seconds: 5),
   });
 

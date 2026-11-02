@@ -653,7 +653,7 @@ void main() {
     _runWithHarness((harness) {
       harness.answer();
 
-      harness.elapse(const Duration(seconds: 19));
+      harness.elapse(const Duration(seconds: 39));
       expect(harness.phase, isA<CallConnecting>());
 
       harness.elapse(const Duration(seconds: 1));
@@ -865,13 +865,13 @@ void main() {
       });
     });
 
-    test('재접속 뒤 워커가 안 보이면 20초 뒤 연결 시간 초과다', () {
+    test('재접속 뒤 워커가 안 보이면 40초 뒤 연결 시간 초과다', () {
       _runWithHarness((harness) {
         loseConnectionAfterTenSeconds(harness);
 
         harness.controller.retryConnection();
         harness.flush();
-        harness.elapse(const Duration(seconds: 19));
+        harness.elapse(const Duration(seconds: 39));
         expect(harness.phase, isA<CallConnecting>());
 
         harness.elapse(const Duration(seconds: 1));
@@ -1024,7 +1024,7 @@ void main() {
   group('connection timeout card keeps the microphone off', () {
     void reachTimeout(_Harness harness) {
       harness.answer();
-      harness.elapse(const Duration(seconds: 20));
+      harness.elapse(const Duration(seconds: 40));
       expect(
         harness.phase,
         _notice(CallConnectionNoticeKind.connectionTimeout, callStarted: false),
@@ -1209,7 +1209,7 @@ void main() {
         );
 
         harness.disposeContainer();
-        harness.elapse(const Duration(seconds: 30));
+        harness.elapse(const Duration(seconds: 50));
 
         expect(harness.gateway.disposeCount, 1);
         expect(harness.keepAlive.stopCount, 1);
@@ -1223,7 +1223,7 @@ void main() {
         harness.answer();
 
         harness.disposeContainer();
-        harness.elapse(const Duration(seconds: 30));
+        harness.elapse(const Duration(seconds: 50));
 
         expect(harness.gateway.disposeCount, 1);
         expect(harness.async.pendingTimers, isEmpty);
