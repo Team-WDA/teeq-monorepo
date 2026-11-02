@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-11-01T06:14:13Z",
-    "currentVersion": "0.39.1",
+    "lastUpdated": "2026-11-02T02:37:22Z",
+    "currentVersion": "0.39.2",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 52
+    "totalReleases": 53
   },
   "releases": [
+    {
+      "version": "0.39.2",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-11-02",
+      "pr_number": null,
+      "raw_summary": "## [0.39.2]\n\n### 🐛 수정\n- 통화 연결중 워커 입장 대기 시간을 40초로 연장",
+      "parsed_changes": {
+        "수정": {
+          "title": "🐛 수정",
+          "items": [
+            "통화 연결중 워커 입장 대기 시간을 40초로 연장"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.39.1",
       "project_types": [
