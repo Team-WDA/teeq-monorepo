@@ -6,7 +6,7 @@ import 'package:teeq/core/design/app_radius.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 
-/// 홈 상단의 인사 카드. 시안 높이는 최소 높이이고 문구가 길면 늘어난다.
+/// 홈 상단의 인사 카드. 높이는 상하 패딩과 문구 줄 수에 맞춰 정해진다.
 class GreetingMessageCard extends StatelessWidget {
   const GreetingMessageCard({super.key, required this.message});
 
@@ -24,31 +24,26 @@ class GreetingMessageCard extends StatelessWidget {
           width: AppBorderWidths.thin,
         ),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: AppLayout.greetingCardHeight,
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.space14,
-                AppSpacing.space24,
-                AppSpacing.space40,
-                AppSpacing.space24,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(message, style: AppTextStyles.heading20Bold),
-              ),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.space14,
+              AppSpacing.space24,
+              AppSpacing.space40,
+              AppSpacing.space24,
             ),
-            const Positioned(
-              top: AppSpacing.space14,
-              right: AppSpacing.space14,
-              child: _GreetingAccentDot(),
+            child: SizedBox(
+              width: double.infinity,
+              child: Text(message, style: AppTextStyles.heading20Bold),
             ),
-          ],
-        ),
+          ),
+          const Positioned(
+            top: AppSpacing.space14,
+            right: AppSpacing.space14,
+            child: _GreetingAccentDot(),
+          ),
+        ],
       ),
     );
   }

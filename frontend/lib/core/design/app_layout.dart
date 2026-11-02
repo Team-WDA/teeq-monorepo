@@ -79,7 +79,6 @@ abstract final class AppLayout {
   // 탭 바 전체 높이 88에서 홈 인디케이터 영역 34를 뺀 본문 높이다.
   static const double tabBarContentHeight = 54;
   static const double tabBarHorizontalInset = 20;
-  static const double greetingCardHeight = 136;
   static const double greetingDotSize = 14;
   static const double brandLogoWidth = 77.255;
   static const double brandLogoHeight = 28.998;

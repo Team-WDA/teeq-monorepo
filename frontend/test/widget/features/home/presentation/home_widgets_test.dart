@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/design/app_layout.dart';
+import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_theme.dart';
 import 'package:teeq/core/ui/tag/accent_outline_hint_tag.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
@@ -27,17 +29,28 @@ const _defaultViewport = ViewportCase(width: 393, height: 852, textScale: 1.0);
 
 void main() {
   group('GreetingMessageCard', () {
-    testWidgets('keeps the design height as minimum height', (tester) async {
+    testWidgets('height follows the number of text lines', (tester) async {
       await pumpAtViewport(
         tester,
         _defaultViewport,
-        _wrap(const GreetingMessageCard(message: '짧은 인사')),
+        _wrap(const GreetingMessageCard(message: '한 줄')),
       );
+      final oneLineHeight = tester
+          .getSize(find.byType(GreetingMessageCard))
+          .height;
+      final oneLineTextHeight = tester.getSize(find.text('한 줄')).height;
 
-      expect(
-        tester.getSize(find.byType(GreetingMessageCard)).height,
-        AppLayout.greetingCardHeight,
+      await pumpAtViewport(
+        tester,
+        _defaultViewport,
+        _wrap(const GreetingMessageCard(message: '첫째 줄\n둘째 줄')),
       );
+      final twoLineHeight = tester
+          .getSize(find.byType(GreetingMessageCard))
+          .height;
+
+      expect(oneLineHeight, AppSpacing.space24 * 2 + oneLineTextHeight);
+      expect(twoLineHeight, greaterThan(oneLineHeight));
     });
 
     testWidgets('grows for the longest greeting without overflow', (
@@ -52,18 +65,26 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
+      final longHeight = tester
+          .getSize(find.byType(GreetingMessageCard))
+          .height;
+      await pumpAtViewport(
+        tester,
+        _narrowViewport,
+        _wrap(const GreetingMessageCard(message: '한 줄')),
+      );
       expect(
-        tester.getSize(find.byType(GreetingMessageCard)).height,
-        greaterThan(AppLayout.greetingCardHeight),
+        longHeight,
+        greaterThan(tester.getSize(find.byType(GreetingMessageCard)).height),
       );
     });
   });
 
   group('PersonalityTagRow', () {
-    testWidgets('wraps three 50 character tags at narrow width', (
+    testWidgets('wraps between tags without wrapping inside a tag', (
       tester,
     ) async {
-      final tags = ['가' * 50, '나' * 50, '다' * 50];
+      final tags = ['다정다감한 친구', '공감과 조언을', '티키타카가 좋은'];
       await pumpAtViewport(
         tester,
         _narrowViewport,
@@ -76,14 +97,13 @@ void main() {
           .widgetList(find.byType(AccentOutlineHintTag))
           .map((tag) => tester.getTopLeft(find.byWidget(tag)).dy)
           .toSet();
-      expect(tops, hasLength(3));
-      for (final text in tester.widgetList<Text>(
-        find.descendant(
-          of: find.byType(AccentOutlineHintTag),
-          matching: find.byType(Text),
-        ),
-      )) {
-        expect(text.maxLines, 1);
+      expect(tops.length, greaterThanOrEqualTo(2));
+      for (final tag in tags) {
+        final paragraph = tester.renderObject<RenderParagraph>(find.text(tag));
+        final lineHeight = paragraph.getFullHeightForCaret(
+          const TextPosition(offset: 0),
+        );
+        expect(paragraph.size.height, lessThan(lineHeight * 1.5));
       }
     });
   });
