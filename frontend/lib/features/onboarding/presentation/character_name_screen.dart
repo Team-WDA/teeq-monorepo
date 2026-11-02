@@ -77,21 +77,30 @@ class _CharacterNameScreenState extends ConsumerState<CharacterNameScreen> {
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppSpacing.space24),
-            const ScreenTitleWithDescriptionHeading(
-              title: '마지막으로,\n이 친구의 이름을 정해줘.',
-              description: '너의 답변을 바탕으로 너와 잘 맞는 친구가 탄생했어.\n이제 너만의 별명을 붙여줘.',
-            ),
-            const SizedBox(height: AppSpacing.space40),
-            Center(
-              child: CharacterNamingIllustration(
-                characterType:
-                    ref
-                        .watch(characterSetupFlowControllerProvider)
-                        .character
-                        ?.characterType ??
-                    CharacterType.character1,
-              ),
+            // 아래에서 위로 쌓아(역순 나열) 제목과 설명을 일러스트 다음에 그린다.
+            // 일러스트의 빛 번짐이 레이아웃 영역 밖으로 번져 제목 위를 덮지 않게 하려는 것이다.
+            // 화면에 놓이는 위치는 같고, 태그와 입력창은 아래 순서대로 빛 번짐 위에 그려진다.
+            Column(
+              verticalDirection: VerticalDirection.up,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: CharacterNamingIllustration(
+                    characterType:
+                        ref
+                            .watch(characterSetupFlowControllerProvider)
+                            .character
+                            ?.characterType ??
+                        CharacterType.character1,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.space40),
+                const ScreenTitleWithDescriptionHeading(
+                  title: '마지막으로,\n이 친구의 이름을 정해줘.',
+                  description: '너의 답변을 바탕으로 너와 잘 맞는 친구가 탄생했어.\n이제 너만의 별명을 붙여줘.',
+                ),
+                const SizedBox(height: AppSpacing.space24),
+              ],
             ),
             const SizedBox(height: AppSpacing.space8),
             const Center(

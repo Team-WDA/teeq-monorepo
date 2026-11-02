@@ -8,14 +8,12 @@ import 'package:teeq/core/design/app_radius.dart';
 import 'package:teeq/core/design/app_spacing.dart';
 import 'package:teeq/core/design/app_text_styles.dart';
 
-/// 강조색 테두리의 알약형 안내 태그.
+/// 강조색 테두리의 알약형 안내 태그. 문구는 한 줄로만 보이고, 줄바꿈과 말줄임을 하지 않는다.
+/// 너비는 문구 길이를 따른다.
 class AccentOutlineHintTag extends StatelessWidget {
-  const AccentOutlineHintTag({super.key, required this.message, this.maxLines});
+  const AccentOutlineHintTag({super.key, required this.message});
 
   final String message;
-
-  /// 지정하면 문구를 이 줄 수까지만 보이고 넘치면 말줄임한다. null이면 줄바꿈한다.
-  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +45,9 @@ class AccentOutlineHintTag extends StatelessWidget {
               Flexible(
                 child: Text(
                   message,
-                  maxLines: maxLines,
-                  overflow: maxLines == null ? null : TextOverflow.ellipsis,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
                   style: AppTextStyles.body14SemiBoldMultiline.copyWith(
                     color: AppColors.textSecondary,
                   ),

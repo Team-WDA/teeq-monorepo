@@ -741,7 +741,7 @@ void main() {
           characterName: '가나다라마바사아자차',
           characterType: CharacterType.character1,
           characterMood: CharacterMood.welcome,
-          personalityTags: ['가' * 50, '나' * 50, '다' * 50],
+          personalityTags: ['다정다감한 친구', '공감과 조언을', '티키타카가 좋은'],
           greeting: List.filled(4, '가' * 45).join('\n'),
         );
         final setUp = _setUp(FakeHomeRepository(summary: longSummary));
