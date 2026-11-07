@@ -26,39 +26,39 @@ void main() {
   test('service terms asset matches the design', () async {
     final document = await loader.load(LegalDocumentType.serviceTerms);
 
-    expect(document.version, 'v1');
-    expect(document.announcementDate, '2026.10.25');
-    expect(document.effectiveDate, '2026.10.25');
+    expect(document.version, 'v1.2');
+    expect(document.announcementDate, '2026.11.03');
+    expect(document.effectiveDate, '2026.11.03');
     expect(document.articles, hasLength(14));
     expect(document.articles.first.title, '제1조 목적과 운영자');
     expect(document.articles.last.title, '제14조 알파 테스터 참여 조건');
-    expect(_paragraphCount(document), 47);
-    // 시안 원문 그대로 보존한다(실제 달력에 없는 날짜처럼 보여도 고치지 않는다).
+    expect(_paragraphCount(document), 49);
     final lastArticleBlocks = document.articles.last.blocks;
     expect(
       (lastArticleBlocks[1] as LegalParagraph).text,
       '② 미공개 초대 링크·접근 정보·테스트 자료는 사전 허락 없이 공개하지 않습니다. '
-      '(의무 기간: 2026.10.20~2026.11.31)',
+      '(의무 기간: 2026.11.02~2026.12.31)',
     );
   });
 
   test('privacy policy asset matches the design', () async {
     final document = await loader.load(LegalDocumentType.privacyPolicy);
 
-    expect(document.version, 'v1');
-    expect(document.announcementDate, '2026.10.25');
-    expect(document.effectiveDate, '2026.10.25');
+    expect(document.version, 'v1.2');
+    expect(document.announcementDate, '2026.11.03');
+    expect(document.effectiveDate, '2026.11.03');
     expect(document.articles, hasLength(13));
     expect(document.articles.first.title, '제1조 개인정보처리자 및 적용 범위');
     expect(document.articles.last.title, '제13조 문의·권리구제 및 변경');
-    expect(_paragraphCount(document), 45);
-    // 제2조의 12개 카드와 제6조의 6개 카드는 각각 문단 사이 위치를 지킨다.
+    expect(_paragraphCount(document), 48);
+    // 제2조는 문단 2개 뒤 카드 12개, 제6조는 카드 6개 뒤 문단 순서를 지킨다.
     final article2 = document.articles[1];
     expect(_tableCount(article2), 12);
     expect(article2.blocks.first, isA<LegalParagraph>());
-    expect(article2.blocks[1], isA<LegalTable>());
-    expect(article2.blocks[12], isA<LegalTable>());
-    expect(article2.blocks[13], isA<LegalParagraph>());
+    expect(article2.blocks[1], isA<LegalParagraph>());
+    expect(article2.blocks[2], isA<LegalTable>());
+    expect(article2.blocks[13], isA<LegalTable>());
+    expect(article2.blocks[14], isA<LegalParagraph>());
     final article6 = document.articles[5];
     expect(_tableCount(article6), 6);
     expect(article6.blocks.first, isA<LegalTable>());
