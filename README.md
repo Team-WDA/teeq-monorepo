@@ -48,6 +48,6 @@ open -a "Android Studio" frontend
 ---
 
 <!-- AUTO-VERSION-SECTION: DO NOT EDIT MANUALLY -->
-## 최신 버전 : v0.39.2 (2026-11-02)
+## 최신 버전 : v0.39.3 (2026-11-07)
 
 [전체 버전 기록 보기](CHANGELOG.md)
