@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-11-02T08:23:37Z",
-    "currentVersion": "0.39.3",
+    "lastUpdated": "2026-11-07T07:59:10Z",
+    "currentVersion": "0.40.0",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 54
+    "totalReleases": 55
   },
   "releases": [
+    {
+      "version": "0.40.0",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-11-07",
+      "pr_number": null,
+      "raw_summary": "## [0.40.0]\n\n### ✨ 기능\n- 이용약관_개인정보_처리방침_v1_2_앱_반영 — 이용약관과 개인정보 처리방침 v1.2 원문으로 교체하고 자산 단정 테스트 갱신",
+      "parsed_changes": {
+        "기능": {
+          "title": "✨ 기능",
+          "items": [
+            "이용약관_개인정보_처리방침_v1_2_앱_반영 — 이용약관과 개인정보 처리방침 v1.2 원문으로 교체하고 자산 단정 테스트 갱신"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.39.3",
       "project_types": [
