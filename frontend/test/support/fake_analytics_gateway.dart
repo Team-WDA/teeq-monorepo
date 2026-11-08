@@ -7,7 +7,7 @@ import 'package:teeq/core/analytics/firebase_analytics_gateway.dart';
 class FakeAnalyticsGateway implements AnalyticsGateway {
   final List<String> loggedScreenNames = [];
   final List<String?> userIdCalls = [];
-  final List<Map<String, Object>> defaultEventParametersCalls = [];
+  final List<Map<String, num>> defaultEventParametersCalls = [];
 
   @override
   Future<void> logScreenView(String screenName) async {
@@ -20,7 +20,7 @@ class FakeAnalyticsGateway implements AnalyticsGateway {
   }
 
   @override
-  Future<void> setDefaultEventParameters(Map<String, Object> parameters) async {
+  Future<void> setDefaultEventParameters(Map<String, num> parameters) async {
     defaultEventParametersCalls.add(parameters);
   }
 }
@@ -31,5 +31,7 @@ class FakeAnalyticsGateway implements AnalyticsGateway {
 /// 앱 provider를 만드는 테스트는 이 헬퍼를 함께 넘긴다.
 List<Override> analyticsTestOverrides([FakeAnalyticsGateway? gateway]) => [
   analyticsGatewayProvider.overrideWithValue(gateway ?? FakeAnalyticsGateway()),
-  analyticsNavigatorObserverProvider.overrideWithValue(NavigatorObserver()),
+  analyticsNavigatorObserverProvider.overrideWithValue(
+    RouteObserver<ModalRoute<dynamic>>(),
+  ),
 ];

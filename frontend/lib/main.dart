@@ -34,7 +34,7 @@ Future<void> main() async {
   // debug 빌드의 모든 이벤트에 debug_mode를 붙여 GA4 개발자 트래픽 필터가 제외하게 한다. release 빌드는 아무것도 하지 않는다.
   if (kDebugMode) {
     await container.read(analyticsGatewayProvider).setDefaultEventParameters({
-      'debug_mode': true,
+      'debug_mode': 1,
     });
   }
   installGlobalLogHooks(container.read(appLoggerProvider));

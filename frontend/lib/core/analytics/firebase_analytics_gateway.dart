@@ -18,7 +18,7 @@ final class FirebaseAnalyticsGateway implements AnalyticsGateway {
       FirebaseAnalytics.instance.setUserId(id: userId);
 
   @override
-  Future<void> setDefaultEventParameters(Map<String, Object> parameters) =>
+  Future<void> setDefaultEventParameters(Map<String, num> parameters) =>
       FirebaseAnalytics.instance.setDefaultEventParameters(parameters);
 }
 
@@ -26,5 +26,5 @@ final class FirebaseAnalyticsGateway implements AnalyticsGateway {
 AnalyticsGateway analyticsGateway(Ref ref) => const FirebaseAnalyticsGateway();
 
 @Riverpod(keepAlive: true)
-NavigatorObserver analyticsNavigatorObserver(Ref ref) =>
+RouteObserver<ModalRoute<dynamic>> analyticsNavigatorObserver(Ref ref) =>
     FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance);

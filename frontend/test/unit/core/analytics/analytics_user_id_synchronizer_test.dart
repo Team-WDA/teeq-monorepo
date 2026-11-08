@@ -68,12 +68,12 @@ void main() {
     expect(gateway.userIdCalls, ['member-a']);
   });
 
-  test('회원이 없는 채로 시작하면 아무것도 호출하지 않는다', () {
+  test('회원이 없는 채로 시작해도 이전 user_id가 남지 않도록 null로 해제한다', () {
     final gateway = FakeAnalyticsGateway();
     final container = _createContainer(gateway, null);
 
     container.read(analyticsUserIdSynchronizerProvider);
 
-    expect(gateway.userIdCalls, isEmpty);
+    expect(gateway.userIdCalls, [null]);
   });
 }

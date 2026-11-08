@@ -17,7 +17,10 @@ class MainTabShellScreen extends ConsumerStatefulWidget {
   ConsumerState<MainTabShellScreen> createState() => _MainTabShellScreenState();
 }
 
-class _MainTabShellScreenState extends ConsumerState<MainTabShellScreen> {
+class _MainTabShellScreenState extends ConsumerState<MainTabShellScreen>
+    with RouteAware {
+  RouteObserver<ModalRoute<dynamic>>? _routeObserver;
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +29,28 @@ class _MainTabShellScreenState extends ConsumerState<MainTabShellScreen> {
       _logCurrentTabScreenView();
     });
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    final observer = ref.read(analyticsNavigatorObserverProvider);
+    _routeObserver = observer;
+    if (route != null) {
+      observer.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    // dispose에서는 ref를 쓸 수 없으므로 구독할 때 보관한 observer로 해제한다.
+    _routeObserver?.unsubscribe(this);
+    super.dispose();
+  }
+
+  // 마이 하위 화면 등 위에 쌓인 화면이 닫혀 탭이 다시 보이면 탭 화면 조회를 다시 기록한다.
+  @override
+  void didPopNext() => _logCurrentTabScreenView();
 
   @override
   void didUpdateWidget(MainTabShellScreen oldWidget) {

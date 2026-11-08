@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/permission/microphone_permission_prompt.dart';
@@ -76,12 +78,13 @@ Future<ProviderContainer> _pumpApp(
   required Member member,
   required FakeHomeRepository homeRepository,
   RecordingErrorHandler? errorHandler,
+  FakeAnalyticsGateway? analyticsGateway,
 }) async {
   final container = ProviderContainer(
     // 실패 응답이 재시도되지 않도록 한다.
     retry: (retryCount, error) => null,
     overrides: [
-      ...analyticsTestOverrides(),
+      ...analyticsTestOverrides(analyticsGateway),
       microphonePermissionPromptProvider.overrideWithValue(
         FakeMicrophonePermissionPrompt(),
       ),
@@ -113,6 +116,31 @@ Future<ProviderContainer> _pumpApp(
 }
 
 void main() {
+  testWidgets('하위 화면에서 마이 탭으로 돌아오면 마이 탭 화면 조회를 다시 기록한다', (tester) async {
+    final analyticsGateway = FakeAnalyticsGateway();
+    final container = await _pumpApp(
+      tester,
+      member: _memberWithCharacter,
+      homeRepository: FakeHomeRepository(summary: _homeSummary),
+      analyticsGateway: analyticsGateway,
+    );
+    await tester.tap(find.text('마이'));
+    await tester.pumpAndSettle();
+    expect(analyticsGateway.loggedScreenNames, [
+      AppRoutes.home,
+      AppRoutes.myPage,
+    ]);
+
+    final router = container.read(appRouterProvider);
+    unawaited(router.push<void>(AppRoutes.nicknameChange));
+    await tester.pumpAndSettle();
+    router.pop();
+    await tester.pumpAndSettle();
+
+    expect(analyticsGateway.loggedScreenNames.last, AppRoutes.myPage);
+    expect(analyticsGateway.loggedScreenNames, hasLength(3));
+  });
+
   testWidgets('signed in member with character sees home tab and tab bar', (
     tester,
   ) async {
