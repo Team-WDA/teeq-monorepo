@@ -1,7 +1,28 @@
 # Changelog
 
-**현재 버전:** 0.40.0  
-**마지막 업데이트:** 2026-11-07T07:59:10Z  
+**현재 버전:** 0.41.0  
+**마지막 업데이트:** 2026-11-08T16:36:12Z  
+
+---
+
+## [0.41.0] - 2026-11-08
+
+**✨ 기능**
+- 통화 시작 전 안내 모달 추가
+- Firebase_Analytics_GA4_화면_이동_자동_기록과_user_id_설정 — debug 빌드 이벤트에 debug_mode 표시
+- Firebase_Analytics_GA4_화면_이동_자동_기록과_user_id_설정 — 라우트 observer 연결과 탭 전환 screen_view 기록
+- Firebase_Analytics_GA4_화면_이동_자동_기록과_user_id_설정 — 온보딩 질문별 screen_view 기록
+- Firebase_Analytics_GA4_화면_이동_자동_기록과_user_id_설정 — 로그인 회원 id를 GA4 user_id에 동기화
+- Firebase_Analytics_GA4_화면_이동_자동_기록과_user_id_설정 — Analytics 게이트웨이와 provider 추가
+
+**🐛 수정**
+- PR 리뷰 반영 - debug_mode 값 타입, 시작 시 user_id 해제, 탭 복귀 screen_view
+
+**✅ 테스트**
+- 앱 provider를 만드는 테스트에 Analytics 가짜 게이트웨이 override 추가
+
+**🔧 변경사항**
+- firebase_analytics 의존성 추가
 
 ---
 
