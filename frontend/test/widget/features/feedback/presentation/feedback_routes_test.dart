@@ -27,6 +27,7 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 
+import '../../../../support/fake_analytics_gateway.dart';
 import '../../../../support/fake_app_permission_gateway.dart';
 import '../../../../support/fake_auth_repository.dart';
 import '../../../../support/fake_auth_status_controller.dart';
@@ -77,6 +78,7 @@ Future<_Harness> _pumpApp(
   final container = ProviderContainer(
     retry: (retryCount, error) => null,
     overrides: [
+      ...analyticsTestOverrides(),
       microphonePermissionPromptProvider.overrideWithValue(
         FakeMicrophonePermissionPrompt(),
       ),

@@ -24,6 +24,7 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 
+import '../../../support/fake_analytics_gateway.dart';
 import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_auth_status_controller.dart';
 import '../../../support/fake_splash_minimum_display_controller.dart';
@@ -46,6 +47,7 @@ Future<ProviderContainer> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...analyticsTestOverrides(),
         microphonePermissionPromptProvider.overrideWithValue(
           FakeMicrophonePermissionPrompt(),
         ),

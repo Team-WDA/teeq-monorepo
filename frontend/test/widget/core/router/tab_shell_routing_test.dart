@@ -28,6 +28,7 @@ import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_controller.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
+import '../../../support/fake_analytics_gateway.dart';
 import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_auth_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
@@ -80,6 +81,7 @@ Future<ProviderContainer> _pumpApp(
     // 실패 응답이 재시도되지 않도록 한다.
     retry: (retryCount, error) => null,
     overrides: [
+      ...analyticsTestOverrides(),
       microphonePermissionPromptProvider.overrideWithValue(
         FakeMicrophonePermissionPrompt(),
       ),

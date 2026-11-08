@@ -23,6 +23,7 @@ import 'package:teeq/features/auth/presentation/signup_nickname_screen.dart';
 import 'package:teeq/features/auth/presentation/welcome_screen.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
+import '../support/fake_analytics_gateway.dart';
 import '../support/fake_auth_repository.dart';
 import '../support/fake_auth_status_controller.dart';
 import '../support/fake_auth_credential_provider.dart';
@@ -58,6 +59,7 @@ Future<(FakeAuthRepository, FakeAuthCredentialProvider)> _pumpApp(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...analyticsTestOverrides(),
         splashMinimumDisplayControllerProvider.overrideWith(
           () => FakeSplashMinimumDisplayController(true),
         ),

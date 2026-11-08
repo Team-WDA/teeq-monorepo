@@ -23,6 +23,7 @@ import 'package:teeq/features/splash/presentation/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/fake_analytics_gateway.dart';
 import '../support/fake_app_permission_gateway.dart';
 import '../support/fake_app_update_controller.dart';
 import '../support/fake_auth_repository.dart';
@@ -44,6 +45,7 @@ Future<void> _pumpSignedInApp(WidgetTester tester, Member member) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...analyticsTestOverrides(),
         microphonePermissionPromptProvider.overrideWithValue(
           FakeMicrophonePermissionPrompt(),
         ),
@@ -71,6 +73,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...analyticsTestOverrides(),
           microphonePermissionPromptProvider.overrideWithValue(
             FakeMicrophonePermissionPrompt(),
           ),
@@ -144,6 +147,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...analyticsTestOverrides(),
           microphonePermissionPromptProvider.overrideWithValue(
             FakeMicrophonePermissionPrompt(),
           ),
@@ -175,6 +179,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...analyticsTestOverrides(),
           microphonePermissionPromptProvider.overrideWithValue(
             FakeMicrophonePermissionPrompt(),
           ),
@@ -226,6 +231,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...analyticsTestOverrides(),
           microphonePermissionPromptProvider.overrideWithValue(
             FakeMicrophonePermissionPrompt(),
           ),
