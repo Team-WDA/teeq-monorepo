@@ -20,6 +20,7 @@ import 'package:teeq/features/home/domain/home_repository.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/presentation/home_screen.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
+import 'package:teeq/features/home/presentation/widgets/call_guide_dialog.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
 import 'package:teeq/features/home/presentation/widgets/character_edit_entry_card.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
@@ -66,6 +67,25 @@ const _feedbackStubText = 'FEEDBACK-FLOW';
 const _callStubText = 'CALL-SCREEN';
 const _returnHomeButtonText = '홈으로 돌아가기';
 const _closeButtonText = '닫기';
+const _callGuideTitle = '통화 전에 잠깐!';
+
+/// 통화 전 안내 모달의 X 버튼을 눌러 닫는다.
+Future<void> _closeCallGuideDialog(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(CallGuideDialog),
+      matching: find.byType(AppCloseButton),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// "통화하기"를 누르고 안내 모달을 X로 닫아 통화 화면까지 연다.
+Future<void> _startCall(WidgetTester tester) async {
+  await tester.tap(find.text('통화하기'));
+  await tester.pumpAndSettle();
+  await _closeCallGuideDialog(tester);
+}
 
 /// 피드백·통화 흐름 자리표시 화면. 뒤로가기(pop)와 `context.go` 홈 복귀를 모두 제공한다.
 Widget _flowStubScreen(BuildContext context, String text) => Scaffold(
@@ -442,12 +462,52 @@ void main() {
   });
 
   group('통화하기 버튼', () {
-    testWidgets('대기_피드백이_없으면_통화_화면으로_이동한다', (tester) async {
+    testWidgets('누르면_안내_모달이_뜨고_통화_화면은_아직_열리지_않는다', (tester) async {
       final setUp = _setUp(FakeHomeRepository(summary: _summary));
       final router = await _pumpRoutedHome(tester, setUp.container);
 
       await tester.tap(find.text('통화하기'));
       await tester.pumpAndSettle();
+
+      expect(find.text(_callGuideTitle), findsOneWidget);
+      expect(_currentPath(router), AppRoutes.home);
+      expect(find.text(_callStubText), findsNothing);
+    });
+
+    testWidgets('X로_닫으면_모달이_사라지고_통화_화면으로_이동한다', (tester) async {
+      final setUp = _setUp(FakeHomeRepository(summary: _summary));
+      final router = await _pumpRoutedHome(tester, setUp.container);
+
+      await tester.tap(find.text('통화하기'));
+      await tester.pumpAndSettle();
+      await _closeCallGuideDialog(tester);
+
+      expect(find.text(_callGuideTitle), findsNothing);
+      expect(_currentPath(router), AppRoutes.call);
+      expect(find.text(_callStubText), findsOneWidget);
+    });
+
+    testWidgets('바깥_탭과_뒤로가기로는_닫히지_않는다', (tester) async {
+      final setUp = _setUp(FakeHomeRepository(summary: _summary));
+      final router = await _pumpRoutedHome(tester, setUp.container);
+      await tester.tap(find.text('통화하기'));
+      await tester.pumpAndSettle();
+
+      await tester.tapAt(const Offset(1, 1));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.text(_callGuideTitle), findsOneWidget);
+      expect(_currentPath(router), AppRoutes.home);
+      expect(find.text(_callStubText), findsNothing);
+    });
+
+    testWidgets('대기_피드백이_없으면_통화_화면으로_이동한다', (tester) async {
+      final setUp = _setUp(FakeHomeRepository(summary: _summary));
+      final router = await _pumpRoutedHome(tester, setUp.container);
+
+      await _startCall(tester);
 
       expect(_currentPath(router), AppRoutes.call);
       expect(find.text(_callStubText), findsOneWidget);
@@ -461,8 +521,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(_currentPath(router), AppRoutes.home);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
 
       expect(_currentPath(router), AppRoutes.call);
       expect(find.text(_callStubText), findsOneWidget);
@@ -480,6 +539,8 @@ void main() {
       onPressed();
       onPressed();
       await tester.pumpAndSettle();
+      expect(find.byType(CallGuideDialog), findsOneWidget);
+      await _closeCallGuideDialog(tester);
       expect(find.text(_callStubText), findsOneWidget);
 
       // 한 번만 쌓였다면 한 번 pop으로 홈에 돌아온다.
@@ -493,8 +554,7 @@ void main() {
       final setUp = _setUp(FakeHomeRepository(summary: _summary));
       await _pumpRoutedHome(tester, setUp.container);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       expect(find.text(_callStubText), findsOneWidget);
 
       // 흐름은 pop이 아니라 go로 끝나므로 push의 Future가 끝나지 않을 수 있다.
@@ -502,8 +562,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(_callStubText), findsNothing);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       expect(find.text(_callStubText), findsOneWidget);
     });
   });
@@ -552,8 +611,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(_feedbackStubText), findsNothing);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       await tester.tap(find.text(_returnHomeButtonText));
       await tester.pumpAndSettle();
 
@@ -614,16 +672,14 @@ void main() {
       final setUp = _setUp(FakeHomeRepository(summary: _summary));
       final router = await _pumpTabbedHome(tester, setUp.container);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       expect(_currentPath(router), AppRoutes.call);
 
       await tester.tap(find.text(_returnHomeButtonText));
       await tester.pumpAndSettle();
       expect(_currentPath(router), AppRoutes.home);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       expect(_currentPath(router), AppRoutes.call);
       expect(find.text(_callStubText), findsOneWidget);
     });
@@ -640,8 +696,7 @@ void main() {
       expect(_currentPath(router), AppRoutes.home);
       expect(find.text(_feedbackStubText), findsNothing);
 
-      await tester.tap(find.text('통화하기'));
-      await tester.pumpAndSettle();
+      await _startCall(tester);
       expect(_currentPath(router), AppRoutes.call);
       expect(find.text(_callStubText), findsOneWidget);
     });
