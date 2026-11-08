@@ -1,3 +1,4 @@
+import 'package:teeq/core/analytics/analytics_user_id_synchronizer.dart';
 import 'package:teeq/core/debug_console/presentation/debug_console_host.dart';
 import 'package:teeq/core/design/app_layout.dart';
 import 'package:teeq/core/design/app_theme.dart';
@@ -11,6 +12,8 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 회원 상태를 GA4 user_id에 맞춘다.
+    ref.watch(analyticsUserIdSynchronizerProvider);
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'TeeQ',

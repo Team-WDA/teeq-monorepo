@@ -10,6 +10,7 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_contr
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_state.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 
+import '../../../../support/fake_analytics_gateway.dart';
 import '../../../../support/fake_onboarding_catalog_repository.dart';
 
 const _character = AiCharacter(
@@ -25,6 +26,7 @@ final _lifeMentor = testOnboardingOption('RELATIONSHIP_LIFE_MENTOR');
 ProviderContainer _createContainer() {
   final container = ProviderContainer(
     overrides: [
+      ...analyticsTestOverrides(),
       onboardingCatalogRepositoryProvider.overrideWithValue(
         FakeOnboardingCatalogRepository(),
       ),

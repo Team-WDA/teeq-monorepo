@@ -25,6 +25,7 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_state
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_introduction_screen.dart';
 
+import '../../../support/fake_analytics_gateway.dart';
 import '../../../support/fake_app_permission_gateway.dart';
 import '../../../support/fake_ai_character_repository.dart';
 import '../../../support/fake_auth_status_controller.dart';
@@ -78,6 +79,7 @@ Future<ProviderContainer> _pumpApp(
 }) async {
   final container = ProviderContainer(
     overrides: [
+      ...analyticsTestOverrides(),
       microphonePermissionPromptProvider.overrideWithValue(
         FakeMicrophonePermissionPrompt(),
       ),

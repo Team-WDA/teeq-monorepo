@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:teeq/core/analytics/firebase_analytics_gateway.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/core/auth/current_member_controller.dart';
 import 'package:teeq/core/router/app_routes.dart';
@@ -76,6 +77,8 @@ GoRouter appRouter(Ref ref) {
   final router = GoRouter(
     initialLocation: AppRoutes.home,
     refreshListenable: refreshNotifier,
+    // 라우트 push·pop을 GA4 screen_view로 자동 기록한다.
+    observers: [ref.watch(analyticsNavigatorObserverProvider)],
     redirect: (context, state) => authRedirect(
       ref.read(authStatusControllerProvider),
       ref.read(currentMemberControllerProvider),
@@ -152,6 +155,8 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const SignupCompletionConsentScreen(),
       ),
       StatefulShellRoute.indexedStack(
+        // 탭 화면은 MainTabShellScreen이 직접 기록하므로 루트 observer의 중복 기록을 막는다.
+        notifyRootObserver: false,
         builder: (context, state, navigationShell) =>
             MainTabShellScreen(navigationShell: navigationShell),
         branches: [

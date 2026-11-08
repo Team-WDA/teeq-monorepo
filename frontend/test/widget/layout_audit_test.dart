@@ -65,6 +65,7 @@ import 'package:teeq/features/app_update/presentation/app_update_controller.dart
 import 'package:teeq/features/app_update/presentation/update_required_screen.dart';
 
 import '../support/fake_ai_character_repository.dart';
+import '../support/fake_analytics_gateway.dart';
 import '../support/fake_app_update_controller.dart';
 import '../support/fake_feedback_repository.dart';
 import '../support/fake_home_repository.dart';
@@ -148,6 +149,7 @@ ProviderContainer _newContainer({
 }) {
   final container = ProviderContainer(
     overrides: [
+      ...analyticsTestOverrides(),
       errorHandlerProvider.overrideWithValue(_NoopErrorHandler()),
       authFlowProvider.overrideWithValue(authFlow ?? _NoopAuthFlow()),
       appUpdateControllerProvider.overrideWith(FakeAppUpdateController.new),

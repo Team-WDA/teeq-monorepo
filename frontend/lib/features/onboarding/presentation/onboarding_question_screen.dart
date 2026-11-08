@@ -15,11 +15,30 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_contr
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 
 /// 온보딩 카탈로그의 질문들을 한 화면에서 인덱스로 전환하며 보여 주는 화면.
-class OnboardingQuestionScreen extends ConsumerWidget {
+class OnboardingQuestionScreen extends ConsumerStatefulWidget {
   const OnboardingQuestionScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OnboardingQuestionScreen> createState() =>
+      _OnboardingQuestionScreenState();
+}
+
+class _OnboardingQuestionScreenState
+    extends ConsumerState<OnboardingQuestionScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 처음 노출된 질문(첫 질문 또는 복귀한 질문)을 한 번 기록한다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref
+          .read(characterSetupFlowControllerProvider.notifier)
+          .logCurrentQuestionView();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(characterSetupFlowControllerProvider);
     final controller = ref.read(characterSetupFlowControllerProvider.notifier);
     // 진입점이 카탈로그를 기다린 뒤에 이동하므로 null은 방어용이다.

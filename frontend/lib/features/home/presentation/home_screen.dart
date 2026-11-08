@@ -19,6 +19,7 @@ import 'package:teeq/features/home/domain/feedback_flow_path.dart';
 import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/home/domain/pending_feedback_auto_open_policy.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
+import 'package:teeq/features/home/presentation/widgets/call_guide_dialog.dart';
 import 'package:teeq/features/home/presentation/widgets/call_start_button.dart';
 import 'package:teeq/features/home/presentation/widgets/character_edit_entry_card.dart';
 import 'package:teeq/features/home/presentation/widgets/greeting_message_card.dart';
@@ -38,6 +39,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isEditDialogOpen = false;
   bool _isCallFlowOpening = false;
+  bool _isCallGuideDialogOpen = false;
   GoRouterDelegate? _routerDelegate;
   String? _previousPath;
 
@@ -167,7 +169,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final routerDelegate = _routerDelegate;
     // 라우터가 없는 하네스에서는 이동하지 않는다.
     // 캐릭터 수정 팝업은 루트 Navigator에 떠서 홈이 현재 화면으로 남으므로 따로 막는다.
-    if (routerDelegate == null || _isCallFlowOpening || _isEditDialogOpen) {
+    if (routerDelegate == null ||
+        _isCallFlowOpening ||
+        _isEditDialogOpen ||
+        _isCallGuideDialogOpen) {
       return;
     }
     // 탭 셸 안의 홈은 위에 다른 화면이 쌓여도 자기 Navigator에서는 현재 화면이므로 경로도 함께 확인한다.
@@ -196,7 +201,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _openFeedbackFlow(pendingFeedback.callSessionId);
   }
 
-  void _openCallFlow() => _pushCallFlowRoute(AppRoutes.call);
+  /// 통화 전 안내 모달을 먼저 띄우고, X로 닫으면 통화 화면을 연다.
+  /// 모달이 떠 있는 동안 다시 눌려도 모달을 또 띄우지 않고, 대기 피드백 자동 열림도 막는다.
+  Future<void> _openCallFlow() async {
+    if (_isCallFlowOpening || _isCallGuideDialogOpen) {
+      return;
+    }
+    _isCallGuideDialogOpen = true;
+    try {
+      await showCallGuideDialog(context);
+    } finally {
+      _isCallGuideDialogOpen = false;
+    }
+    if (!mounted) {
+      return;
+    }
+    _pushCallFlowRoute(AppRoutes.call);
+  }
 
   void _openFeedbackFlow(String callSessionId) =>
       _pushCallFlowRoute(AppRoutes.feedbackClosingLocation(callSessionId));

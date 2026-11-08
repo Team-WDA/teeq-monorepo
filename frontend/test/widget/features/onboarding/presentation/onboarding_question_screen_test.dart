@@ -14,6 +14,7 @@ import 'package:teeq/features/onboarding/presentation/character_setup_flow_contr
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_question_screen.dart';
 
+import '../../../../support/fake_analytics_gateway.dart';
 import '../../../../support/fake_onboarding_catalog_repository.dart';
 
 final _relationship = testOnboardingQuestion('RELATIONSHIP');
@@ -43,6 +44,7 @@ Future<ProviderContainer> _pumpScreen(
   addTearDown(router.dispose);
   final container = ProviderContainer(
     overrides: [
+      ...analyticsTestOverrides(),
       onboardingCatalogRepositoryProvider.overrideWithValue(
         FakeOnboardingCatalogRepository(),
       ),

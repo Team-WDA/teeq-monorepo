@@ -1,11 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:teeq/app.dart';
+import 'package:teeq/core/analytics/firebase_analytics_gateway.dart';
 import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/debug_console/developer_mode_controller.dart';
 import 'package:teeq/core/debug_console/secure_developer_mode_storage.dart';
 import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/logging/global_log_hooks.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,6 +31,12 @@ Future<void> main() async {
       ),
     ],
   );
+  // debug 빌드의 모든 이벤트에 debug_mode를 붙여 GA4 개발자 트래픽 필터가 제외하게 한다. release 빌드는 아무것도 하지 않는다.
+  if (kDebugMode) {
+    await container.read(analyticsGatewayProvider).setDefaultEventParameters({
+      'debug_mode': 1,
+    });
+  }
   installGlobalLogHooks(container.read(appLoggerProvider));
   runApp(UncontrolledProviderScope(container: container, child: const App()));
 }
