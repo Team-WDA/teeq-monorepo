@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:teeq/core/analytics/firebase_analytics_gateway.dart';
 import 'package:teeq/core/auth/auth_status.dart';
 import 'package:teeq/core/auth/auth_status_controller.dart';
 import 'package:teeq/features/onboarding/domain/ai_character.dart';
 import 'package:teeq/features/onboarding/domain/character_setup_mode.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_option.dart';
 import 'package:teeq/features/onboarding/domain/onboarding_question.dart';
+import 'package:teeq/features/onboarding/domain/onboarding_question_screen_name.dart';
 import 'package:teeq/features/onboarding/presentation/character_setup_flow_state.dart';
 import 'package:teeq/features/onboarding/presentation/onboarding_catalog_provider.dart';
 
@@ -43,6 +47,7 @@ class CharacterSetupFlowController extends _$CharacterSetupFlowController {
       return false;
     }
     state = state.copyWith(questionIndex: state.questionIndex + 1);
+    logCurrentQuestionView();
     return true;
   }
 
@@ -52,7 +57,17 @@ class CharacterSetupFlowController extends _$CharacterSetupFlowController {
       return false;
     }
     state = state.copyWith(questionIndex: state.questionIndex - 1);
+    logCurrentQuestionView();
     return true;
+  }
+
+  /// 현재 질문 화면 노출을 GA4에 기록한다.
+  void logCurrentQuestionView() {
+    unawaited(
+      ref
+          .read(analyticsGatewayProvider)
+          .logScreenView(onboardingQuestionScreenName(state.questionIndex)),
+    );
   }
 
   void recordCharacter(AiCharacter character) {
