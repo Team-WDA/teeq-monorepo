@@ -16,12 +16,15 @@ import kr.co.teeq.api.call.application.service.CallHistoryQueryService;
 import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
 import kr.co.teeq.api.call.core.port.AiCallDetailPort;
+import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,15 +55,22 @@ class AdminCallDetailServiceTest {
         assertThat(response.aiDetail()).isSameAs(detail);
     }
 
-    @Test
-    void turns가_비어_있으면_EXPIRED이고_AI_상세도_담는다() {
-        AiCallDetail detail = detail(List.of());
+    @ParameterizedTest
+    @CsvSource(value = {
+        "PENDING, RESULT_PENDING",
+        "MISSING, RESULT_MISSING",
+        "RECEIVED, EMPTY",
+        "null, EMPTY"
+    }, nullValues = "null")
+    void turns가_비어_있으면_resultStatus에_따라_상태를_정하고_AI_상세도_담는다(
+        AiCallResultStatus resultStatus, ConversationState expectedState) {
+        AiCallDetail detail = detail(resultStatus, List.of());
         given(callHistoryQueryService.getBySessionId(SESSION_ID)).willReturn(call());
         given(aiCallDetailPort.find(SESSION_ID)).willReturn(Optional.of(detail));
 
         AdminCallDetailResponse response = service.getDetail(SESSION_ID);
 
-        assertThat(response.conversationState()).isEqualTo(ConversationState.EXPIRED);
+        assertThat(response.conversationState()).isEqualTo(expectedState);
         assertThat(response.aiDetail()).isSameAs(detail);
     }
 
@@ -115,7 +125,11 @@ class AdminCallDetailServiceTest {
     }
 
     private AiCallDetail detail(List<AiCallTurn> turns) {
-        return new AiCallDetail(SESSION_ID, null, null, null, null, turns);
+        return detail(null, turns);
+    }
+
+    private AiCallDetail detail(AiCallResultStatus resultStatus, List<AiCallTurn> turns) {
+        return new AiCallDetail(SESSION_ID, resultStatus, null, null, null, null, turns);
     }
 
 }

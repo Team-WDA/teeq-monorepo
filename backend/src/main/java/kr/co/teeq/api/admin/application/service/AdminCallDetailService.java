@@ -7,6 +7,7 @@ import kr.co.teeq.api.call.application.dto.response.CallHistoryItemResponse;
 import kr.co.teeq.api.call.application.service.CallHistoryQueryService;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
 import kr.co.teeq.api.call.core.port.AiCallDetailPort;
+import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -40,9 +41,21 @@ public class AdminCallDetailService {
         if (aiDetail.isEmpty()) {
             return new AdminCallDetailResponse(call, ConversationState.NOT_RECORDED, null);
         }
-        ConversationState state = aiDetail.get().turns().isEmpty()
-            ? ConversationState.EXPIRED : ConversationState.LOADED;
-        return new AdminCallDetailResponse(call, state, aiDetail.get());
+        return new AdminCallDetailResponse(call, resolveState(aiDetail.get()), aiDetail.get());
+    }
+
+    // 대화가 없을 때는 AI 서버가 알려 준 결과 수신 상태로 이유를 구분한다
+    private ConversationState resolveState(AiCallDetail aiDetail) {
+        if (!aiDetail.turns().isEmpty()) {
+            return ConversationState.LOADED;
+        }
+        if (aiDetail.resultStatus() == AiCallResultStatus.PENDING) {
+            return ConversationState.RESULT_PENDING;
+        }
+        if (aiDetail.resultStatus() == AiCallResultStatus.MISSING) {
+            return ConversationState.RESULT_MISSING;
+        }
+        return ConversationState.EMPTY;
     }
 
 }

@@ -179,7 +179,7 @@ class AdminCallControllerTest {
 
     @Test
     void detail_loaded_rendersCallInfoSummaryConversationAndCost() throws Exception {
-        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, "오늘 하루를 이야기했다", "gpt-test",
+        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, "오늘 하루를 이야기했다", "gpt-test",
             new BigDecimal("0.0123"), true, List.of(
                 new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, 800, 300),
                 new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워요", true, 900, 350)));
@@ -203,7 +203,7 @@ class AdminCallControllerTest {
 
     @Test
     void detail_loadedWithNullOptionalFields_showsDash() throws Exception {
-        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, List.of(
+        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, null, List.of(
             new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, null, null)));
         given(adminCallDetailService.getDetail(SESSION_ID))
             .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.LOADED, aiDetail));
@@ -214,13 +214,33 @@ class AdminCallControllerTest {
     }
 
     @Test
-    void detail_expired_showsExpiredNotice() throws Exception {
+    void detail_resultPending_showsResultPendingNotice() throws Exception {
         given(adminCallDetailService.getDetail(SESSION_ID))
-            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EXPIRED, null));
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.RESULT_PENDING, null));
 
         mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("보관 기간이 지나 대화가 삭제되었습니다")));
+            .andExpect(content().string(containsString("통화 결과를 아직 받지 못했습니다.")));
+    }
+
+    @Test
+    void detail_resultMissing_showsResultMissingNotice() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.RESULT_MISSING, null));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("통화 결과가 수신되지 않았습니다.")));
+    }
+
+    @Test
+    void detail_empty_showsEmptyNotice() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("대화 내용이 없습니다. 발화가 없었거나 보관 기간이 지났을 수 있습니다.")));
     }
 
     @Test
@@ -249,7 +269,7 @@ class AdminCallControllerTest {
 
     @Test
     void detail_conversationText_isEscaped() throws Exception {
-        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, List.of(
+        AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, null, List.of(
             new AiCallTurn(0, AiCallTurnRole.USER, "<script>alert(1)</script>", false, null, null)));
         given(adminCallDetailService.getDetail(SESSION_ID))
             .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.LOADED, aiDetail));

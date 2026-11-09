@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
 import kr.co.teeq.api.call.core.port.AiCallDetailPort;
+import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -25,6 +26,7 @@ import org.springframework.web.client.RestClientException;
 public class AiServerCallDetailAdapter implements AiCallDetailPort {
 
     private static final String SESSION_ID_FIELD = "sessionId";
+    private static final String RESULT_STATUS_FIELD = "resultStatus";
     private static final String SUMMARY_FIELD = "summary";
     private static final String LLM_MODEL_FIELD = "llmModel";
     private static final String ESTIMATED_COST_FIELD = "estimatedCostUsd";
@@ -36,6 +38,9 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
     private static final String INTERRUPTED_FIELD = "interrupted";
     private static final String END_TO_END_LATENCY_FIELD = "endToEndLatencyMillis";
     private static final String LLM_FIRST_TOKEN_FIELD = "llmFirstTokenMillis";
+    private static final String DETAIL_FIELD = "detail";
+    private static final String CODE_FIELD = "code";
+    private static final String SESSION_NOT_FOUND_CODE = "SESSION_NOT_FOUND";
 
     private final RestClient restClient;
     private final AiServerProperties properties;
@@ -48,7 +53,8 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
         this.properties = properties;
     }
 
-    // 재시도하지 않는다. 404는 세션 없음, 그 외 실패는 원인을 cause로만 남기고 화면에는 노출하지 않는다
+    // 재시도하지 않는다. SESSION_NOT_FOUND 404만 세션 없음이고,
+    // 그 외 404를 포함한 실패는 원인을 cause로만 남기고 화면에는 노출하지 않는다
     @Override
     public Optional<AiCallDetail> find(String callSessionId) {
         Map<String, Object> responseBody;
@@ -60,7 +66,11 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
                 .body(new ParameterizedTypeReference<Map<String, Object>>() {
                 });
         } catch (HttpClientErrorException.NotFound exception) {
-            return Optional.empty();
+            if (isSessionNotFound(exception)) {
+                return Optional.empty();
+            }
+            log.warn("AI 서버 통화 상세 404 응답이 세션 없음이 아닙니다(경로 오류 등)");
+            throw new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE, exception);
         } catch (RestClientException exception) {
             throw new CustomException(ErrorCode.AI_SERVER_UNAVAILABLE, exception);
         }
@@ -72,11 +82,41 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
             log.warn("AI 서버 통화 상세 응답의 {}가 없거나 요청과 다릅니다", SESSION_ID_FIELD);
         }
         return Optional.of(new AiCallDetail(callSessionId,
+            readResultStatus(responseBody.get(RESULT_STATUS_FIELD)),
             readText(responseBody.get(SUMMARY_FIELD)),
             readText(responseBody.get(LLM_MODEL_FIELD)),
             readCost(responseBody.get(ESTIMATED_COST_FIELD)),
             responseBody.get(MEMORY_INJECTED_FIELD) instanceof Boolean memoryInjected ? memoryInjected : null,
             readTurns(responseBody.get(TURNS_FIELD))));
+    }
+
+    // FastAPI는 detail 아래에 code를 감싸 내리고 문서에는 평평한 형태라 둘 다 받는다.
+    // 읽지 못하면 일치하지 않는 것으로 본다
+    private boolean isSessionNotFound(HttpClientErrorException.NotFound exception) {
+        try {
+            Map<String, Object> errorBody = exception.getResponseBodyAs(new ParameterizedTypeReference<>() {
+            });
+            if (errorBody == null) {
+                return false;
+            }
+            Object code = errorBody.get(DETAIL_FIELD) instanceof Map<?, ?> detail
+                ? detail.get(CODE_FIELD) : errorBody.get(CODE_FIELD);
+            return SESSION_NOT_FOUND_CODE.equals(code);
+        } catch (RuntimeException parseFailure) {
+            return false;
+        }
+    }
+
+    // 없거나 계약 밖의 값이면 오류 없이 null로 둔다
+    private AiCallResultStatus readResultStatus(Object rawStatus) {
+        if (!(rawStatus instanceof String statusName)) {
+            return null;
+        }
+        try {
+            return AiCallResultStatus.valueOf(statusName);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private List<AiCallTurn> readTurns(Object rawTurns) {

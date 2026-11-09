@@ -5,14 +5,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withResourceNotFound;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
+import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
 import kr.co.teeq.api.common.core.exception.CustomException;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
@@ -98,11 +100,54 @@ class AiServerCallDetailAdapterTest {
         assertThat(adapter.find(SESSION_ID).orElseThrow().turns()).isEmpty();
     }
 
-    @Test
-    void 세션이_없어_404면_빈_값이다() {
-        server.expect(requestTo(BASE_URL + "/calls/sess-1")).andRespond(withResourceNotFound());
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"detail\":{\"code\":\"SESSION_NOT_FOUND\",\"message\":\"call session not found\"}}",
+        "{\"code\":\"SESSION_NOT_FOUND\"}"
+    })
+    void SESSION_NOT_FOUND_404면_빈_값이다(String responseBody) {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(responseBody));
 
         assertThat(adapter.find(SESSION_ID)).isEqualTo(Optional.empty());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"detail\":\"Not Found\"}",
+        "{\"detail\":{\"code\":\"OTHER\"}}",
+        "",
+        "not json"
+    })
+    void 그_외_404면_AI_서버_오류로_바꾼다(String responseBody) {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(responseBody));
+
+        assertUnavailable(SESSION_ID);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"RECEIVED", "PENDING", "MISSING"})
+    void resultStatus를_파싱한다(String resultStatus) {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1")).andRespond(withSuccess(
+            "{\"sessionId\":\"sess-1\",\"resultStatus\":\"" + resultStatus + "\",\"turns\":[]}",
+            MediaType.APPLICATION_JSON));
+
+        assertThat(adapter.find(SESSION_ID).orElseThrow().resultStatus())
+            .isEqualTo(AiCallResultStatus.valueOf(resultStatus));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"sessionId\":\"sess-1\",\"turns\":[]}",
+        "{\"sessionId\":\"sess-1\",\"resultStatus\":\"WEIRD\",\"turns\":[]}",
+        "{\"sessionId\":\"sess-1\",\"resultStatus\":1,\"turns\":[]}"
+    })
+    void resultStatus가_없거나_알_수_없으면_null이다(String responseBody) {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+
+        assertThat(adapter.find(SESSION_ID).orElseThrow().resultStatus()).isNull();
     }
 
     @Test
