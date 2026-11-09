@@ -41,6 +41,15 @@
     </div>
   </section>
 
+  <section th:replace="~{admin/fragments/member-call-summary :: member-call-summary}"></section>
+
+  <section id="member-call-history" class="panel-section">
+    <h2 class="call-history-heading">통화 기록</h2>
+    <section th:replace="~{admin/fragments/call-history-filter-form :: call-history-filter-form}"></section>
+    <section th:replace="~{admin/fragments/call-history-table :: call-history-table}"></section>
+    <nav th:replace="~{admin/fragments/call-history-pagination :: call-history-pagination}"></nav>
+  </section>
+
   <section th:replace="~{admin/fragments/call-bonus-grant-form :: call-bonus-grant-form}"></section>
   <section th:replace="~{admin/fragments/call-bonus-table :: call-bonus-table}"></section>
 </main>

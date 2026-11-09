@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 회원 통화 요약 타일 4개. 실패·대기 통화는 제외한 값이다. 컨텍스트 변수 callSummary -->
+<section class="call-summary-grid" aria-label="통화 요약" th:fragment="member-call-summary">
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">총 통화</h2>
+    <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(callSummary.callCount, 1, 'COMMA')}회|">0회</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">총 통화 시간</h2>
+    <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(callSummary.usedSeconds, 1, 'COMMA')}초|">0초</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">마지막 통화</h2>
+    <p class="dashboard-kpi-value call-summary-last-started" th:if="${callSummary.lastStartedAt != null}"
+       th:text="${#temporals.format(callSummary.lastStartedAt, 'yyyy-MM-dd HH:mm', 'Asia/Seoul')}">2026-10-20 12:00</p>
+    <p class="dashboard-kpi-value call-summary-last-started" th:if="${callSummary.lastStartedAt == null}">-</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">최근 7일 통화</h2>
+    <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(callSummary.recentCallCount, 1, 'COMMA')}회|">0회</p>
+  </article>
+</section>
+</body>
+</html>
