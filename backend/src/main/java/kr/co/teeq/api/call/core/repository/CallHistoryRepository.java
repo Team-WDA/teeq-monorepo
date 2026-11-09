@@ -8,12 +8,23 @@ import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.call.core.entity.CallHistory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> {
+public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID>,
+    JpaSpecificationExecutor<CallHistory> {
+
+    // 목록에서 회원을 함께 조회한다(회원 N+1 방지)
+    @Override
+    @EntityGraph(attributePaths = "member")
+    Page<CallHistory> findAll(Specification<CallHistory> specification, Pageable pageable);
 
     Optional<CallHistory> findByIdAndDeletedFalse(UUID id);
 
@@ -117,5 +128,35 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID> 
         """, nativeQuery = true)
     long countReturningMembers(@Param("fromInclusive") Instant fromInclusive,
         @Param("toExclusive") Instant toExclusive, @Param("minimumCalls") long minimumCalls);
+
+    // 회원 통화 요약 결과. 별칭은 getter 이름과 같아야 한다
+    interface MemberCallSummaryRow {
+
+        long getCallCount();
+
+        long getUsedSeconds();
+
+        // 통화가 없으면 null
+        Instant getLastStartedAt();
+
+        long getRecentCallCount();
+
+    }
+
+    // 회원의 활성 기록 중 excludedStatuses가 아닌 통화의 건수·사용 시간(초)·마지막 시작 시각과,
+    // 시작 시각이 recentFromInclusive 이후인 최근 통화 건수
+    @Query("""
+        select count(c) as callCount,
+               coalesce(sum(c.durationSeconds), 0L) as usedSeconds,
+               max(c.startedAt) as lastStartedAt,
+               coalesce(sum(case when c.startedAt >= :recentFromInclusive then 1L else 0L end), 0L) as recentCallCount
+        from CallHistory c
+        where c.member.id = :memberId
+          and c.deleted = false
+          and c.status not in :excludedStatuses
+        """)
+    MemberCallSummaryRow summarizeByMember(@Param("memberId") UUID memberId,
+        @Param("excludedStatuses") Collection<CallStatus> excludedStatuses,
+        @Param("recentFromInclusive") Instant recentFromInclusive);
 
 }
