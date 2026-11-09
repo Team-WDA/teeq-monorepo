@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 기록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 callBasePath, callMemberColumnVisible, callKeyword, callFrom, callTo, callStatusName, callStatusOptions, callAbnormalOnly -->
+<section class="panel" th:fragment="call-history-filter-form">
+  <form class="panel-body call-history-filter-form" method="get" th:action="@{${callBasePath}}">
+    <label class="call-history-filter-field call-history-filter-keyword" th:if="${callMemberColumnVisible}">
+      <span class="call-history-filter-label">닉네임·이메일</span>
+      <input class="input input-sm" type="text" name="keyword" th:value="${callKeyword}" placeholder="닉네임 또는 이메일">
+    </label>
+    <label class="call-history-filter-field">
+      <span class="call-history-filter-label">시작일</span>
+      <input class="input input-sm" type="date" name="from" th:value="${callFrom}">
+    </label>
+    <label class="call-history-filter-field">
+      <span class="call-history-filter-label">종료일</span>
+      <input class="input input-sm" type="date" name="to" th:value="${callTo}">
+    </label>
+    <label class="call-history-filter-field">
+      <span class="call-history-filter-label">상태</span>
+      <select class="select select-sm" name="status">
+        <option value="">전체</option>
+        <option th:each="option : ${callStatusOptions}" th:value="${option.name}" th:text="${option.label}"
+                th:selected="${option.name == callStatusName}">종료</option>
+      </select>
+    </label>
+    <label class="call-history-filter-checkbox">
+      <input class="checkbox checkbox-sm" type="checkbox" name="abnormalOnly" value="true" th:checked="${callAbnormalOnly}">
+      <span>실패·비정상 종료만 보기</span>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>

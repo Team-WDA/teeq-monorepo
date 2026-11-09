@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('통화 상세', ~{::main}, 'calls')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>통화 상세</h1>
+      <p><a class="link link-primary" th:href="@{/admin/calls}">통화 기록으로</a></p>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head"><h2>통화 정보</h2></div>
+    <dl class="panel-body member-info-list">
+      <div>
+        <dt>회원</dt>
+        <dd>
+          <a class="link link-primary" th:href="@{/admin/members/{memberId}(memberId=${detail.call.memberId})}"
+             th:text="${detail.call.memberNickname}">닉네임</a>
+          <div class="muted" th:text="${detail.call.memberEmail}">user@example.com</div>
+        </dd>
+      </div>
+      <div>
+        <dt>시작 시각</dt>
+        <dd class="mono" th:text="${#temporals.format(detail.call.startedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</dd>
+      </div>
+      <div>
+        <dt>길이</dt>
+        <dd th:text="|${#numbers.formatInteger(detail.call.durationSeconds, 1, 'COMMA')}초|">0초</dd>
+      </div>
+      <div>
+        <dt>상태</dt>
+        <dd><span th:replace="~{admin/fragments/call-status-badge :: call-status-badge(${detail.call.status.name()}, ${callStatusLabel})}"></span></dd>
+      </div>
+      <div>
+        <dt>종료 사유</dt>
+        <dd th:text="${callEndReasonLabel}">사용자 종료</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section th:replace="~{admin/fragments/call-conversation :: call-conversation}"></section>
+</main>
+</body>
+</html>

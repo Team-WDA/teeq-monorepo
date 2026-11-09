@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('통화 기록', ~{::main}, 'calls')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>통화 기록</h1>
+      <p>모든 회원의 통화를 최근 시작순으로 보여 줍니다. 통화를 선택하면 대화와 요약을 볼 수 있습니다. 날짜는 한국 시간 기준입니다.</p>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/call-history-filter-form :: call-history-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/call-history-table :: call-history-table}"></section>
+
+  <nav th:replace="~{admin/fragments/call-history-pagination :: call-history-pagination}"></nav>
+</main>
+</body>
+</html>

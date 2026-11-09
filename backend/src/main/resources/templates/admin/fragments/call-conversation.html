@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 대화 영역. detail.conversationState(LOADED, EXPIRED, NOT_RECORDED, UNAVAILABLE)별로 보여 준다. 대화 텍스트는 th:text로만 출력한다 -->
+<section class="panel" th:fragment="call-conversation" th:switch="${detail.conversationState.name()}">
+  <div class="panel-head"><h2>대화</h2></div>
+
+  <div th:case="'LOADED'" class="panel-body">
+    <p class="call-conversation-summary" th:if="${detail.aiDetail.summary != null}">
+      <span class="call-conversation-summary-label">요약</span>
+      <span th:text="${detail.aiDetail.summary}">통화 요약</span>
+    </p>
+    <ol class="call-conversation-list">
+      <li th:each="turn : ${detail.aiDetail.turns}"
+          th:classappend="${turn.role.name() == 'USER'} ? 'call-bubble-user' : 'call-bubble-assistant'"
+          class="call-bubble">
+        <span class="call-bubble-role" th:text="${turn.role.name() == 'USER'} ? '사용자' : 'AI'">사용자</span>
+        <p class="call-bubble-text" th:text="${turn.text}">대화 내용</p>
+        <span class="badge badge-ghost badge-sm" th:if="${turn.interrupted}">끼어듦</span>
+      </li>
+    </ol>
+    <details class="call-conversation-latency">
+      <summary>품질 지표·비용·모델 보기</summary>
+      <dl class="member-info-list call-conversation-meta">
+        <div>
+          <dt>추정 비용(USD)</dt>
+          <dd th:if="${detail.aiDetail.estimatedCostUsd != null}"
+              th:text="${#numbers.formatDecimal(detail.aiDetail.estimatedCostUsd, 1, 4)}">0.0123</dd>
+          <dd th:if="${detail.aiDetail.estimatedCostUsd == null}">-</dd>
+        </div>
+        <div>
+          <dt>LLM 모델</dt>
+          <dd th:if="${detail.aiDetail.llmModel != null}" th:text="${detail.aiDetail.llmModel}">모델</dd>
+          <dd th:if="${detail.aiDetail.llmModel == null}">-</dd>
+        </div>
+        <div>
+          <dt>기억 주입</dt>
+          <dd th:if="${detail.aiDetail.memoryInjected == null}">-</dd>
+          <dd th:if="${detail.aiDetail.memoryInjected != null}"
+              th:text="${detail.aiDetail.memoryInjected} ? '주입함' : '주입 안 함'">주입함</dd>
+        </div>
+      </dl>
+      <div class="table-wrap">
+        <table class="table call-latency-table">
+          <thead>
+            <tr>
+              <th class="numeric-cell">순서</th>
+              <th>발화자</th>
+              <th class="numeric-cell">응답 지연(ms)</th>
+              <th class="numeric-cell">첫 토큰(ms)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="turn : ${detail.aiDetail.turns}">
+              <td class="numeric-cell" th:text="${turn.index}">0</td>
+              <td th:text="${turn.role.name() == 'USER'} ? '사용자' : 'AI'">사용자</td>
+              <td class="numeric-cell"
+                  th:text="${turn.endToEndLatencyMillis != null} ? ${#numbers.formatInteger(turn.endToEndLatencyMillis, 1, 'COMMA')} : '-'">-</td>
+              <td class="numeric-cell"
+                  th:text="${turn.llmFirstTokenMillis != null} ? ${#numbers.formatInteger(turn.llmFirstTokenMillis, 1, 'COMMA')} : '-'">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+
+  <p th:case="'EXPIRED'" class="panel-body muted">보관 기간이 지나 대화가 삭제되었습니다.</p>
+
+  <p th:case="'NOT_RECORDED'" class="panel-body muted">AI 서버에 기록이 없습니다.</p>
+
+  <div th:case="'UNAVAILABLE'" class="panel-body">
+    <p class="error-message">대화를 불러오지 못했습니다.</p>
+    <a class="btn btn-sm btn-ghost" th:href="@{/admin/calls/{callSessionId}(callSessionId=${detail.call.callSessionId})}">다시 시도</a>
+  </div>
+</section>
+</body>
+</html>
