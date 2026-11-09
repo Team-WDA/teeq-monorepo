@@ -40,7 +40,9 @@ class CallHistoryRepositoryDeclarationTest {
         String queryText = method.getAnnotation(Query.class).value();
 
         assertThat(queryText).contains("c.deleted = false")
-            .contains("as callCount", "as usedSeconds", "as lastStartedAt", "as recentCallCount");
+            .contains("as callCount", "as usedSeconds", "as lastStartedAt", "as recentCallCount")
+            .contains("c.status not in :excludedStatuses")
+            .contains("case when c.startedAt >= :recentFromInclusive then 1L else 0L end");
         assertThat(queryText.split("coalesce", -1)).hasSize(3);
         assertThat(method.getReturnType()).isEqualTo(CallHistoryRepository.MemberCallSummaryRow.class);
     }

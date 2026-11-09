@@ -3,6 +3,7 @@ package kr.co.teeq.api.admin.application.controller;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -153,6 +154,24 @@ class AdminCallControllerTest {
     }
 
     @Test
+    void calls_keywordWithPlus_isEncodedStrictlyInPaginationLink() throws Exception {
+        given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(endedCall()), 0, 20, 50));
+
+        mockMvc.perform(get(PATH).with(asAdmin()).param("keyword", "user+tag"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("/admin/calls?keyword=user%2Btag&amp;page=1\"")));
+    }
+
+    @Test
+    void calls_keywordWithSpaceAmpersandAndEquals_isFullyEncodedInPaginationLink() throws Exception {
+        given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(endedCall()), 0, 20, 50));
+
+        mockMvc.perform(get(PATH).with(asAdmin()).param("keyword", "a b&c=d"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("/admin/calls?keyword=a%20b%26c%3Dd&amp;page=1\"")));
+    }
+
+    @Test
     void calls_negativeAndHugePage_areClampedWithoutError() throws Exception {
         given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(), 0, 20, 0));
 
@@ -210,7 +229,18 @@ class AdminCallControllerTest {
 
         mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("안녕하세요")));
+            .andExpect(content().string(containsString("안녕하세요")))
+            .andExpect(content().string(matchesPattern(dashAfterLabel("추정 비용\\(USD\\)"))))
+            .andExpect(content().string(matchesPattern(dashAfterLabel("LLM 모델"))))
+            .andExpect(content().string(matchesPattern(dashAfterLabel("기억 주입"))))
+            .andExpect(content().string(matchesPattern(
+                "(?s).*<td class=\"numeric-cell\">0</td>\\s*<td>사용자</td>"
+                    + "\\s*<td class=\"numeric-cell\">-</td>\\s*<td class=\"numeric-cell\">-</td>.*")));
+    }
+
+    // 라벨 바로 뒤의 dd가 대시인지 확인해 항목별로 자리표시자를 구분한다
+    private static String dashAfterLabel(String labelPattern) {
+        return "(?s).*<dt>" + labelPattern + "</dt>\\s*<dd[^>]*>-</dd>.*";
     }
 
     @Test

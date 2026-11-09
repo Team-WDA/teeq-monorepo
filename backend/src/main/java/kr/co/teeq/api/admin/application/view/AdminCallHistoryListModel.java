@@ -64,7 +64,7 @@ public final class AdminCallHistoryListModel {
     private static String pageUrl(String basePath, CallHistorySearchRequest request, int page) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath(basePath);
         if (request.keyword() != null) {
-            builder.queryParam("keyword", request.keyword());
+            builder.queryParam("keyword", "{keyword}");
         }
         if (request.from() != null) {
             builder.queryParam("from", request.from());
@@ -78,7 +78,11 @@ public final class AdminCallHistoryListModel {
         if (request.abnormalOnly()) {
             builder.queryParam("abnormalOnly", true);
         }
-        return builder.queryParam("page", page).build().encode().toUriString();
+        builder.queryParam("page", page);
+        // 키워드의 +, &, =가 쿼리 구분자로 남지 않도록 URI 변수 값으로 엄격하게 인코딩한다
+        return request.keyword() == null
+            ? builder.build().encode().toUriString()
+            : builder.encode().buildAndExpand(request.keyword()).toUriString();
     }
 
 }

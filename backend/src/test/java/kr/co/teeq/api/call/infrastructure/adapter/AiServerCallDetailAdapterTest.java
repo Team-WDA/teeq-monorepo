@@ -182,13 +182,20 @@ class AiServerCallDetailAdapterTest {
         assertUnavailable(SESSION_ID);
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"{\"turns\":[]}", "{\"sessionId\":\"other\",\"turns\":[]}"})
-    void 응답의_sessionId가_없거나_다르면_요청한_id를_사용한다(String responseBody) {
+    @Test
+    void 응답의_sessionId가_없으면_요청한_id를_사용한다() {
         server.expect(requestTo(BASE_URL + "/calls/sess-1"))
-            .andRespond(withSuccess(responseBody, MediaType.APPLICATION_JSON));
+            .andRespond(withSuccess("{\"turns\":[]}", MediaType.APPLICATION_JSON));
 
         assertThat(adapter.find(SESSION_ID).orElseThrow().sessionId()).isEqualTo(SESSION_ID);
+    }
+
+    @Test
+    void 응답의_sessionId가_요청과_다르면_AI_서버_오류로_바꾼다() {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess("{\"sessionId\":\"other\",\"turns\":[]}", MediaType.APPLICATION_JSON));
+
+        assertUnavailable(SESSION_ID);
     }
 
     @Test

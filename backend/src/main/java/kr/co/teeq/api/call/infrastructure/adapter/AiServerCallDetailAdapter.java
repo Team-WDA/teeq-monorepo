@@ -77,9 +77,12 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
         if (responseBody == null) {
             throw invalidResponse("응답 본문이 비어 있습니다");
         }
-        if (!(responseBody.get(SESSION_ID_FIELD) instanceof String responseSessionId)
-            || !responseSessionId.equals(callSessionId)) {
-            log.warn("AI 서버 통화 상세 응답의 {}가 없거나 요청과 다릅니다", SESSION_ID_FIELD);
+        if (responseBody.get(SESSION_ID_FIELD) instanceof String responseSessionId) {
+            if (!responseSessionId.equals(callSessionId)) {
+                throw invalidResponse(SESSION_ID_FIELD + "가 요청과 다릅니다");
+            }
+        } else {
+            log.warn("AI 서버 통화 상세 응답에 {}가 없거나 문자열이 아닙니다", SESSION_ID_FIELD);
         }
         return Optional.of(new AiCallDetail(callSessionId,
             readResultStatus(responseBody.get(RESULT_STATUS_FIELD)),

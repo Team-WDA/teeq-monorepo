@@ -6,6 +6,7 @@ import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
@@ -272,7 +273,9 @@ class AdminMemberControllerTest {
 
         mockMvc.perform(get(PATH + "/{memberId}", MEMBER_ID).with(asAdmin()))
             .andExpect(status().isOk())
-            .andExpect(content().string(containsString("통화 기록이 없습니다.")));
+            .andExpect(content().string(containsString("통화 기록이 없습니다.")))
+            .andExpect(content().string(matchesPattern(
+                "(?s).*class=\"[^\"]*call-summary-last-started[^\"]*\">-</p>.*")));
     }
 
     @Test
