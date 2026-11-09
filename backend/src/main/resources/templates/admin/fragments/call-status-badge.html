@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 상태 배지. 매개변수 statusName(CallStatus 이름), statusLabel(한국어 라벨) -->
+<span th:fragment="call-status-badge(statusName, statusLabel)" th:switch="${statusName}">
+  <span th:case="'ENDED'" class="badge badge-success badge-sm" th:text="${statusLabel}">종료</span>
+  <span th:case="'IN_PROGRESS'" class="badge badge-info badge-sm" th:text="${statusLabel}">통화 중</span>
+  <span th:case="'FAILED'" class="badge badge-error badge-sm" th:text="${statusLabel}">시작 실패</span>
+  <span th:case="'EXPIRED'" class="badge badge-warning badge-sm" th:text="${statusLabel}">만료</span>
+  <span th:case="*" class="badge badge-ghost badge-sm" th:text="${statusLabel}">대기 중</span>
+</span>
+</body>
+</html>

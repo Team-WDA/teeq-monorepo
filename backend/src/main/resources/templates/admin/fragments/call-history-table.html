@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 목록 표(날짜 구분 헤더 포함). 컨텍스트 변수 callGroups, callMemberColumnVisible -->
+<section class="panel" th:fragment="call-history-table">
+  <div class="table-wrap">
+    <table class="table call-history-table">
+      <thead>
+        <tr>
+          <th th:if="${callMemberColumnVisible}">회원</th>
+          <th>시작 시각</th>
+          <th class="numeric-cell">길이</th>
+          <th>상태</th>
+          <th>종료 사유</th>
+        </tr>
+      </thead>
+      <tbody th:each="group : ${callGroups}">
+        <tr class="call-history-date-row">
+          <th th:colspan="${callMemberColumnVisible} ? 5 : 4" th:text="${group.date}">2026-10-20</th>
+        </tr>
+        <tr th:each="row : ${group.rows}">
+          <td th:if="${callMemberColumnVisible}">
+            <a class="link link-primary" th:href="@{/admin/members/{memberId}(memberId=${row.call.memberId})}"
+               th:text="${row.call.memberNickname}">닉네임</a>
+            <div class="muted" th:text="${row.call.memberEmail}">user@example.com</div>
+          </td>
+          <td class="mono">
+            <a th:if="${row.call.callSessionId != null}" class="link link-primary"
+               th:href="@{/admin/calls/{callSessionId}(callSessionId=${row.call.callSessionId})}"
+               th:text="${#temporals.format(row.call.startedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</a>
+            <span th:if="${row.call.callSessionId == null}"
+                  th:text="${#temporals.format(row.call.startedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</span>
+          </td>
+          <td class="numeric-cell" th:text="|${#numbers.formatInteger(row.call.durationSeconds, 1, 'COMMA')}초|">0초</td>
+          <td><span th:replace="~{admin/fragments/call-status-badge :: call-status-badge(${row.call.status.name()}, ${row.statusLabel})}"></span></td>
+          <td th:text="${row.endReasonLabel}">사용자 종료</td>
+        </tr>
+      </tbody>
+      <tbody th:if="${#lists.isEmpty(callGroups)}">
+        <tr>
+          <td class="muted" th:colspan="${callMemberColumnVisible} ? 5 : 4">통화 기록이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</body>
+</html>

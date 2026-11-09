@@ -5,10 +5,16 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import kr.co.teeq.api.admin.application.view.AdminCallHistoryListModel;
 import kr.co.teeq.api.call.application.dto.request.CallBonusGrantRequest;
+import kr.co.teeq.api.call.application.dto.request.CallHistorySearchRequest;
+import kr.co.teeq.api.call.application.dto.response.CallHistoryPageResponse;
 import kr.co.teeq.api.call.application.service.CallBonusService;
+import kr.co.teeq.api.call.application.service.CallHistoryQueryService;
+import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.member.application.dto.request.MemberSearchRequest;
 import kr.co.teeq.api.member.application.dto.response.MemberPageResponse;
 import kr.co.teeq.api.member.application.service.MemberDeletionService;
@@ -49,6 +55,8 @@ public class AdminMemberController {
     private final MemberQueryService memberQueryService;
     private final MemberDeletionService memberDeletionService;
     private final CallBonusService callBonusService;
+    private final CallHistoryQueryService callHistoryQueryService;
+    private final ZoneId koreaZoneId;
     private final Validator validator;
 
     @LogMonitoring
@@ -81,8 +89,17 @@ public class AdminMemberController {
 
     @LogMonitoring
     @GetMapping("/{member-id}")
-    public String detail(@PathVariable("member-id") UUID memberId, Model model) {
+    public String detail(
+        @PathVariable("member-id") UUID memberId,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+        @RequestParam(required = false) CallStatus status,
+        @RequestParam(defaultValue = "false") boolean abnormalOnly,
+        @RequestParam(defaultValue = "0") int page,
+        Model model) {
         addDetailAttributes(model, memberId);
+        addCallHistoryAttributes(model, new CallHistorySearchRequest(memberId, null, from, to, status,
+            abnormalOnly), page);
         return MEMBER_DETAIL_VIEW;
     }
 
@@ -103,6 +120,9 @@ public class AdminMemberController {
             .toList();
         if (!formErrorMessages.isEmpty()) {
             addDetailAttributes(model, memberId);
+            // 같은 뷰를 다시 그리므로 통화 영역은 필터 기본값으로 채운다
+            addCallHistoryAttributes(model,
+                new CallHistorySearchRequest(memberId, null, null, null, null, false), 0);
             model.addAttribute("formErrorMessages", formErrorMessages);
             model.addAttribute("submittedSeconds", seconds);
             model.addAttribute("submittedBonusDate", bonusDate);
@@ -136,6 +156,15 @@ public class AdminMemberController {
     private void addDetailAttributes(Model model, UUID memberId) {
         model.addAttribute("member", memberQueryService.getSummary(memberId));
         model.addAttribute("bonuses", callBonusService.getAll(memberId));
+    }
+
+    // 회원 통화 영역: 요약 타일, 이 회원으로 고정한 통화 목록(필터·페이지 규칙은 전체 통화 화면과 같다)
+    private void addCallHistoryAttributes(Model model, CallHistorySearchRequest request, int page) {
+        model.addAttribute("callSummary", callHistoryQueryService.getMemberSummary(request.memberId()));
+        CallHistoryPageResponse result = callHistoryQueryService.search(
+            request, AdminCallHistoryListModel.pageable(page));
+        AdminCallHistoryListModel.populate(model, request, result, MEMBERS_PATH + "/" + request.memberId(), false,
+            koreaZoneId);
     }
 
     // page * size가 int 범위를 넘으면 조회 오프셋이 넘쳐 500이 되므로, 넘치지 않는 마지막 페이지로 줄인다

@@ -6,6 +6,7 @@ import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +32,14 @@ import kr.co.teeq.api.admin.infrastructure.config.AdminSecurityConfig;
 import kr.co.teeq.api.admin.support.AdminSliceTestConfig;
 import kr.co.teeq.api.call.application.dto.request.CallBonusGrantRequest;
 import kr.co.teeq.api.call.application.dto.response.CallBonusResponse;
+import kr.co.teeq.api.call.application.dto.request.CallHistorySearchRequest;
+import kr.co.teeq.api.call.application.dto.response.CallHistoryItemResponse;
+import kr.co.teeq.api.call.application.dto.response.CallHistoryPageResponse;
+import kr.co.teeq.api.call.application.dto.response.MemberCallSummaryResponse;
 import kr.co.teeq.api.call.application.service.CallBonusService;
+import kr.co.teeq.api.call.application.service.CallHistoryQueryService;
+import kr.co.teeq.api.call.core.constant.CallStatus;
+import kr.co.teeq.api.call.core.constant.EndReason;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
@@ -86,6 +94,9 @@ class AdminMemberControllerTest {
 
     @MockitoBean
     private CallBonusService callBonusService;
+
+    @MockitoBean
+    private CallHistoryQueryService callHistoryQueryService;
 
     @Test
     void members_defaultRequest_rendersFirstPageOf20() throws Exception {
@@ -231,6 +242,61 @@ class AdminMemberControllerTest {
     }
 
     @Test
+    void detail_rendersCallSummaryTilesAndCallListFixedToMember() throws Exception {
+        givenMemberWithBonuses();
+        given(callHistoryQueryService.getMemberSummary(MEMBER_ID))
+            .willReturn(new MemberCallSummaryResponse(12, 3_400, Instant.parse("2026-10-20T03:00:00Z"), 4));
+        given(callHistoryQueryService.search(any(), any())).willReturn(new CallHistoryPageResponse(List.of(
+            new CallHistoryItemResponse("session-0001", MEMBER_ID, "테스터", "foo@example.com",
+                Instant.parse("2026-10-20T03:00:00Z"), 125, CallStatus.ENDED, EndReason.USER_HANGUP, null),
+            new CallHistoryItemResponse(null, MEMBER_ID, "테스터", "foo@example.com",
+                Instant.parse("2026-10-19T03:00:00Z"), 0, CallStatus.FAILED, EndReason.DISPATCH_FAILED, null)),
+            0, 20, 2));
+
+        mockMvc.perform(get(PATH + "/{memberId}", MEMBER_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("3,400")))
+            .andExpect(content().string(containsString("2026-10-20 12:00:00")))
+            .andExpect(content().string(containsString("시작 실패")))
+            .andExpect(content().string(containsString("href=\"/admin/calls/session-0001\"")))
+            // 필터 폼은 회원 상세 경로로 보낸다
+            .andExpect(content().string(containsString("action=\"/admin/members/" + MEMBER_ID + "\"")));
+
+        verify(callHistoryQueryService).search(
+            eq(new CallHistorySearchRequest(MEMBER_ID, null, null, null, null, false)),
+            eq(PageRequest.of(0, 20)));
+    }
+
+    @Test
+    void detail_memberWithoutCalls_rendersDashForLastCall() throws Exception {
+        givenMemberWithBonuses();
+
+        mockMvc.perform(get(PATH + "/{memberId}", MEMBER_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("통화 기록이 없습니다.")))
+            .andExpect(content().string(matchesPattern(
+                "(?s).*class=\"[^\"]*call-summary-last-started[^\"]*\">-</p>.*")));
+    }
+
+    @Test
+    void detail_callFilters_arePassedAndCarriedInPaginationLinks() throws Exception {
+        givenMemberWithBonuses();
+        given(callHistoryQueryService.search(any(), any())).willReturn(new CallHistoryPageResponse(List.of(), 1, 20, 50));
+
+        mockMvc.perform(get(PATH + "/{memberId}", MEMBER_ID).with(asAdmin())
+                .param("status", "FAILED").param("page", "1"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString(
+                "/admin/members/" + MEMBER_ID + "?status=FAILED&amp;page=0\"")))
+            .andExpect(content().string(containsString(
+                "/admin/members/" + MEMBER_ID + "?status=FAILED&amp;page=2\"")));
+
+        verify(callHistoryQueryService).search(
+            eq(new CallHistorySearchRequest(MEMBER_ID, null, null, null, CallStatus.FAILED, false)),
+            eq(PageRequest.of(1, 20)));
+    }
+
+    @Test
     void grantBonus_invalidSeconds_returns422WithFormErrors() throws Exception {
         givenMemberWithBonuses();
 
@@ -365,6 +431,9 @@ class AdminMemberControllerTest {
     private void givenMemberWithBonuses() {
         given(memberQueryService.getSummary(MEMBER_ID)).willReturn(completeMember());
         given(callBonusService.getAll(MEMBER_ID)).willReturn(List.of(activeBonus(), canceledBonus()));
+        given(callHistoryQueryService.getMemberSummary(MEMBER_ID))
+            .willReturn(new MemberCallSummaryResponse(0, 0, null, 0));
+        given(callHistoryQueryService.search(any(), any())).willReturn(new CallHistoryPageResponse(List.of(), 0, 20, 0));
     }
 
     private MemberPageResponse pageOf(List<MemberSummaryResponse> members, int page, int size, long totalElements) {

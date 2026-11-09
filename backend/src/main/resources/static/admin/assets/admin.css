@@ -172,6 +172,29 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .member-deleted-notice { margin: 0 0 12px; padding: 10px 12px; border-radius: 6px; background: var(--admin-accent-soft); color: var(--admin-accent); }
 .member-delete-title { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
 
+/* 통화 기록: 필터 폼, 날짜 구분 행, 회원 상세 요약 타일 */
+.call-history-filter-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.call-history-filter-field { display: flex; flex-direction: column; gap: 4px; }
+.call-history-filter-label { font-size: 12px; font-weight: 600; color: var(--admin-text-muted); }
+.call-history-filter-keyword { flex: 1; min-width: 240px; }
+.call-history-filter-checkbox { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; }
+.call-history-heading { margin: 24px 0 12px; font-size: 16px; }
+.call-history-date-row th { background: var(--admin-page-background); font-size: 12px; color: var(--admin-text-muted); }
+.call-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.call-summary-last-started { font-size: 18px; }
+
+/* 통화 상세: 요약, 말풍선(사용자는 오른쪽, AI는 왼쪽), 지연 표 */
+.call-conversation-summary { margin: 0 0 16px; padding: 10px 12px; border-radius: 6px; background: var(--admin-accent-soft); white-space: pre-wrap; }
+.call-conversation-summary-label { display: block; margin-bottom: 4px; font-size: 12px; font-weight: 600; color: var(--admin-accent); }
+.call-conversation-list { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.call-bubble { max-width: 70%; padding: 8px 12px; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: var(--admin-surface); }
+.call-bubble-user { align-self: flex-end; background: var(--admin-accent-soft); border-color: var(--admin-accent-muted); }
+.call-bubble-assistant { align-self: flex-start; }
+.call-bubble-role { font-size: 11px; font-weight: 600; color: var(--admin-text-muted); }
+.call-bubble-text { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
+.call-conversation-meta { margin-bottom: 16px; }
+.call-conversation-latency summary { cursor: pointer; color: var(--admin-accent); }
+
 /* 로그인: 좌우 분할, 왼쪽 어두운 패널 */
 .login-split { min-height: 100vh; display: grid; grid-template-columns: minmax(280px, 5fr) 7fr; }
 .login-brand-panel { background: var(--admin-sidebar-background); color: var(--admin-sidebar-text); padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -198,6 +221,8 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
   .setting-name-cell, .setting-state-cell { width: auto; }
   .dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-trend-grid, .dashboard-recent-grid { grid-template-columns: 1fr; }
+  .call-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .call-bubble { max-width: 90%; }
   .login-split { grid-template-columns: 1fr; }
   .login-brand-panel { padding: 24px; }
 }
