@@ -5,9 +5,10 @@
   <div class="page-head">
     <div>
       <h1>통화 기록</h1>
-      <p>모든 회원의 통화를 최근 시작순으로 보여 줍니다. 통화를 선택하면 대화와 요약을 볼 수 있습니다. 날짜는 한국 시간 기준입니다.</p>
     </div>
   </div>
+
+  <nav th:replace="~{admin/fragments/tab-navigation :: tab-navigation(${callTabs}, ${activeTab})}"></nav>
 
   <section th:replace="~{admin/fragments/call-history-filter-form :: call-history-filter-form}"></section>
 

@@ -8,16 +8,18 @@
 -->
 <section class="panel" th:fragment="admin-account-create-form">
   <div class="panel-head"><h2>관리자 계정 추가</h2></div>
-  <form class="panel-body account-create-form" method="post" th:action="@{/admin/accounts}">
+  <!-- 확인 모달에는 아이디·이름·권한만 나열하고 비밀번호는 싣지 않는다 -->
+  <form class="panel-body account-create-form" method="post" th:action="@{/admin/accounts}"
+        data-confirm-title="관리자 계정을 추가할까요?">
     <label class="account-field">
       <span class="account-label">아이디</span>
       <input class="input input-sm" type="text" name="username" maxlength="30" autocomplete="off"
-             th:value="${submittedUsername}" required>
+             th:value="${submittedUsername}" required data-confirm-label="아이디" data-confirm-previous="">
     </label>
     <label class="account-field">
       <span class="account-label">이름</span>
       <input class="input input-sm" type="text" name="name" maxlength="30" autocomplete="off"
-             th:value="${submittedName}" required>
+             th:value="${submittedName}" required data-confirm-label="이름" data-confirm-previous="">
     </label>
     <label class="account-field">
       <span class="account-label">초기 비밀번호</span>
@@ -25,7 +27,8 @@
     </label>
     <label class="account-field">
       <span class="account-label">권한</span>
-      <select class="select select-sm" name="role" required>
+      <!-- 새 계정에는 이전값이 없으므로 빈 이전값을 줘 "이전 → 새값" 대신 선택값만 보인다 -->
+      <select class="select select-sm" name="role" required data-confirm-label="권한" data-confirm-previous="">
         <!-- 선택값이 없으면 ADMIN이 기본이라 실수로 SUPER_ADMIN을 만들지 않는다 -->
         <option th:each="role : ${roles}" th:value="${role}" th:text="${role}"
                 th:selected="${submittedRole != null ? role == submittedRole : role.name() == 'ADMIN'}">ADMIN</option>

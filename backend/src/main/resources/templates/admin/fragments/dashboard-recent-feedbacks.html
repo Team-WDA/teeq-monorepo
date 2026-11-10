@@ -5,6 +5,7 @@
 <section class="panel" th:fragment="dashboard-recent-feedbacks">
   <div class="panel-head">
     <h2>최근 피드백</h2>
+    <a th:href="@{/admin/feedbacks}">전체 보기</a>
   </div>
   <div class="table-wrap">
     <table class="table table-sm dashboard-recent-feedback-table">
@@ -18,7 +19,7 @@
       </thead>
       <tbody>
         <tr th:each="feedback : ${dashboard.recentFeedbacks}">
-          <td th:text="${feedback.kind}">필수</td>
+          <td><a th:href="@{/admin/members/{memberId}/feedbacks(memberId=${feedback.memberId})}" th:text="${feedback.kind}">필수</a></td>
           <td th:text="${feedback.rating} ?: '-'">-</td>
           <td class="dashboard-free-text-preview" th:text="${feedback.freeTextPreview} ?: '-'">-</td>
           <td class="muted" th:text="${#temporals.format(feedback.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">-</td>

@@ -9,11 +9,15 @@
       th:id="|bug-report-status-form-${bugReportId}|"
       th:action="@{/admin/bug-reports/{bugReportId}/status(bugReportId=${bugReportId})}"
       th:attr="hx-post=@{/admin/bug-reports/{bugReportId}/status(bugReportId=${bugReportId})}"
-      hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+      hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']"
+      data-confirm-title="상태를 변경할까요?">
   <span th:replace="~{admin/fragments/bug-report-status-badge :: bug-report-status-badge(${currentStatus})}"></span>
   <label>
     <span class="muted">상태 변경</span>
-    <select class="select select-sm" name="status" aria-label="처리 상태">
+    <!-- 현재 상태는 선택지에서 빠져 기본 선택 옵션이 없으므로 이전값을 data-confirm-previous로 싣는다 -->
+    <select class="select select-sm" name="status" aria-label="처리 상태" data-confirm-label="상태"
+            th:data-confirm-previous="${currentStatus.name() == 'RECEIVED' ? '접수'
+                : currentStatus.name() == 'IN_PROGRESS' ? '확인 중' : '해결'}">
       <option th:each="candidate : ${statuses}" th:value="${candidate.name()}" th:if="${candidate != currentStatus}"
               th:text="${candidate.name() == 'RECEIVED' ? '접수' : candidate.name() == 'IN_PROGRESS' ? '확인 중' : '해결'}">접수</option>
     </select>

@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,17 +21,22 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.admin.application.dto.response.AdminCallDetailResponse;
 import kr.co.teeq.api.admin.application.dto.response.AdminCallDetailResponse.ConversationState;
 import kr.co.teeq.api.admin.application.service.AdminCallDetailService;
+import kr.co.teeq.api.admin.application.view.AdminCallUsageModel;
 import kr.co.teeq.api.admin.infrastructure.config.AdminSecurityConfig;
 import kr.co.teeq.api.admin.support.AdminSliceTestConfig;
 import kr.co.teeq.api.call.application.dto.request.CallHistorySearchRequest;
 import kr.co.teeq.api.call.application.dto.response.CallHistoryItemResponse;
 import kr.co.teeq.api.call.application.dto.response.CallHistoryPageResponse;
+import kr.co.teeq.api.call.application.dto.response.CallUsageResponse;
 import kr.co.teeq.api.call.application.service.CallHistoryQueryService;
+import kr.co.teeq.api.call.application.service.CallUsageService;
 import kr.co.teeq.api.call.core.constant.CallStatus;
+import kr.co.teeq.api.call.core.constant.CallUsageUnit;
 import kr.co.teeq.api.call.core.constant.EndReason;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
@@ -37,9 +44,16 @@ import kr.co.teeq.api.call.core.port.AiCallTurnRole;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
+import kr.co.teeq.api.feedback.application.dto.response.CallFeedbackResponse;
+import kr.co.teeq.api.feedback.application.service.FeedbackQueryService;
+import kr.co.teeq.api.feedback.core.constant.AwkwardMoment;
+import kr.co.teeq.api.feedback.core.constant.PreviousCallRecall;
+import kr.co.teeq.api.feedback.core.constant.RevisitIntention;
+import kr.co.teeq.api.feedback.core.constant.StartReason;
 import kr.co.teeq.api.member.core.repository.AdminRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -56,7 +70,8 @@ import org.springframework.test.web.servlet.MockMvc;
     AdminSliceTestConfig.class,
     GlobalExceptionHandler.class,
     AdminExceptionHandler.class,
-    AdminCallController.class
+    AdminCallController.class,
+    AdminCallUsageModel.class
 })
 class AdminCallControllerTest {
 
@@ -77,6 +92,12 @@ class AdminCallControllerTest {
 
     @MockitoBean
     private AdminCallDetailService adminCallDetailService;
+
+    @MockitoBean
+    private CallUsageService callUsageService;
+
+    @MockitoBean
+    private FeedbackQueryService feedbackQueryService;
 
     @Test
     void calls_defaultRequest_passesEmptyRequestAndFirstPageAndRendersRows() throws Exception {
@@ -109,7 +130,7 @@ class AdminCallControllerTest {
         mockMvc.perform(get(PATH).with(asAdmin()))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("대기 중")))
-            .andExpect(content().string(not(containsString("/admin/calls/"))));
+            .andExpect(content().string(not(matchesPattern("(?s).*/admin/calls/(?!usages).*"))));
 
         given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(endedCall()), 0, 20, 1));
 
@@ -217,6 +238,8 @@ class AdminCallControllerTest {
             .andExpect(content().string(containsString("0.0123")))
             .andExpect(content().string(containsString("gpt-test")))
             .andExpect(content().string(containsString("<details")))
+            .andExpect(content().string(containsString("aria-label=\"위치 경로\"")))
+            .andExpect(content().string(not(containsString("통화 기록으로"))))
             .andExpect(content().string(not(containsString("대화를 불러오지 못했습니다"))));
     }
 
@@ -318,6 +341,212 @@ class AdminCallControllerTest {
         mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
             .andExpect(status().isNotFound())
             .andExpect(view().name("admin/error"));
+    }
+
+    @Test
+    void callDetail_withoutFeedback_rendersEmptyMessage() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+        given(feedbackQueryService.getByCallSessionId(SESSION_ID)).willReturn(Optional.empty());
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("이 통화의 피드백")))
+            .andExpect(content().string(containsString("피드백이 없습니다.")))
+            .andExpect(content().string(not(containsString("필수 피드백"))));
+
+        // 피드백 조회는 AI 서버를 부르는 상세 서비스 밖에서, 상세 조회 뒤에 따로 한다
+        InOrder order = inOrder(adminCallDetailService, feedbackQueryService);
+        order.verify(adminCallDetailService).getDetail(SESSION_ID);
+        order.verify(feedbackQueryService).getByCallSessionId(SESSION_ID);
+    }
+
+    @Test
+    void callDetail_withRequiredOnly_rendersRequiredAndNoDetailedNotice() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+        given(feedbackQueryService.getByCallSessionId(SESSION_ID)).willReturn(Optional.of(new CallFeedbackResponse(
+            new CallFeedbackResponse.RequiredPart(3, RevisitIntention.NEUTRAL, null,
+                List.of(AwkwardMoment.CUT, AwkwardMoment.SLOW)),
+            null)));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("필수 피드백")))
+            .andExpect(content().string(containsString("3점")))
+            .andExpect(content().string(containsString("잘 모르겠음")))
+            .andExpect(content().string(stringContainsInOrder("말이 끊김", "답이 늦음")))
+            // 첫 통화라 지난 통화 기억 질문이 없었으면 행을 숨긴다
+            .andExpect(content().string(not(containsString("지난 통화 기억"))))
+            .andExpect(content().string(containsString("상세 피드백은 제출되지 않았습니다.")))
+            .andExpect(content().string(not(containsString("피드백이 없습니다."))))
+            .andExpect(content().string(not(containsString(">NEUTRAL<"))))
+            .andExpect(content().string(not(containsString(">CUT<"))));
+    }
+
+    @Test
+    void callDetail_withDetailedFeedback_hidesMemoryRowWhenNotApplicable() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+        given(feedbackQueryService.getByCallSessionId(SESSION_ID)).willReturn(Optional.of(new CallFeedbackResponse(
+            new CallFeedbackResponse.RequiredPart(5, RevisitIntention.YES, PreviousCallRecall.REMEMBERED, List.of()),
+            detailedPart(null, null, true))));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("지난 통화 기억")))
+            .andExpect(content().string(containsString("기억함")))
+            .andExpect(content().string(containsString("상세 피드백")))
+            .andExpect(content().string(stringContainsInOrder("대화 타이밍", "4점", "타이밍이 좋았어")))
+            .andExpect(content().string(containsString("성격·말투")))
+            .andExpect(content().string(containsString("공감·신뢰")))
+            .andExpect(content().string(containsString("개인적인 이야기")))
+            .andExpect(content().string(containsString("기억·저장 안심")))
+            .andExpect(content().string(not(containsString("대화 기억"))))
+            .andExpect(content().string(stringContainsInOrder("누군가와 이야기하고 싶어서", "기타", "산책하다가")))
+            .andExpect(content().string(not(containsString("상세 피드백은 제출되지 않았습니다."))))
+            .andExpect(content().string(not(containsString(">NEED_TO_TALK<"))));
+    }
+
+    @Test
+    void callDetail_withMemoryScore_showsMemoryRow() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+        given(feedbackQueryService.getByCallSessionId(SESSION_ID)).willReturn(Optional.of(new CallFeedbackResponse(
+            new CallFeedbackResponse.RequiredPart(5, RevisitIntention.YES, null, List.of()),
+            detailedPart(2, "지난 이야기를 잊었어", false))));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(stringContainsInOrder("대화 기억", "2점", "지난 이야기를 잊었어")));
+    }
+
+    @Test
+    void callDetail_freeText_isEscapedAndKeepsLineBreaks() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.EMPTY, null));
+        given(feedbackQueryService.getByCallSessionId(SESSION_ID)).willReturn(Optional.of(new CallFeedbackResponse(
+            new CallFeedbackResponse.RequiredPart(5, RevisitIntention.YES, null, List.of()),
+            detailedPart(null, null, true))));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("class=\"feedback-free-text\"")))
+            .andExpect(content().string(containsString("&lt;b&gt;좋았어&lt;/b&gt;")))
+            .andExpect(content().string(not(containsString("<b>좋았어"))));
+    }
+
+    @Test
+    void detail_unknownSession_doesNotLookUpFeedback() throws Exception {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willThrow(new CustomException(ErrorCode.CALL_SESSION_NOT_FOUND));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isNotFound());
+
+        verify(feedbackQueryService, never()).getByCallSessionId(any());
+    }
+
+    private CallFeedbackResponse.DetailedPart detailedPart(Integer memoryScore, String memoryReason,
+        boolean memoryNotApplicable) {
+        return new CallFeedbackResponse.DetailedPart(4, "타이밍이 좋았어", 5, null, memoryScore, memoryReason,
+            memoryNotApplicable, 4, null, 3, null, 2, "조금 불안했어", "<b>좋았어</b>\n다음에도",
+            List.of(StartReason.NEED_TO_TALK, StartReason.OTHER), "산책하다가");
+    }
+
+    @Test
+    void calls_rendersTabNavigation() throws Exception {
+        given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(), 0, 20, 0));
+
+        mockMvc.perform(get(PATH).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("<h1>통화 기록</h1>")))
+            .andExpect(content().string(containsString("href=\"/admin/calls/usages\"")))
+            .andExpect(content().string(containsString("사용량 집계")))
+            .andExpect(content().string(matchesPattern(
+                "(?s).*class=\"tab tab-active\" href=\"/admin/calls\" aria-current=\"page\".*")))
+            .andExpect(content().string(not(containsString("breadcrumb"))));
+    }
+
+    @Test
+    void usages_rendersAggregateForAllMembers() throws Exception {
+        LocalDate from = LocalDate.of(2026, 10, 1);
+        LocalDate to = LocalDate.of(2026, 10, 3);
+        given(callUsageService.getUsages(CallUsageUnit.DAY, from, to, null)).willReturn(List.of(
+            new CallUsageResponse(LocalDate.of(2026, 10, 1), 1_200, 3),
+            new CallUsageResponse(LocalDate.of(2026, 10, 2), 0, 0),
+            new CallUsageResponse(LocalDate.of(2026, 10, 3), 3_400, 5)));
+
+        mockMvc.perform(get(PATH + "/usages").with(asAdmin())
+                .param("unit", "DAY").param("from", "2026-10-01").param("to", "2026-10-03"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("admin/call-usages"))
+            .andExpect(content().string(containsString("<h1>통화 기록</h1>")))
+            .andExpect(content().string(containsString("1,200")))
+            .andExpect(content().string(containsString("3,400")))
+            // 합계 행: 4,600초, 8회
+            .andExpect(content().string(containsString("합계")))
+            .andExpect(content().string(containsString("4,600")))
+            .andExpect(content().string(containsString("value=\"2026-10-01\"")))
+            .andExpect(content().string(containsString("value=\"2026-10-03\"")))
+            .andExpect(content().string(containsString("action=\"/admin/calls/usages\"")))
+            .andExpect(content().string(matchesPattern(
+                "(?s).*class=\"tab tab-active\" href=\"/admin/calls/usages\" aria-current=\"page\".*")))
+            .andExpect(content().string(not(containsString("name=\"memberId\""))))
+            .andExpect(content().string(not(containsString("/admin/members/"))));
+
+        verify(callUsageService).getUsages(CallUsageUnit.DAY, from, to, null);
+    }
+
+    @Test
+    void usages_withoutParams_usesDefaultLastSevenDays() throws Exception {
+        // 고정 Clock 2026-10-20T03:00Z = 한국 시간 2026-10-20 12:00
+        LocalDate from = LocalDate.of(2026, 10, 14);
+        LocalDate to = LocalDate.of(2026, 10, 20);
+        given(callUsageService.getUsages(CallUsageUnit.DAY, from, to, null)).willReturn(List.of());
+
+        mockMvc.perform(get(PATH + "/usages").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("value=\"2026-10-14\"")))
+            .andExpect(content().string(containsString("value=\"2026-10-20\"")))
+            .andExpect(content().string(containsString("조회된 기간이 없습니다")))
+            .andExpect(content().string(stringContainsInOrder(
+                "call-usage-total-row", "<th class=\"numeric-cell\">0</th>", "<th class=\"numeric-cell\">0</th>")));
+
+        verify(callUsageService).getUsages(CallUsageUnit.DAY, from, to, null);
+    }
+
+    @Test
+    void usages_withMalformedUnitOrDate_showsErrorMessage() throws Exception {
+        mockMvc.perform(get(PATH + "/usages").with(asAdmin()).param("unit", "WEEK"))
+            .andExpect(status().isBadRequest())
+            .andExpect(view().name("admin/error"));
+
+        mockMvc.perform(get(PATH + "/usages").with(asAdmin()).param("from", "2026-13-45"))
+            .andExpect(status().isBadRequest())
+            .andExpect(view().name("admin/error"));
+    }
+
+    @Test
+    void usages_withoutSession_redirectsToLogin() throws Exception {
+        mockMvc.perform(get(PATH + "/usages"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(header().string("Location", containsString("/admin/login")));
+    }
+
+    @Test
+    void sidebar_noLongerHasCallUsagesLink() throws Exception {
+        given(callHistoryQueryService.search(any(), any())).willReturn(pageOf(List.of(), 0, 20, 0));
+
+        mockMvc.perform(get(PATH).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString("/admin/call-usages"))));
+    }
+
+    @Test
+    void oldCallUsagesPath_returnsNotFound() throws Exception {
+        mockMvc.perform(get("/admin/call-usages").with(asAdmin()))
+            .andExpect(status().isNotFound());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package kr.co.teeq.api.support.core.repository;
 
+import java.util.UUID;
 import kr.co.teeq.api.support.core.constant.BugReportSource;
 import kr.co.teeq.api.support.core.constant.BugReportStatus;
 import kr.co.teeq.api.support.core.entity.BugReport;
@@ -19,6 +20,10 @@ public final class BugReportSpecifications {
 
     public static Specification<BugReport> ofStatus(BugReportStatus status) {
         return (root, query, builder) -> builder.equal(root.get("status"), status);
+    }
+
+    public static Specification<BugReport> ofMember(UUID memberId) {
+        return (root, query, builder) -> builder.equal(root.get("member").get("id"), memberId);
     }
 
     public static Specification<BugReport> ofSource(BugReportSource source) {

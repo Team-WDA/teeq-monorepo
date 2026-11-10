@@ -3,6 +3,7 @@ package kr.co.teeq.api.admin.application.dto.response;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.CallUsageResponse;
 
 /**
@@ -70,17 +71,18 @@ public record AdminDashboardResponse(
     }
 
     // 최근 가입 회원. 이메일은 앞 1자만 남기고 가린다
-    public record RecentMember(String maskedEmail, Instant joinedAt) {
+    public record RecentMember(UUID memberId, String maskedEmail, Instant joinedAt) {
 
     }
 
     // 최근 피드백. kind는 "필수"/"상세", rating은 필수만, freeTextPreview는 상세의 자유 입력 앞부분
-    public record RecentFeedback(String kind, Integer rating, Instant createdAt, String freeTextPreview) {
+    public record RecentFeedback(UUID memberId, String kind, Integer rating, Instant createdAt,
+        String freeTextPreview) {
 
     }
 
     // 최근 부여된(취소되지 않은) 보너스
-    public record RecentBonus(LocalDate bonusDate, int seconds, String reason, Instant grantedAt) {
+    public record RecentBonus(UUID memberId, LocalDate bonusDate, int seconds, String reason, Instant grantedAt) {
 
     }
 

@@ -16,7 +16,7 @@
       </thead>
       <tbody>
         <tr th:each="member : ${dashboard.recentMembers}">
-          <td th:text="${member.maskedEmail}">m***@example.com</td>
+          <td><a th:href="@{/admin/members/{memberId}(memberId=${member.memberId})}" th:text="${member.maskedEmail}">m***@example.com</a></td>
           <td class="muted" th:text="${#temporals.format(member.joinedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">-</td>
         </tr>
         <tr th:if="${#lists.isEmpty(dashboard.recentMembers)}">

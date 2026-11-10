@@ -1,7 +1,5 @@
-package kr.co.teeq.api.admin.application.controller;
+package kr.co.teeq.api.admin.application.view;
 
-import com.chuseok22.logging.annotation.LogMonitoring;
-import io.swagger.v3.oas.annotations.Hidden;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -11,23 +9,17 @@ import kr.co.teeq.api.call.application.dto.response.CallUsageResponse;
 import kr.co.teeq.api.call.application.service.CallUsageService;
 import kr.co.teeq.api.call.core.constant.CallUsageUnit;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * 통화 사용량 화면. 필터는 GET 쿼리스트링에 남기며, 형식이 틀린 값은 오류 화면(400)으로 보인다.
+ * 통화 사용량 영역(필터 폼, 집계 표)이 읽는 모델 변수를 채운다.
+ * 전체 통화 사용량 화면과 회원 허브의 통화 사용량 탭이 같은 fragment를 쓰므로 기간 계산과 변수 이름을 한 곳에 둔다.
  */
-@Hidden
-@Controller
+@Component
 @RequiredArgsConstructor
-@RequestMapping("/admin/call-usages")
-public class AdminCallUsageController {
+public class AdminCallUsageModel {
 
-    private static final String CALL_USAGES_VIEW = "admin/call-usages";
     // 기간을 주지 않았을 때 보여 주는 최근 일수(오늘 포함)
     private static final int DEFAULT_RANGE_DAYS = 7;
 
@@ -35,14 +27,9 @@ public class AdminCallUsageController {
     private final Clock clock;
     private final ZoneId koreaZoneId;
 
-    @LogMonitoring
-    @GetMapping
-    public String callUsages(
-        @RequestParam(defaultValue = "DAY") CallUsageUnit unit,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-        @RequestParam(required = false) UUID memberId,
-        Model model) {
+    // memberId가 null이면 전체 회원을 집계한다. basePath는 필터 폼이 조회를 보낼 경로다
+    public void populate(Model model, CallUsageUnit unit, LocalDate from, LocalDate to, UUID memberId,
+        String basePath) {
         LocalDate toDate = to != null ? to : LocalDate.now(clock.withZone(koreaZoneId));
         LocalDate fromDate = from != null ? from : toDate.minusDays(DEFAULT_RANGE_DAYS - 1);
 
@@ -51,11 +38,10 @@ public class AdminCallUsageController {
         model.addAttribute("unit", unit);
         model.addAttribute("from", fromDate);
         model.addAttribute("to", toDate);
-        model.addAttribute("memberId", memberId);
+        model.addAttribute("usageBasePath", basePath);
         model.addAttribute("usages", usages);
         model.addAttribute("totalUsedSeconds", usages.stream().mapToLong(CallUsageResponse::usedSeconds).sum());
         model.addAttribute("totalCallCount", usages.stream().mapToLong(CallUsageResponse::callCount).sum());
-        return CALL_USAGES_VIEW;
     }
 
 }

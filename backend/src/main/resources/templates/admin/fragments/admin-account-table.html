@@ -29,23 +29,28 @@
           <td class="mono" th:text="${#temporals.format(account.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</td>
           <td>
             <span class="muted" th:if="${account.id == currentAdminId}">본인 계정</span>
-            <div class="account-actions" th:unless="${account.id == currentAdminId}">
+            <div class="account-actions" th:unless="${account.id == currentAdminId}"
+                 th:with="accountSubject=|${account.name} (${account.username})|">
               <form class="account-inline-form" method="post"
-                    th:action="@{/admin/accounts/{adminId}/role(adminId=${account.id})}">
-                <select class="select select-sm" name="role" th:attr="aria-label=|${account.username} 권한|">
+                    th:action="@{/admin/accounts/{adminId}/role(adminId=${account.id})}"
+                    data-confirm-title="권한을 변경할까요?" th:data-confirm-subject="${accountSubject}">
+                <select class="select select-sm" name="role" th:attr="aria-label=|${account.username} 권한|"
+                        data-confirm-label="권한">
                   <option th:each="role : ${roles}" th:value="${role}" th:text="${role}"
                           th:selected="${role == account.role}">ADMIN</option>
                 </select>
                 <button class="btn btn-sm btn-ghost" type="submit">권한 변경</button>
               </form>
               <form class="account-inline-form" method="post"
-                    th:action="@{/admin/accounts/{adminId}/password(adminId=${account.id})}">
+                    th:action="@{/admin/accounts/{adminId}/password(adminId=${account.id})}"
+                    data-confirm-title="비밀번호를 재설정할까요?" th:data-confirm-subject="${accountSubject}">
                 <input class="input input-sm" type="password" name="newPassword" autocomplete="new-password"
                        placeholder="새 비밀번호" th:attr="aria-label=|${account.username} 새 비밀번호|" required>
                 <button class="btn btn-sm btn-ghost" type="submit">비밀번호 재설정</button>
               </form>
               <form class="account-inline-form" method="post"
-                    th:action="@{/admin/accounts/{adminId}/deactivate(adminId=${account.id})}">
+                    th:action="@{/admin/accounts/{adminId}/deactivate(adminId=${account.id})}"
+                    data-confirm-title="계정을 비활성화할까요?" th:data-confirm-subject="${accountSubject}">
                 <button class="btn btn-sm btn-ghost account-deactivate-button" type="submit">비활성화</button>
               </form>
             </div>

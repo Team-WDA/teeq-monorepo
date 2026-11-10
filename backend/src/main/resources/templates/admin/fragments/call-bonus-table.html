@@ -22,7 +22,9 @@
           <td class="mono" th:text="${#temporals.format(bonus.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</td>
           <td>
             <form th:unless="${bonus.canceled}" method="post"
-                  th:action="@{/admin/members/{memberId}/call-bonuses/{callBonusId}/cancel(memberId=${member.id},callBonusId=${bonus.id})}">
+                  th:action="@{/admin/members/{memberId}/call-bonuses/{callBonusId}/cancel(memberId=${member.id},callBonusId=${bonus.id})}"
+                  data-confirm-title="부여를 취소할까요?" th:data-confirm-subject="${member.nickname}"
+                  th:data-confirm-message="|유효 날짜 ${bonus.bonusDate}, 추가 시간 ${#numbers.formatInteger(bonus.seconds, 1, 'COMMA')}초|">
               <button class="btn btn-sm btn-ghost" type="submit">취소</button>
             </form>
             <div th:if="${bonus.canceled}">

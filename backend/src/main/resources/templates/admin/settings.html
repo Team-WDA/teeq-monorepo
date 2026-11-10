@@ -5,11 +5,10 @@
   <div class="page-head">
     <div>
       <h1>서비스 설정</h1>
-      <p>키마다 따로 저장합니다. 운영 중 바꿀 수 있는 정책 값만 보입니다.</p>
     </div>
   </div>
 
-  <p class="notice notice-info" role="status">저장하면 즉시 반영됩니다. 서버를 다시 시작할 필요가 없습니다.</p>
+  <nav th:replace="~{admin/fragments/tab-navigation :: tab-navigation(${settingTabs}, ${activeTab})}"></nav>
 
   <section class="panel">
     <div class="table-wrap">

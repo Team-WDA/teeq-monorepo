@@ -8,12 +8,12 @@
      th:attr="aria-current=${activeMenu == 'home'} ? 'page'">대시보드</a>
   <a th:href="@{/admin/settings}" th:classappend="${activeMenu == 'settings'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'settings'} ? 'page'">서비스 설정</a>
-  <a th:href="@{/admin/call-usages}" th:classappend="${activeMenu == 'call-usages'} ? 'active'"
-     th:attr="aria-current=${activeMenu == 'call-usages'} ? 'page'">통화 사용량</a>
   <a th:href="@{/admin/members}" th:classappend="${activeMenu == 'members'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'members'} ? 'page'">회원 관리</a>
   <a th:href="@{/admin/calls}" th:classappend="${activeMenu == 'calls'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'calls'} ? 'page'">통화 기록</a>
+  <a th:href="@{/admin/feedbacks}" th:classappend="${activeMenu == 'feedbacks'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'feedbacks'} ? 'page'">피드백</a>
   <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
   <a th:href="@{/admin/bug-reports}" th:classappend="${activeMenu == 'bug-reports'} ? 'active'"

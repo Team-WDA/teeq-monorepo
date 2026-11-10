@@ -2,6 +2,7 @@ package kr.co.teeq.api.admin.application.controller;
 
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asSuperAdmin;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.BDDMockito.given;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import kr.co.teeq.api.admin.application.dto.response.AdminDashboardResponse;
 import kr.co.teeq.api.admin.application.dto.response.AdminDashboardResponse.RecentBonus;
 import kr.co.teeq.api.admin.application.dto.response.AdminDashboardResponse.RecentFeedback;
@@ -43,6 +45,8 @@ import org.springframework.test.web.servlet.MockMvc;
 })
 class AdminHomeControllerTest {
 
+    private static final UUID MEMBER_ID = UUID.fromString("0192f0aa-0000-7000-8000-000000000001");
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -55,10 +59,10 @@ class AdminHomeControllerTest {
     @Test
     void home_rendersKpisAndMenu() throws Exception {
         given(adminDashboardService.getDashboard()).willReturn(dashboard(568_000, 900_000,
-            List.of(new RecentMember("m***@gmail.com", AdminSliceTestConfig.NOW)),
-            List.of(new RecentFeedback("필수", 4, AdminSliceTestConfig.NOW, null),
-                new RecentFeedback("상세", null, AdminSliceTestConfig.NOW, "목소리가 좋아요")),
-            List.of(new RecentBonus(LocalDate.of(2026, 10, 20), 600, "이벤트", AdminSliceTestConfig.NOW))));
+            List.of(new RecentMember(MEMBER_ID, "m***@gmail.com", AdminSliceTestConfig.NOW)),
+            List.of(new RecentFeedback(MEMBER_ID, "필수", 4, AdminSliceTestConfig.NOW, null),
+                new RecentFeedback(MEMBER_ID, "상세", null, AdminSliceTestConfig.NOW, "목소리가 좋아요")),
+            List.of(new RecentBonus(MEMBER_ID, LocalDate.of(2026, 10, 20), 600, "이벤트", AdminSliceTestConfig.NOW))));
 
         mockMvc.perform(get("/admin").with(asAdmin()))
             .andExpect(status().isOk())
@@ -77,7 +81,6 @@ class AdminHomeControllerTest {
             .andExpect(content().string(not(containsString("limit-gauge-exceeded"))))
             .andExpect(content().string(containsString("href=\"/admin\"")))
             .andExpect(content().string(containsString("href=\"/admin/settings\"")))
-            .andExpect(content().string(containsString("href=\"/admin/call-usages\"")))
             .andExpect(content().string(containsString("href=\"/admin/members\"")))
             .andExpect(content().string(containsString("href=\"/admin/onboarding-submissions\"")));
     }
@@ -115,6 +118,56 @@ class AdminHomeControllerTest {
             .andExpect(status().isOk())
             .andExpect(content().string(not(containsString("href=\"/admin/accounts\""))))
             .andExpect(content().string(containsString("href=\"/admin/password\"")));
+    }
+
+    @Test
+    void home_rendersKpiCardLinksAndRecentRowLinks() throws Exception {
+        given(adminDashboardService.getDashboard()).willReturn(dashboard(568_000, 900_000,
+            List.of(new RecentMember(MEMBER_ID, "m***@gmail.com", AdminSliceTestConfig.NOW)),
+            List.of(new RecentFeedback(MEMBER_ID, "필수", 4, AdminSliceTestConfig.NOW, null)),
+            List.of(new RecentBonus(MEMBER_ID, LocalDate.of(2026, 10, 20), 600, "이벤트",
+                AdminSliceTestConfig.NOW))));
+
+        mockMvc.perform(get("/admin").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("href=\"/admin/calls\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members\"")))
+            .andExpect(content().string(containsString("href=\"/admin/onboarding-submissions\"")))
+            .andExpect(content().string(containsString("href=\"/admin/feedbacks\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "/call-bonuses\"")))
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "/feedbacks\"")));
+    }
+
+    @Test
+    void home_bonusKpiCardHasNoLink() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        String body = mockMvc.perform(get("/admin").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        // 링크 카드는 5개이고, 이번 달 부여 보너스 카드는 링크로 감싸지 않는다
+        assertThat(body.split("class=\"dashboard-kpi-link\"", -1)).hasSize(6);
+        // 모든 링크 카드는 <a>가 </a>로 닫힌 뒤 다음 카드가 시작되므로, 보너스 카드 앞의 마지막 <a>는 이미 닫혀 있다
+        String beforeBonusCard = body.substring(0, body.indexOf("이번 달 부여 보너스"));
+        assertThat(beforeBonusCard.lastIndexOf("<a class=\"dashboard-kpi-link\""))
+            .isLessThan(beforeBonusCard.lastIndexOf("</a>"));
+    }
+
+    @Test
+    void home_rendersConfirmDialogShell() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        mockMvc.perform(get("/admin").with(asSuperAdmin()))
+            .andExpect(status().isOk())
+            // 공통 셸이 확인 모달과 data-confirm-* 처리 스크립트를 싣는다
+            .andExpect(content().string(containsString("id=\"confirm-dialog\"")))
+            .andExpect(content().string(containsString("confirmDialog")))
+            // 화면 제목 아래 설명 문구는 보이지 않는다
+            .andExpect(content().string(not(containsString("열 때마다 새로 집계합니다"))));
     }
 
     @Test

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('피드백', ~{::main}, 'feedbacks')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>피드백</h1>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/feedback-filter-form :: feedback-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/feedback-table :: feedback-table}"></section>
+
+  <nav th:replace="~{admin/fragments/feedback-table :: feedback-pagination}"></nav>
+</main>
+</body>
+</html>

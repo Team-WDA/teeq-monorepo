@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 추가 통화 시간', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
+
+  <section class="dashboard-kpi-grid dashboard-kpi-grid-four" aria-label="오늘 통화 한도">
+    <article class="dashboard-kpi-card">
+      <h2 class="dashboard-kpi-label">하루 기본 한도</h2>
+      <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(todayLimit.dailyLimitSeconds, 1, 'COMMA')}초|">1,800초</p>
+    </article>
+    <article class="dashboard-kpi-card">
+      <h2 class="dashboard-kpi-label">오늘 유효 보너스</h2>
+      <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(todayLimit.todayBonusSeconds, 1, 'COMMA')}초|">0초</p>
+    </article>
+    <article class="dashboard-kpi-card">
+      <h2 class="dashboard-kpi-label">오늘 사용</h2>
+      <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(todayLimit.usedSeconds, 1, 'COMMA')}초|">0초</p>
+    </article>
+    <article class="dashboard-kpi-card">
+      <h2 class="dashboard-kpi-label">남은 통화 시간</h2>
+      <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(todayLimit.remainingSeconds, 1, 'COMMA')}초|">1,800초</p>
+    </article>
+  </section>
+
+  <section th:replace="~{admin/fragments/member-call-summary :: member-call-summary}"></section>
+
+  <section th:replace="~{admin/fragments/call-bonus-grant-form :: call-bonus-grant-form}"></section>
+  <section th:replace="~{admin/fragments/call-bonus-table :: call-bonus-table}"></section>
+</main>
+</body>
+</html>

@@ -2,10 +2,10 @@
 <html lang="ko" th:replace="~{admin/fragments/shell :: shell('통화 상세', ~{::main}, 'calls')}" xmlns:th="http://www.thymeleaf.org">
 <body>
 <main class="content">
+  <nav th:replace="~{admin/fragments/breadcrumb :: breadcrumb('통화 기록', '/admin/calls', ${detail.call.memberNickname})}"></nav>
   <div class="page-head">
     <div>
       <h1>통화 상세</h1>
-      <p><a class="link link-primary" th:href="@{/admin/calls}">통화 기록으로</a></p>
     </div>
   </div>
 
@@ -40,6 +40,8 @@
   </section>
 
   <section th:replace="~{admin/fragments/call-conversation :: call-conversation}"></section>
+
+  <section th:replace="~{admin/fragments/call-feedback :: call-feedback}"></section>
 </main>
 </body>
 </html>

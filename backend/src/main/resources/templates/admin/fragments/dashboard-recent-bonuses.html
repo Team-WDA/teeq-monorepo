@@ -18,7 +18,7 @@
       </thead>
       <tbody>
         <tr th:each="bonus : ${dashboard.recentBonuses}">
-          <td th:text="${#temporals.format(bonus.bonusDate, 'yyyy-MM-dd')}">-</td>
+          <td><a th:href="@{/admin/members/{memberId}/call-bonuses(memberId=${bonus.memberId})}" th:text="${#temporals.format(bonus.bonusDate, 'yyyy-MM-dd')}">-</a></td>
           <td th:text="|+${#numbers.formatInteger(bonus.seconds, 1, 'COMMA')}초|">+0초</td>
           <td class="dashboard-free-text-preview" th:text="${bonus.reason}">-</td>
           <td class="muted" th:text="${#temporals.format(bonus.grantedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">-</td>

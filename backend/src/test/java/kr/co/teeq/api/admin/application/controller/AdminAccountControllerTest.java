@@ -91,6 +91,27 @@ class AdminAccountControllerTest {
     }
 
     @Test
+    void getAccounts_rendersConfirmAttributesForEveryChangeForm() throws Exception {
+        given(adminAccountService.getAll()).willReturn(List.of(
+            new AdminAccountResponse(TARGET_ID, "operator2", "운영자2", AdminRole.ADMIN, AdminSliceTestConfig.NOW)));
+
+        mockMvc.perform(get("/admin/accounts").with(asSuperAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("data-confirm-title=\"관리자 계정을 추가할까요?\"")))
+            .andExpect(content().string(containsString("data-confirm-label=\"아이디\"")))
+            .andExpect(content().string(containsString("data-confirm-title=\"권한을 변경할까요?\"")))
+            .andExpect(content().string(containsString("data-confirm-label=\"권한\"")))
+            .andExpect(content().string(containsString("data-confirm-title=\"비밀번호를 재설정할까요?\"")))
+            .andExpect(content().string(containsString("data-confirm-title=\"계정을 비활성화할까요?\"")))
+            .andExpect(content().string(containsString("data-confirm-subject=\"운영자2 (operator2)\"")))
+            // 비밀번호는 확인 모달에 나열하지 않는다
+            .andExpect(content().string(not(matchesPattern(
+                "(?s).*<input[^>]*type=\"password\"[^>]*data-confirm-label.*"))))
+            .andExpect(content().string(not(matchesPattern(
+                "(?s).*<input[^>]*data-confirm-label[^>]*type=\"password\".*"))));
+    }
+
+    @Test
     void getAccounts_createFormDefaultsToAdminRole() throws Exception {
         given(adminAccountService.getAll()).willReturn(List.of());
 

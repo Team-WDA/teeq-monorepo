@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 통화 기록', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
+
+  <section th:replace="~{admin/fragments/call-history-filter-form :: call-history-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/call-history-table :: call-history-table}"></section>
+
+  <nav th:replace="~{admin/fragments/call-history-pagination :: call-history-pagination}"></nav>
+</main>
+</body>
+</html>

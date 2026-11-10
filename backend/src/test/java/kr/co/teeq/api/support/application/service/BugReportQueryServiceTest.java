@@ -98,7 +98,7 @@ class BugReportQueryServiceTest {
             .willReturn(new PageImpl<>(List.of(bugReport("앱이 멈춰요", null, null, 0)), requested, 41));
 
         BugReportPageResponse response =
-            bugReportQueryService.search(BugReportStatus.RECEIVED, BugReportSource.USER, requested);
+            bugReportQueryService.search(BugReportStatus.RECEIVED, BugReportSource.USER, null, requested);
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(bugReportRepository).findAll(any(Specification.class), pageable.capture());
@@ -123,7 +123,7 @@ class BugReportQueryServiceTest {
         given(bugReportRepository.findAll(any(Specification.class), any(Pageable.class)))
             .willReturn(new PageImpl<>(List.of(), requested, 0));
 
-        BugReportPageResponse response = bugReportQueryService.search(null, null, requested);
+        BugReportPageResponse response = bugReportQueryService.search(null, null, null, requested);
 
         assertThat(response.items()).isEmpty();
         assertThat(response.totalElements()).isZero();
@@ -135,7 +135,7 @@ class BugReportQueryServiceTest {
         Pageable requested = PageRequest.of(0, 20);
         given(bugReportRepository.findAll(any(Specification.class), any(Pageable.class)))
             .willReturn(new PageImpl<>(List.of(), requested, 0));
-        bugReportQueryService.search(status, source, requested);
+        bugReportQueryService.search(status, source, null, requested);
 
         ArgumentCaptor<Specification<BugReport>> captor = ArgumentCaptor.forClass(Specification.class);
         verify(bugReportRepository).findAll(captor.capture(), any(Pageable.class));
@@ -185,12 +185,36 @@ class BugReportQueryServiceTest {
 
     @Test
     @SuppressWarnings("unchecked")
+    void search_withMemberId_filtersByMember() {
+        Pageable requested = PageRequest.of(0, 20);
+        given(bugReportRepository.findAll(any(Specification.class), any(Pageable.class)))
+            .willReturn(new PageImpl<>(List.of(), requested, 0));
+
+        bugReportQueryService.search(null, null, MEMBER_ID, requested);
+
+        ArgumentCaptor<Specification<BugReport>> captor = ArgumentCaptor.forClass(Specification.class);
+        verify(bugReportRepository).findAll(captor.capture(), any(Pageable.class));
+        Root<BugReport> root = mock(Root.class);
+        CriteriaBuilder builder = mock(CriteriaBuilder.class);
+        Path<Object> deletedPath = mock(Path.class);
+        Path<Object> memberPath = mock(Path.class);
+        Path<Object> memberIdPath = mock(Path.class);
+        given(root.get("deleted")).willReturn(deletedPath);
+        given(root.get("member")).willReturn(memberPath);
+        given(memberPath.get("id")).willReturn(memberIdPath);
+        captor.getValue().toPredicate(root, mock(CriteriaQuery.class), builder);
+
+        verify(builder).equal(memberIdPath, MEMBER_ID);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void search_longContent_isTruncatedToPreview() {
         Pageable requested = PageRequest.of(0, 20);
         given(bugReportRepository.findAll(any(Specification.class), any(Pageable.class)))
             .willReturn(new PageImpl<>(List.of(bugReport("가".repeat(500), null, null, 0)), requested, 1));
 
-        BugReportPageResponse response = bugReportQueryService.search(null, null, requested);
+        BugReportPageResponse response = bugReportQueryService.search(null, null, null, requested);
 
         assertThat(response.items().get(0).contentPreview()).hasSizeLessThan(500).endsWith("…");
     }

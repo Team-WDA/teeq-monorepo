@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 통화 사용량 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 unit, from, to, memberId -->
+<!-- 통화 사용량 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 unit, from, to, usageBasePath -->
 <section class="panel" th:fragment="call-usage-filter-form">
-  <form class="panel-body call-usage-filter-form" method="get" th:action="@{/admin/call-usages}">
+  <form class="panel-body call-usage-filter-form" method="get" th:action="@{${usageBasePath}}">
     <label class="call-usage-filter-field">
       <span class="call-usage-filter-label">집계 단위</span>
       <select class="select select-sm" name="unit">
@@ -18,10 +18,6 @@
     <label class="call-usage-filter-field">
       <span class="call-usage-filter-label">종료일</span>
       <input class="input input-sm" type="date" name="to" th:value="${to}">
-    </label>
-    <label class="call-usage-filter-field call-usage-filter-member">
-      <span class="call-usage-filter-label">회원 ID (선택)</span>
-      <input class="input input-sm mono" type="text" name="memberId" th:value="${memberId}" placeholder="비우면 전체 회원">
     </label>
     <button class="btn btn-sm btn-primary" type="submit">조회</button>
   </form>

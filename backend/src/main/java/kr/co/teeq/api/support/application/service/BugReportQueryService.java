@@ -49,9 +49,11 @@ public class BugReportQueryService {
     private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
-    public BugReportPageResponse search(BugReportStatus status, BugReportSource source, Pageable pageable) {
+    public BugReportPageResponse search(BugReportStatus status, BugReportSource source, UUID memberId,
+        Pageable pageable) {
         Pageable fixedSortPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), BUG_REPORT_SORT);
-        Page<BugReport> page = bugReportRepository.findAll(toSpecification(status, source), fixedSortPageable);
+        Page<BugReport> page =
+            bugReportRepository.findAll(toSpecification(status, source, memberId), fixedSortPageable);
         List<BugReportSummaryResponse> items = page.getContent().stream().map(this::toSummary).toList();
         return new BugReportPageResponse(items, page.getNumber(), page.getSize(), page.getTotalElements());
     }
@@ -77,7 +79,8 @@ public class BugReportQueryService {
     }
 
     // null이 아닌 조건만 합친다. 회원의 삭제 여부는 조건에 넣지 않는다
-    private Specification<BugReport> toSpecification(BugReportStatus status, BugReportSource source) {
+    private Specification<BugReport> toSpecification(
+        BugReportStatus status, BugReportSource source, UUID memberId) {
         List<Specification<BugReport>> specifications = new ArrayList<>();
         specifications.add(BugReportSpecifications.notDeleted());
         if (status != null) {
@@ -86,13 +89,17 @@ public class BugReportQueryService {
         if (source != null) {
             specifications.add(BugReportSpecifications.ofSource(source));
         }
+        if (memberId != null) {
+            specifications.add(BugReportSpecifications.ofMember(memberId));
+        }
         return Specification.allOf(specifications);
     }
 
     private BugReportSummaryResponse toSummary(BugReport bugReport) {
         Member member = bugReport.getMember();
         return new BugReportSummaryResponse(bugReport.getId(), preview(bugReport.getContent()), bugReport.getStatus(),
-            bugReport.getSource(), member.getEmail(), member.isDeleted(), bugReport.getCreatedAt());
+            bugReport.getSource(), member.getId(), member.getEmail(), member.isDeleted(),
+            bugReport.getCreatedAt());
     }
 
     private String preview(String content) {

@@ -2,13 +2,7 @@
 <html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 상세', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
 <body>
 <main class="content">
-  <div class="page-head">
-    <div>
-      <h1>회원 상세</h1>
-      <p><a class="link link-primary" th:href="@{/admin/members}">회원 목록으로</a></p>
-    </div>
-    <div th:replace="~{admin/fragments/member-delete-modal :: member-delete-modal}"></div>
-  </div>
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
 
   <section class="panel">
     <div class="panel-head"><h2>기본 정보</h2></div>
@@ -19,9 +13,7 @@
       </div>
       <div>
         <dt>닉네임</dt>
-        <dd>
-          <span th:text="${member.nickname}">닉네임</span>
-        </dd>
+        <dd th:text="${member.nickname}">닉네임</dd>
       </div>
       <div>
         <dt>이메일</dt>
@@ -36,22 +28,15 @@
         <dd class="mono" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</dd>
       </div>
     </dl>
-    <div class="panel-body">
-      <a class="btn btn-sm btn-ghost" th:href="@{/admin/call-usages(memberId=${member.id})}">이 회원의 통화 사용량 보기</a>
-    </div>
   </section>
 
   <section th:replace="~{admin/fragments/member-call-summary :: member-call-summary}"></section>
 
-  <section id="member-call-history" class="panel-section">
-    <h2 class="call-history-heading">통화 기록</h2>
-    <section th:replace="~{admin/fragments/call-history-filter-form :: call-history-filter-form}"></section>
+  <section class="panel-section">
+    <h2 class="call-history-heading">최근 통화</h2>
     <section th:replace="~{admin/fragments/call-history-table :: call-history-table}"></section>
-    <nav th:replace="~{admin/fragments/call-history-pagination :: call-history-pagination}"></nav>
+    <p><a class="link link-primary" th:href="@{${allCallsPath}}">전체 보기</a></p>
   </section>
-
-  <section th:replace="~{admin/fragments/call-bonus-grant-form :: call-bonus-grant-form}"></section>
-  <section th:replace="~{admin/fragments/call-bonus-table :: call-bonus-table}"></section>
 </main>
 </body>
 </html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  통화 상세의 피드백 영역. 피드백이 없으면 feedback이 없다. 사용자가 쓴 글은 th:text로만 출력한다.
+  컨텍스트 변수 feedback(required, detailed), feedbackRevisitIntentionLabel, feedbackPreviousCallRecallLabel(없을 수 있음),
+  feedbackAwkwardMomentLabels, feedbackStartReasonLabels
+-->
+<section class="panel" th:fragment="call-feedback">
+  <div class="panel-head"><h2>이 통화의 피드백</h2></div>
+
+  <p th:if="${feedback == null}" class="panel-body muted">피드백이 없습니다.</p>
+
+  <div th:if="${feedback != null}" class="panel-body">
+    <h3 class="feedback-section-title">필수 피드백</h3>
+    <dl class="member-info-list">
+      <div>
+        <dt>별점</dt>
+        <dd th:text="|${feedback.required.rating}점|">5점</dd>
+      </div>
+      <div>
+        <dt>재방문 의향</dt>
+        <dd th:text="${feedbackRevisitIntentionLabel}">다시 이용하고 싶음</dd>
+      </div>
+      <div th:if="${feedbackPreviousCallRecallLabel != null}">
+        <dt>지난 통화 기억</dt>
+        <dd th:text="${feedbackPreviousCallRecallLabel}">기억함</dd>
+      </div>
+      <div>
+        <dt>어색했던 순간</dt>
+        <dd th:if="${#lists.isEmpty(feedbackAwkwardMomentLabels)}">-</dd>
+        <dd th:unless="${#lists.isEmpty(feedbackAwkwardMomentLabels)}">
+          <ul class="feedback-choice-list">
+            <li th:each="label : ${feedbackAwkwardMomentLabels}" th:text="${label}">말이 끊김</li>
+          </ul>
+        </dd>
+      </div>
+    </dl>
+
+    <h3 class="feedback-section-title">상세 피드백</h3>
+    <p th:if="${feedback.detailed == null}" class="muted">상세 피드백은 제출되지 않았습니다.</p>
+    <th:block th:if="${feedback.detailed != null}" th:with="detailed=${feedback.detailed}">
+      <div class="table-wrap">
+        <table class="table feedback-score-table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th class="numeric-cell">점수</th>
+              <th>사유</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>대화 타이밍</td>
+              <td class="numeric-cell" th:text="|${detailed.timingScore}점|">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.timingReason ?: '-'}">-</td>
+            </tr>
+            <tr>
+              <td>성격·말투</td>
+              <td class="numeric-cell" th:text="|${detailed.personaFitScore}점|">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.personaFitReason ?: '-'}">-</td>
+            </tr>
+            <tr th:unless="${detailed.memoryNotApplicable}">
+              <td>대화 기억</td>
+              <td class="numeric-cell" th:text="${detailed.memoryScore != null} ? |${detailed.memoryScore}점| : '-'">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.memoryReason ?: '-'}">-</td>
+            </tr>
+            <tr>
+              <td>공감·신뢰</td>
+              <td class="numeric-cell" th:text="|${detailed.empathyTrustScore}점|">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.empathyTrustReason ?: '-'}">-</td>
+            </tr>
+            <tr>
+              <td>개인적인 이야기 편안함</td>
+              <td class="numeric-cell" th:text="|${detailed.personalComfortScore}점|">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.personalComfortReason ?: '-'}">-</td>
+            </tr>
+            <tr>
+              <td>기억·저장 안심</td>
+              <td class="numeric-cell" th:text="|${detailed.storageComfortScore}점|">4점</td>
+              <td class="feedback-reason-cell" th:text="${detailed.storageComfortReason ?: '-'}">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <dl class="member-info-list feedback-detail-list">
+        <div>
+          <dt>자유 서술</dt>
+          <dd th:if="${detailed.freeText == null}">-</dd>
+          <dd th:if="${detailed.freeText != null}"><p class="feedback-free-text" th:text="${detailed.freeText}">자유 서술</p></dd>
+        </div>
+        <div>
+          <dt>통화 시작 이유</dt>
+          <dd th:if="${#lists.isEmpty(feedbackStartReasonLabels)}">-</dd>
+          <dd th:unless="${#lists.isEmpty(feedbackStartReasonLabels)}">
+            <ul class="feedback-choice-list">
+              <li th:each="label : ${feedbackStartReasonLabels}" th:text="${label}">누군가와 이야기하고 싶어서</li>
+            </ul>
+          </dd>
+        </div>
+        <div th:if="${detailed.startReasonOtherText != null}">
+          <dt>기타 입력</dt>
+          <dd><p class="feedback-free-text" th:text="${detailed.startReasonOtherText}">기타 이유</p></dd>
+        </div>
+      </dl>
+    </th:block>
+  </div>
+</section>
+</body>
+</html>
