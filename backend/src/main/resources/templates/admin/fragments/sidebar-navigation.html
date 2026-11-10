@@ -14,6 +14,8 @@
      th:attr="aria-current=${activeMenu == 'calls'} ? 'page'">통화 기록</a>
   <a th:href="@{/admin/feedbacks}" th:classappend="${activeMenu == 'feedbacks'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'feedbacks'} ? 'page'">피드백</a>
+  <a th:href="@{/admin/ai-server}" th:classappend="${activeMenu == 'ai-server'} ? 'active'"
+     th:attr="aria-current=${activeMenu == 'ai-server'} ? 'page'">AI 서버</a>
   <a th:href="@{/admin/onboarding-submissions}" th:classappend="${activeMenu == 'onboarding-submissions'} ? 'active'"
      th:attr="aria-current=${activeMenu == 'onboarding-submissions'} ? 'page'">온보딩 응답 이력</a>
   <a th:href="@{/admin/bug-reports}" th:classappend="${activeMenu == 'bug-reports'} ? 'active'"

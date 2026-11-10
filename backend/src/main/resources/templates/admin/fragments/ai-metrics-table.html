@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 기간별 AI 품질·비용 표와 합계 행. 지연이 없으면 "측정 안 됨", 비용은 소수 둘째 자리 USD. 컨텍스트 변수 metrics, unit -->
+<section class="panel" th:fragment="ai-metrics-table" th:with="monthUnit=${unit.name() == 'MONTH'}">
+  <div class="table-wrap">
+    <table class="table call-usage-table">
+      <thead>
+        <tr>
+          <th>기간</th>
+          <th class="numeric-cell">통화 수</th>
+          <th class="numeric-cell">집계 통화</th>
+          <th class="numeric-cell">턴 수</th>
+          <th class="numeric-cell">p50 지연</th>
+          <th class="numeric-cell">p95 지연</th>
+          <th class="numeric-cell">추정 비용(USD)</th>
+          <th class="numeric-cell">비정상 종료</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${metrics.rows}">
+          <td class="mono" th:text="${#temporals.format(row.periodStart, monthUnit ? 'yyyy-MM' : 'yyyy-MM-dd')}">2026-11-02</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(row.callCount, 1, 'COMMA')}">0</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(row.measuredCallCount, 1, 'COMMA')}">0</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(row.turnCount, 1, 'COMMA')}">0</td>
+          <td class="numeric-cell"
+              th:text="${row.p50LatencyMillis != null} ? ${#numbers.formatInteger(row.p50LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">-</td>
+          <td class="numeric-cell"
+              th:text="${row.p95LatencyMillis != null} ? ${#numbers.formatInteger(row.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">-</td>
+          <td class="numeric-cell"
+              th:text="${row.estimatedCostUsd != null} ? '$' + ${#numbers.formatDecimal(row.estimatedCostUsd, 1, 2)} : '측정 안 됨'">$0.00</td>
+          <td class="numeric-cell" th:text="${#numbers.formatInteger(row.abnormalCallCount, 1, 'COMMA')}">0</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(metrics.rows)}">
+          <td class="muted" colspan="8">조회된 기간이 없습니다.</td>
+        </tr>
+      </tbody>
+      <tfoot th:with="total=${metrics.total}">
+        <tr class="call-usage-total-row">
+          <th>합계</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(total.callCount, 1, 'COMMA')}">0</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(total.measuredCallCount, 1, 'COMMA')}">0</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(total.turnCount, 1, 'COMMA')}">0</th>
+          <th class="numeric-cell"
+              th:text="${total.p50LatencyMillis != null} ? ${#numbers.formatInteger(total.p50LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">-</th>
+          <th class="numeric-cell"
+              th:text="${total.p95LatencyMillis != null} ? ${#numbers.formatInteger(total.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">-</th>
+          <th class="numeric-cell"
+              th:text="${total.estimatedCostUsd != null} ? '$' + ${#numbers.formatDecimal(total.estimatedCostUsd, 1, 2)} : '측정 안 됨'">$0.00</th>
+          <th class="numeric-cell" th:text="${#numbers.formatInteger(total.abnormalCallCount, 1, 'COMMA')}">0</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 기간별 p95 지연 막대(기간 오름차순). 막대 높이는 metrics.barHeightPercent(가장 큰 p95 = 100%)이고, p95가 없는 기간은
+     줄무늬 막대로 보인다. 기간이 길면 가로로 스크롤한다. 컨텍스트 변수 metrics, unit -->
+<section class="panel" th:fragment="ai-metrics-chart" th:unless="${#lists.isEmpty(metrics.rows)}"
+         th:with="monthUnit=${unit.name() == 'MONTH'}">
+  <div class="panel-head">
+    <h2 th:text="${monthUnit} ? '월별 p95 지연' : '일별 p95 지연'">일별 p95 지연</h2>
+  </div>
+  <div class="panel-body ai-metrics-chart-scroll">
+    <ol class="usage-chart">
+      <li class="usage-chart-day" th:each="row : ${metrics.rows}"
+          th:with="periodLabel=${#temporals.format(row.periodStart, monthUnit ? 'yyyy-MM' : 'yyyy-MM-dd')},
+                   p95Label=${row.p95LatencyMillis != null} ? ${#numbers.formatInteger(row.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'"
+          th:title="|${periodLabel} · p95 ${p95Label}|">
+        <span class="usage-chart-track">
+          <span th:if="${row.p95LatencyMillis == null}" class="usage-chart-bar usage-chart-bar-empty"
+                th:style="|--bar-height: ${metrics.barHeightPercent(row)}%|"></span>
+          <span th:if="${row.p95LatencyMillis != null}" class="usage-chart-bar"
+                th:style="|--bar-height: ${metrics.barHeightPercent(row)}%|"></span>
+        </span>
+        <span class="usage-chart-label"
+              th:text="${#temporals.format(row.periodStart, monthUnit ? 'yy-MM' : 'MM/dd')}">11/02</span>
+        <span class="visually-hidden" th:text="|${periodLabel} p95 ${p95Label}|"></span>
+      </li>
+    </ol>
+  </div>
+</section>
+</body>
+</html>

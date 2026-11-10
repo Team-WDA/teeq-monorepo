@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('AI 품질·비용', ~{::main}, 'ai-server')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <div class="page-head">
+    <div>
+      <h1>AI 품질·비용</h1>
+    </div>
+  </div>
+
+  <section th:replace="~{admin/fragments/ai-metrics-filter-form :: ai-metrics-filter-form}"></section>
+
+  <section class="panel" th:if="${metrics.unavailable}">
+    <div class="panel-body">
+      <p class="error-message">AI 서버 데이터를 불러오지 못했습니다.</p>
+      <a class="btn btn-sm btn-ghost"
+         th:href="@{/admin/ai-server(unit=${unit}, from=${from} ?: '', to=${to} ?: '')}">다시 시도</a>
+    </div>
+  </section>
+
+  <th:block th:unless="${metrics.unavailable}">
+    <section th:replace="~{admin/fragments/ai-metrics-summary-tiles :: ai-metrics-summary-tiles}"></section>
+    <section th:replace="~{admin/fragments/ai-metrics-chart :: ai-metrics-chart}"></section>
+    <section th:replace="~{admin/fragments/ai-metrics-table :: ai-metrics-table}"></section>
+  </th:block>
+</main>
+</body>
+</html>
