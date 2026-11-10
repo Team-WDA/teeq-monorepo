@@ -3,6 +3,7 @@ package kr.co.teeq.api.admin.application.controller;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.ADMIN_ID;
 import static kr.co.teeq.api.admin.support.AdminTestAuthentication.asAdmin;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -64,7 +65,9 @@ class AdminOwnPasswordControllerTest {
             .andExpect(view().name("admin/own-password"))
             .andExpect(content().string(containsString("name=\"currentPassword\"")))
             .andExpect(content().string(containsString("name=\"_csrf\"")))
-            .andExpect(content().string(not(containsString("비밀번호를 변경했습니다."))));
+            .andExpect(content().string(not(containsString("비밀번호를 변경했습니다."))))
+            .andExpect(content().string(containsString("data-confirm-title=\"비밀번호를 변경할까요?\"")))
+            .andExpect(content().string(not(matchesPattern("(?s).*<input[^>]*data-confirm-label.*"))));
     }
 
     @Test
@@ -83,6 +86,7 @@ class AdminOwnPasswordControllerTest {
             .andExpect(status().isUnprocessableContent())
             .andExpect(view().name("admin/own-password"))
             .andExpect(content().string(containsString("새 비밀번호와 확인 값이 일치하지 않습니다.")))
+            .andExpect(content().string(containsString("data-confirm-title=\"비밀번호를 변경할까요?\"")))
             .andExpect(content().string(not(containsString(CURRENT_PASSWORD))))
             .andExpect(content().string(not(containsString(NEW_PASSWORD))));
 
