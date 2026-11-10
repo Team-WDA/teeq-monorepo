@@ -41,6 +41,11 @@
 
   <section th:replace="~{admin/fragments/call-conversation :: call-conversation}"></section>
 
+  <!--/* AI 지표 패널은 대화가 있거나 비어 있을 때만 대화 패널 다음에 따로 보인다(조각이 aiDetail null을 다시 거른다) */-->
+  <th:block th:if="${detail.conversationState.name() == 'LOADED' or detail.conversationState.name() == 'EMPTY'}">
+    <section th:replace="~{admin/fragments/call-ai-metrics :: call-ai-metrics}"></section>
+  </th:block>
+
   <section th:replace="~{admin/fragments/call-feedback :: call-feedback}"></section>
 </main>
 </body>

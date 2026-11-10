@@ -39,8 +39,10 @@ import kr.co.teeq.api.call.core.constant.CallStatus;
 import kr.co.teeq.api.call.core.constant.CallUsageUnit;
 import kr.co.teeq.api.call.core.constant.EndReason;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
+import kr.co.teeq.api.call.core.port.AiCallQuality;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
+import kr.co.teeq.api.call.core.port.AiCallUsage;
 import kr.co.teeq.api.common.application.exception.GlobalExceptionHandler;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
@@ -221,8 +223,9 @@ class AdminCallControllerTest {
     void detail_loaded_rendersCallInfoSummaryConversationAndCost() throws Exception {
         AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, "오늘 하루를 이야기했다", "gpt-test",
             new BigDecimal("0.0123"), true, List.of(
-                new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, 800, 300),
-                new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워요", true, 900, 350)));
+                new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, 800, 300, null, null, null),
+                new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워요", true, 900, 350, null, null, null)),
+            null, null, null, null, List.of());
         given(adminCallDetailService.getDetail(SESSION_ID))
             .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.LOADED, aiDetail));
 
@@ -237,7 +240,7 @@ class AdminCallControllerTest {
             .andExpect(content().string(containsString("끼어듦")))
             .andExpect(content().string(containsString("0.0123")))
             .andExpect(content().string(containsString("gpt-test")))
-            .andExpect(content().string(containsString("<details")))
+            .andExpect(content().string(not(containsString("<details"))))
             .andExpect(content().string(containsString("aria-label=\"위치 경로\"")))
             .andExpect(content().string(not(containsString("통화 기록으로"))))
             .andExpect(content().string(not(containsString("대화를 불러오지 못했습니다"))));
@@ -246,19 +249,190 @@ class AdminCallControllerTest {
     @Test
     void detail_loadedWithNullOptionalFields_showsDash() throws Exception {
         AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, null, List.of(
-            new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, null, null)));
+            new AiCallTurn(0, AiCallTurnRole.USER, "안녕하세요", false, null, null, null, null, null)),
+            null, null, null, null, List.of());
         given(adminCallDetailService.getDetail(SESSION_ID))
             .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.LOADED, aiDetail));
 
         mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("안녕하세요")))
-            .andExpect(content().string(matchesPattern(dashAfterLabel("추정 비용\\(USD\\)"))))
+            .andExpect(content().string(matchesPattern(dashAfterLabel("추정 비용"))))
             .andExpect(content().string(matchesPattern(dashAfterLabel("LLM 모델"))))
             .andExpect(content().string(matchesPattern(dashAfterLabel("기억 주입"))))
             .andExpect(content().string(matchesPattern(
                 "(?s).*<td class=\"numeric-cell\">0</td>\\s*<td>사용자</td>"
-                    + "\\s*<td class=\"numeric-cell\">-</td>\\s*<td class=\"numeric-cell\">-</td>.*")));
+                    + "\\s*<td class=\"numeric-cell\">-</td>\\s*<td class=\"numeric-cell\">-</td>"
+                    + "\\s*<td class=\"numeric-cell\">-</td>.*")));
+    }
+
+    private static String numericCells(String... cellTexts) {
+        StringBuilder pattern = new StringBuilder();
+        for (String cellText : cellTexts) {
+            pattern.append("\\s*<td class=\"numeric-cell\">").append(cellText).append("</td>");
+        }
+        return pattern.toString();
+    }
+
+    private static AiCallDetail aiMetricsDetail(
+        AiCallQuality quality, Integer firstAiAudioMillis, List<AiCallUsage> usages, List<AiCallTurn> turns) {
+        return new AiCallDetail(SESSION_ID, null, null, null, null, null, turns, quality, firstAiAudioMillis,
+            "a1b2c3d", 3, usages);
+    }
+
+    private void givenDetail(ConversationState state, AiCallDetail aiDetail) {
+        given(adminCallDetailService.getDetail(SESSION_ID))
+            .willReturn(new AdminCallDetailResponse(endedCall(), state, aiDetail));
+    }
+
+    @Test
+    void detail_rendersAiMetricsPanelExpanded() throws Exception {
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(new AiCallQuality(820, 1740, 2, false), 1250,
+            List.of(), List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("AI 지표")))
+            .andExpect(content().string(containsString("p50 지연")))
+            .andExpect(content().string(containsString("820ms")))
+            .andExpect(content().string(containsString("p95 지연")))
+            .andExpect(content().string(containsString("1,740ms")))
+            .andExpect(content().string(containsString("1,250ms")))
+            .andExpect(content().string(containsString("2회")))
+            .andExpect(content().string(containsString("아니요")))
+            .andExpect(content().string(containsString("a1b2c3d")))
+            .andExpect(content().string(matchesPattern("(?s).*<dt>통화 횟수</dt>\\s*<dd>3번째 통화</dd>.*")))
+            .andExpect(content().string(not(containsString("call-conversation-latency"))));
+    }
+
+    @Test
+    void detail_aiMetricsPanelIsSiblingAfterConversationPanel() throws Exception {
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(new AiCallQuality(820, 1740, 2, false), 1250,
+            List.of(), List.of()));
+
+        String body = mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        // 대화 패널이 닫힌 뒤에 AI 지표 패널이 따로 시작한다(대화 패널 본문 안에 중첩되지 않는다)
+        String betweenPanels = body.substring(body.indexOf("<h2>대화</h2>"), body.indexOf("<h2>AI 지표</h2>"));
+        assertThat(betweenPanels).contains("</section>");
+        assertThat(body.split("<h2>AI 지표</h2>", -1)).hasSize(2);
+    }
+
+    @Test
+    void detail_rendersNotMeasuredForNullAiValues() throws Exception {
+        // 턴 목록을 비워 턴별 지연 표의 "측정 안 됨"이 섞이지 않게 하고 타일 5개만 센다
+        List<AiCallTurn> noTurns = List.of();
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, List.of(), noTurns));
+
+        String body = mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        assertThat(body.split("측정 안 됨", -1).length - 1).isEqualTo(5);
+    }
+
+    @Test
+    void detail_rendersNotMeasuredForNullTurnLatenciesPerRole() throws Exception {
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, List.of(), List.of(
+            new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, null, null, null, null, null),
+            new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워", false, 900, null, 190, null, null))));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            // 사용자 턴: STT 지연·말끝 감지 지연이 없으면 측정 안 됨
+            .andExpect(content().string(matchesPattern("(?s).*<td>사용자</td>"
+                + numericCells("-", "-", "-", "측정 안 됨", "측정 안 됨") + ".*")))
+            // AI 턴: LLM 첫 토큰이 없으면 측정 안 됨
+            .andExpect(content().string(matchesPattern("(?s).*<td>AI</td>"
+                + numericCells("900ms", "측정 안 됨", "190ms", "-", "-") + ".*")));
+    }
+
+    @Test
+    void detail_rendersUsageTableWithKindLabelsAndEmptyMessage() throws Exception {
+        List<AiCallUsage> usages = List.of(
+            new AiCallUsage("stt", "deepgram", "nova", new BigDecimal("52.4"), null, null, null, null),
+            new AiCallUsage("llm", "openai", "gpt-x", null, 2310L, 1000L, 410L, null));
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, usages, List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString(">STT</td>")))
+            .andExpect(content().string(containsString(">LLM</td>")))
+            .andExpect(content().string(containsString("2,310")))
+            .andExpect(content().string(not(containsString("사용량 기록이 없습니다."))));
+
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, List.of(), List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(content().string(containsString("사용량 기록이 없습니다.")));
+    }
+
+    @Test
+    void detail_rendersTurnLatencyColumnsPerRole() throws Exception {
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, List.of(), List.of(
+            new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, null, null, null, 120, 340),
+            new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워", false, 900, 300, 190, null, null),
+            new AiCallTurn(2, AiCallTurnRole.ASSISTANT, "또 만나", false, 900, 300, null, null, null))));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("190ms")))
+            .andExpect(content().string(containsString("120ms")))
+            .andExpect(content().string(containsString("340ms")))
+            .andExpect(content().string(matchesPattern("(?s).*<td>사용자</td>"
+                + numericCells("-", "-", "-", "120ms", "340ms") + ".*")))
+            .andExpect(content().string(matchesPattern("(?s).*<td>AI</td>"
+                + numericCells("900ms", "300ms", "190ms", "-", "-") + ".*")))
+            .andExpect(content().string(matchesPattern("(?s).*<td>AI</td>"
+                + numericCells("900ms", "300ms", "측정 안 됨", "-", "-") + ".*")));
+    }
+
+    @Test
+    void detail_emptyConversationStillShowsAiMetrics() throws Exception {
+        givenDetail(ConversationState.EMPTY, aiMetricsDetail(new AiCallQuality(820, 1740, 2, false), 1250,
+            List.of(), List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("대화 내용이 없습니다.")))
+            .andExpect(content().string(containsString("AI 지표")))
+            .andExpect(content().string(containsString("820ms")))
+            // EMPTY 안내는 원래의 단일 문구이고 대화 패널은 그 문구로 끝난다
+            .andExpect(content().string(matchesPattern("(?s).*<p class=\"panel-body muted\">대화 내용이 없습니다\\."
+                + " 발화가 없었거나 보관 기간이 지났을 수 있습니다\\.</p>\\s*</section>.*")));
+    }
+
+    @Test
+    void detail_resultPendingHidesAiMetricsEvenWithAiDetail() throws Exception {
+        givenDetail(ConversationState.RESULT_PENDING, aiMetricsDetail(new AiCallQuality(820, 1740, 2, false), 1250,
+            List.of(), List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString("AI 지표"))));
+    }
+
+    @Test
+    void detail_unavailableHidesAiMetrics() throws Exception {
+        givenDetail(ConversationState.UNAVAILABLE, null);
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(not(containsString("AI 지표"))));
+    }
+
+    @Test
+    void detail_formatsUsageAudioSecondsToOneDecimal() throws Exception {
+        List<AiCallUsage> usages = List.of(new AiCallUsage("stt", "deepgram", "nova",
+            new BigDecimal("52.400001525878906"), null, null, null, null));
+        givenDetail(ConversationState.LOADED, aiMetricsDetail(null, null, usages, List.of()));
+
+        mockMvc.perform(get(PATH + "/{id}", SESSION_ID).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString(">52.4</td>")))
+            .andExpect(content().string(not(containsString("52.4000"))));
     }
 
     // 라벨 바로 뒤의 dd가 대시인지 확인해 항목별로 자리표시자를 구분한다
@@ -323,7 +497,8 @@ class AdminCallControllerTest {
     @Test
     void detail_conversationText_isEscaped() throws Exception {
         AiCallDetail aiDetail = new AiCallDetail(SESSION_ID, null, null, null, null, null, List.of(
-            new AiCallTurn(0, AiCallTurnRole.USER, "<script>alert(1)</script>", false, null, null)));
+            new AiCallTurn(0, AiCallTurnRole.USER, "<script>alert(1)</script>", false, null, null, null, null, null)),
+            null, null, null, null, List.of());
         given(adminCallDetailService.getDetail(SESSION_ID))
             .willReturn(new AdminCallDetailResponse(endedCall(), ConversationState.LOADED, aiDetail));
 

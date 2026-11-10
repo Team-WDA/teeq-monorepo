@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 통화 상세의 AI 지표 패널. detail.aiDetail이 있을 때만 그린다. AI가 보내지 않은 값은 "측정 안 됨"으로 보인다 -->
+<section class="panel" th:fragment="call-ai-metrics" th:if="${detail.aiDetail != null}"
+         th:with="quality=${detail.aiDetail.quality}">
+  <div class="panel-head"><h2>AI 지표</h2></div>
+  <div class="panel-body">
+    <div class="call-ai-metric-grid">
+      <div class="dashboard-kpi-card">
+        <p class="dashboard-kpi-label">p50 지연</p>
+        <p class="dashboard-kpi-value"
+           th:text="${quality != null and quality.p50LatencyMillis != null} ? ${#numbers.formatInteger(quality.p50LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">820ms</p>
+      </div>
+      <div class="dashboard-kpi-card">
+        <p class="dashboard-kpi-label">p95 지연</p>
+        <p class="dashboard-kpi-value"
+           th:text="${quality != null and quality.p95LatencyMillis != null} ? ${#numbers.formatInteger(quality.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">1,740ms</p>
+      </div>
+      <div class="dashboard-kpi-card">
+        <p class="dashboard-kpi-label">사용자 끼어들기</p>
+        <p class="dashboard-kpi-value"
+           th:text="${quality != null and quality.userInterruptions != null} ? ${quality.userInterruptions} + '회' : '측정 안 됨'">2회</p>
+      </div>
+      <div class="dashboard-kpi-card">
+        <p class="dashboard-kpi-label">조기 종료</p>
+        <p class="dashboard-kpi-value"
+           th:text="${quality != null and quality.earlyHangup != null} ? (${quality.earlyHangup} ? '예' : '아니요') : '측정 안 됨'">아니요</p>
+      </div>
+      <div class="dashboard-kpi-card">
+        <p class="dashboard-kpi-label">첫 AI 음성까지</p>
+        <p class="dashboard-kpi-value"
+           th:text="${detail.aiDetail.firstAiAudioMillis != null} ? ${#numbers.formatInteger(detail.aiDetail.firstAiAudioMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">1,250ms</p>
+      </div>
+    </div>
+
+    <dl class="member-info-list call-conversation-meta">
+      <div>
+        <dt>LLM 모델</dt>
+        <dd th:if="${detail.aiDetail.llmModel != null}" th:text="${detail.aiDetail.llmModel}">모델</dd>
+        <dd th:if="${detail.aiDetail.llmModel == null}">-</dd>
+      </div>
+      <div>
+        <dt>추정 비용</dt>
+        <dd th:if="${detail.aiDetail.estimatedCostUsd != null}">
+          <span th:text="${#numbers.formatDecimal(detail.aiDetail.estimatedCostUsd, 1, 4)} + ' USD'">0.0123 USD</span>
+          <small class="muted">공개 단가 기준 대략값</small>
+        </dd>
+        <dd th:if="${detail.aiDetail.estimatedCostUsd == null}">-</dd>
+      </div>
+      <div>
+        <dt>기억 주입</dt>
+        <dd th:if="${detail.aiDetail.memoryInjected == null}">-</dd>
+        <dd th:if="${detail.aiDetail.memoryInjected != null}"
+            th:text="${detail.aiDetail.memoryInjected} ? '주입함' : '주입 안 함'">주입함</dd>
+      </div>
+      <div>
+        <dt>프롬프트 버전</dt>
+        <dd th:if="${detail.aiDetail.promptVersion != null}" th:text="${detail.aiDetail.promptVersion}">a1b2c3d</dd>
+        <dd th:if="${detail.aiDetail.promptVersion == null}">-</dd>
+      </div>
+      <div>
+        <dt>통화 횟수</dt>
+        <dd th:if="${detail.aiDetail.callIndex != null}" th:text="${detail.aiDetail.callIndex} + '번째 통화'">3번째 통화</dd>
+        <dd th:if="${detail.aiDetail.callIndex == null}">-</dd>
+      </div>
+    </dl>
+
+    <h3 class="feedback-section-title">모델별 사용량</h3>
+    <div class="table-wrap">
+      <table class="table call-usage-table">
+        <thead>
+          <tr>
+            <th>종류</th>
+            <th>제공자</th>
+            <th>모델</th>
+            <th class="numeric-cell">오디오(초)</th>
+            <th class="numeric-cell">입력 토큰</th>
+            <th class="numeric-cell">캐시 입력 토큰</th>
+            <th class="numeric-cell">출력 토큰</th>
+            <th class="numeric-cell">글자 수</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="usage : ${detail.aiDetail.usages}">
+            <td th:text="${T(kr.co.teeq.api.admin.application.view.AiUsageDisplayLabel).kind(usage.kind)}">STT</td>
+            <td th:text="${usage.provider != null} ? ${usage.provider} : '-'">-</td>
+            <td th:text="${usage.model != null} ? ${usage.model} : '-'">-</td>
+            <td class="numeric-cell"
+                th:text="${usage.audioSeconds != null} ? ${#numbers.formatDecimal(usage.audioSeconds, 1, 1)} : '-'">-</td>
+            <td class="numeric-cell"
+                th:text="${usage.inputTokens != null} ? ${#numbers.formatInteger(usage.inputTokens, 1, 'COMMA')} : '-'">-</td>
+            <td class="numeric-cell"
+                th:text="${usage.cachedInputTokens != null} ? ${#numbers.formatInteger(usage.cachedInputTokens, 1, 'COMMA')} : '-'">-</td>
+            <td class="numeric-cell"
+                th:text="${usage.outputTokens != null} ? ${#numbers.formatInteger(usage.outputTokens, 1, 'COMMA')} : '-'">-</td>
+            <td class="numeric-cell"
+                th:text="${usage.chars != null} ? ${#numbers.formatInteger(usage.chars, 1, 'COMMA')} : '-'">-</td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(detail.aiDetail.usages)}">
+            <td colspan="8" class="muted">사용량 기록이 없습니다.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="feedback-section-title">턴별 지연</h3>
+    <div class="table-wrap">
+      <table class="table call-latency-table">
+        <thead>
+          <tr>
+            <th class="numeric-cell">순서</th>
+            <th>발화자</th>
+            <th class="numeric-cell">종단 지연</th>
+            <th class="numeric-cell">LLM 첫 토큰</th>
+            <th class="numeric-cell">TTS 첫 바이트</th>
+            <th class="numeric-cell">STT 지연</th>
+            <th class="numeric-cell">말끝 감지 지연</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- AI 발화 지표(종단, LLM, TTS)는 사용자 턴에서 해당 없음(-), 사용자 발화 지표(STT, 말끝)는 AI 턴에서 해당 없음(-) -->
+          <tr th:each="turn : ${detail.aiDetail.turns}" th:with="userTurn=${turn.role.name() == 'USER'}">
+            <td class="numeric-cell" th:text="${turn.index}">0</td>
+            <td th:text="${userTurn} ? '사용자' : 'AI'">사용자</td>
+            <td class="numeric-cell"
+                th:text="${turn.endToEndLatencyMillis != null} ? ${#numbers.formatInteger(turn.endToEndLatencyMillis, 1, 'COMMA')} + 'ms' : (${userTurn} ? '-' : '측정 안 됨')">-</td>
+            <td class="numeric-cell"
+                th:text="${turn.llmFirstTokenMillis != null} ? ${#numbers.formatInteger(turn.llmFirstTokenMillis, 1, 'COMMA')} + 'ms' : (${userTurn} ? '-' : '측정 안 됨')">-</td>
+            <td class="numeric-cell"
+                th:text="${turn.ttsFirstByteMillis != null} ? ${#numbers.formatInteger(turn.ttsFirstByteMillis, 1, 'COMMA')} + 'ms' : (${userTurn} ? '-' : '측정 안 됨')">-</td>
+            <td class="numeric-cell"
+                th:text="${turn.transcriptionDelayMillis != null} ? ${#numbers.formatInteger(turn.transcriptionDelayMillis, 1, 'COMMA')} + 'ms' : (${userTurn} ? '측정 안 됨' : '-')">-</td>
+            <td class="numeric-cell"
+                th:text="${turn.endOfTurnDelayMillis != null} ? ${#numbers.formatInteger(turn.endOfTurnDelayMillis, 1, 'COMMA')} + 'ms' : (${userTurn} ? '측정 안 됨' : '-')">-</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+</body>
+</html>
