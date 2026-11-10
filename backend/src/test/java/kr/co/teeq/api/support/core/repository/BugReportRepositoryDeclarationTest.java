@@ -42,7 +42,7 @@ class BugReportRepositoryDeclarationTest {
         assertThat(Arrays.stream(BugReportSpecifications.class.getDeclaredMethods())
             .filter(method -> !method.isSynthetic())
             .map(Method::getName))
-            .containsExactlyInAnyOrder("notDeleted", "ofStatus", "ofSource");
+            .containsExactlyInAnyOrder("notDeleted", "ofStatus", "ofSource", "ofMember");
     }
 
 }

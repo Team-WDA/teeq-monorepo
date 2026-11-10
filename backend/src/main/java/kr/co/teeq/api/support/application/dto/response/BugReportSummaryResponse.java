@@ -13,6 +13,7 @@ public record BugReportSummaryResponse(
     String contentPreview,
     BugReportStatus status,
     BugReportSource source,
+    UUID memberId,
     String memberEmail,
     boolean memberDeleted,
     Instant createdAt
