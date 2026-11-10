@@ -171,6 +171,44 @@ class AdminHomeControllerTest {
     }
 
     @Test
+    void home_sidebarHasAiServerMenuAfterFeedbackMenu() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        String body = mockMvc.perform(get("/admin").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        String sidebar = body.substring(body.indexOf("<nav class=\"sidebar\""), body.indexOf("</nav>"));
+        int feedbackMenuIndex = sidebar.indexOf("href=\"/admin/feedbacks\"");
+        int aiServerMenuIndex = sidebar.indexOf("href=\"/admin/ai-server\"");
+        int onboardingMenuIndex = sidebar.indexOf("href=\"/admin/onboarding-submissions\"");
+        assertThat(feedbackMenuIndex).isNotNegative();
+        assertThat(aiServerMenuIndex).isGreaterThan(feedbackMenuIndex).isLessThan(onboardingMenuIndex);
+        assertThat(sidebar).contains(">AI 서버</a>");
+    }
+
+    @Test
+    void 홈에_AI_서버_상태_자리표시가_있다() throws Exception {
+        given(adminDashboardService.getDashboard())
+            .willReturn(dashboard(568_000, 900_000, List.of(), List.of(), List.of()));
+
+        String body = mockMvc.perform(get("/admin").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("id=\"dashboard-ai-server-status\"")))
+            .andExpect(content().string(containsString("hx-get=\"/admin/ai-server/summary\"")))
+            .andExpect(content().string(containsString("hx-trigger=\"load\"")))
+            .andExpect(content().string(containsString("hx-swap=\"outerHTML\"")))
+            .andExpect(content().string(containsString("AI 서버에서 불러오는 중...")))
+            .andReturn().getResponse().getContentAsString();
+
+        // 자리표시는 추이 영역(14일 차트·월 한도) 다음, 최근 목록 영역 앞에 있다
+        int placeholderIndex = body.indexOf("id=\"dashboard-ai-server-status\"");
+        assertThat(placeholderIndex).isGreaterThan(body.indexOf("이번 달 전체 통화 한도"))
+            .isLessThan(body.indexOf("dashboard-recent-grid"));
+    }
+
+    @Test
     void home_withoutSession_redirectsToLogin() throws Exception {
         mockMvc.perform(get("/admin"))
             .andExpect(status().isFound())

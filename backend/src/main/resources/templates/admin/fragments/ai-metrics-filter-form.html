@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- AI 품질·비용 필터(GET 폼, 값은 쿼리스트링에 남는다). 비운 날짜는 그 방향 제한 없음이다. 컨텍스트 변수 unit, from, to -->
+<section class="panel" th:fragment="ai-metrics-filter-form">
+  <form class="panel-body call-usage-filter-form" method="get" th:action="@{/admin/ai-server}">
+    <label class="call-usage-filter-field">
+      <span class="call-usage-filter-label">시작일</span>
+      <input class="input input-sm" type="date" name="from" th:value="${from}">
+    </label>
+    <label class="call-usage-filter-field">
+      <span class="call-usage-filter-label">종료일</span>
+      <input class="input input-sm" type="date" name="to" th:value="${to}">
+    </label>
+    <label class="call-usage-filter-field">
+      <span class="call-usage-filter-label">집계 단위</span>
+      <select class="select select-sm" name="unit">
+        <option value="DAY" th:selected="${unit.name() == 'DAY'}">일별</option>
+        <option value="MONTH" th:selected="${unit.name() == 'MONTH'}">월별</option>
+      </select>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>

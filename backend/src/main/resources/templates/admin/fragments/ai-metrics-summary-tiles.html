@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- AI 품질·비용 요약 타일 4개(합계 행 기준). 지연이 없으면 "측정 안 됨". 컨텍스트 변수 metrics -->
+<section class="dashboard-kpi-grid dashboard-kpi-grid-four" aria-label="AI 품질·비용 요약"
+         th:fragment="ai-metrics-summary-tiles" th:with="total=${metrics.total}">
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">집계 통화</h2>
+    <p class="dashboard-kpi-value" th:text="|${#numbers.formatInteger(total.measuredCallCount, 1, 'COMMA')}건|">0건</p>
+    <p class="dashboard-kpi-caption"
+       th:text="|전체 ${#numbers.formatInteger(total.callCount, 1, 'COMMA')}건 중 · 턴 ${#numbers.formatInteger(total.turnCount, 1, 'COMMA')}개|">전체 0건 중 · 턴 0개</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">p50 지연</h2>
+    <p class="dashboard-kpi-value"
+       th:text="${total.p50LatencyMillis != null} ? ${#numbers.formatInteger(total.p50LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">790ms</p>
+    <p class="dashboard-kpi-caption">턴 단위 종단 지연</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">p95 지연</h2>
+    <p class="dashboard-kpi-value"
+       th:text="${total.p95LatencyMillis != null} ? ${#numbers.formatInteger(total.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">1,910ms</p>
+    <p class="dashboard-kpi-caption">턴 단위 종단 지연</p>
+  </article>
+  <article class="dashboard-kpi-card">
+    <h2 class="dashboard-kpi-label">추정 비용 합계</h2>
+    <p class="dashboard-kpi-value"
+       th:text="${total.estimatedCostUsd != null} ? '$' + ${#numbers.formatDecimal(total.estimatedCostUsd, 1, 2)} : '측정 안 됨'">$0.00</p>
+    <p class="dashboard-kpi-caption">공개 단가 기준 대략값</p>
+  </article>
+</section>
+</body>
+</html>

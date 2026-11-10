@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 대시보드 AI 서버 상태 카드(htmx로 자리표시를 바꾸는 조각). 오늘(KST)과 전체 누적의 지연·비용·비정상 종료를 보이고,
+     AI 서버가 실패하면 같은 자리에 안내와 다시 시도 버튼을 보인다. 컨텍스트 변수 summary -->
+<section id="dashboard-ai-server-status" class="panel dashboard-ai-server-status" th:fragment="ai-server-summary">
+  <div class="panel-head">
+    <h2>AI 서버 상태</h2>
+    <a class="link link-primary" th:unless="${summary.unavailable}" th:href="@{/admin/ai-server}">AI 품질·비용 보기</a>
+  </div>
+  <div class="panel-body" th:if="${summary.unavailable}">
+    <p class="error-message">AI 서버 데이터를 불러오지 못했습니다.</p>
+    <button class="btn btn-sm btn-ghost" type="button" th:attr="hx-get=@{/admin/ai-server/summary}"
+            hx-target="#dashboard-ai-server-status" hx-swap="outerHTML" hx-disabled-elt="this">다시 시도</button>
+  </div>
+  <div class="panel-body" th:unless="${summary.unavailable}">
+    <div class="ai-server-status-columns">
+      <div th:replace="~{:: ai-server-status-column('오늘', ${summary.today})}"></div>
+      <div th:replace="~{:: ai-server-status-column('전체 누적', ${summary.allTime})}"></div>
+    </div>
+    <p class="dashboard-kpi-caption"
+       th:text="|통화 ${#numbers.formatInteger(summary.allTime.measuredCallCount, 1, 'COMMA')}건 · 턴 ${#numbers.formatInteger(summary.allTime.turnCount, 1, 'COMMA')}개 기준 (대략값)|">통화 0건 · 턴 0개 기준 (대략값)</p>
+  </div>
+</section>
+
+<!-- 한 열: p50을 큰 숫자로, 아래에 p95·추정 비용·비정상 종료. 지연이 없으면 "측정 안 됨" -->
+<div class="ai-server-status-column" th:fragment="ai-server-status-column(columnLabel, row)">
+  <p class="dashboard-kpi-label" th:text="${columnLabel}">오늘</p>
+  <p class="dashboard-kpi-value"
+     th:text="${row.p50LatencyMillis != null} ? ${#numbers.formatInteger(row.p50LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨'">790ms</p>
+  <p class="dashboard-kpi-caption"
+     th:text="'p50 · p95 ' + (${row.p95LatencyMillis != null} ? ${#numbers.formatInteger(row.p95LatencyMillis, 1, 'COMMA')} + 'ms' : '측정 안 됨')">p50 · p95 1,740ms</p>
+  <p class="ai-server-status-line"
+     th:text="'추정 비용 ' + (${row.estimatedCostUsd != null} ? '$' + ${#numbers.formatDecimal(row.estimatedCostUsd, 1, 2)} : '측정 안 됨')">추정 비용 $0.31</p>
+  <p class="ai-server-status-line"
+     th:text="|비정상 종료 ${#numbers.formatInteger(row.abnormalCallCount, 1, 'COMMA')}건|">비정상 종료 0건</p>
+</div>
+</body>
+</html>

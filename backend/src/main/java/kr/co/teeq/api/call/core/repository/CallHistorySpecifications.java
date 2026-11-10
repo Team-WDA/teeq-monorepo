@@ -1,10 +1,9 @@
 package kr.co.teeq.api.call.core.repository;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
+import kr.co.teeq.api.call.core.constant.AbnormalCallCriteria;
 import kr.co.teeq.api.call.core.constant.CallStatus;
-import kr.co.teeq.api.call.core.constant.EndReason;
 import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.member.core.repository.MemberSpecifications;
 import org.springframework.data.jpa.domain.Specification;
@@ -67,10 +66,10 @@ public final class CallHistorySpecifications {
     // 비정상 통화: 시작 실패·만료이거나, 종료됐지만 사유가 에이전트 오류·배정 실패인 통화
     public static Specification<CallHistory> abnormalOnly() {
         return (root, query, builder) -> builder.or(
-            root.get("status").in(List.of(CallStatus.FAILED, CallStatus.EXPIRED)),
+            root.get("status").in(AbnormalCallCriteria.STATUSES),
             builder.and(
                 builder.equal(root.get("status"), CallStatus.ENDED),
-                root.get("endReason").in(List.of(EndReason.AGENT_ERROR, EndReason.DISPATCH_FAILED))));
+                root.get("endReason").in(AbnormalCallCriteria.ENDED_END_REASONS)));
     }
 
 }

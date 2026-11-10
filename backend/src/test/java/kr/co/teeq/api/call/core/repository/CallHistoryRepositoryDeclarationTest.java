@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +46,23 @@ class CallHistoryRepositoryDeclarationTest {
             .contains("case when c.startedAt >= :recentFromInclusive then 1L else 0L end");
         assertThat(queryText.split("coalesce", -1)).hasSize(3);
         assertThat(method.getReturnType()).isEqualTo(CallHistoryRepository.MemberCallSummaryRow.class);
+    }
+
+    @Test
+    void aggregateAbnormal_declaresNativeAggregateQuery() throws NoSuchMethodException {
+        Method method = CallHistoryRepository.class.getMethod(
+            "aggregateAbnormal", String.class, String.class, Instant.class, Instant.class, List.class, List.class);
+
+        Query query = method.getAnnotation(Query.class);
+
+        assertThat(query.nativeQuery()).isTrue();
+        assertThat(query.value()).contains("deleted = false")
+            .contains("status in (:abnormalStatuses)")
+            .contains("end_reason in (:abnormalEndReasons)")
+            .contains("as \"periodStart\"", "as \"abnormalCount\"")
+            .contains("started_at >= :fromInclusive", "started_at < :toExclusive");
+        assertThat(method.getGenericReturnType().getTypeName())
+            .contains(CallHistoryRepository.AbnormalCallRow.class.getSimpleName());
     }
 
     @Test

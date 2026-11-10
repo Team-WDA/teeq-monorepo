@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
+import kr.co.teeq.api.call.core.port.AiCallQuality;
+import kr.co.teeq.api.call.core.port.AiCallUsage;
 import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
@@ -69,9 +71,94 @@ class AiServerCallDetailAdapterTest {
         assertThat(detail.estimatedCostUsd()).isEqualByComparingTo(new BigDecimal("0.0123"));
         assertThat(detail.memoryInjected()).isTrue();
         assertThat(detail.turns()).containsExactly(
-            new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, 900, 300),
-            new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워", true, null, null));
+            new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, 900, 300, null, null, null),
+            new AiCallTurn(1, AiCallTurnRole.ASSISTANT, "반가워", true, null, null, null, null, null));
         server.verify();
+    }
+
+    @Test
+    void 새_AI_지표_필드를_모두_읽는다() {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess("""
+                {"sessionId":"sess-1","firstAiAudioMillis":1250,"promptVersion":"a1b2c3d","callIndex":3,
+                 "quality":{"p50LatencyMillis":820,"p95LatencyMillis":1740,"userInterruptions":2,
+                            "earlyHangup":false},
+                 "usage":[
+                  {"kind":"stt","provider":"deepgram","model":"nova","audioSeconds":52.4,"inputTokens":null,
+                   "cachedInputTokens":null,"outputTokens":null,"chars":null},
+                  {"kind":"llm","provider":"openai","model":"gpt-x","audioSeconds":null,"inputTokens":2310,
+                   "cachedInputTokens":1000,"outputTokens":410,"chars":null}],
+                 "turns":[{"index":0,"role":"ASSISTANT","text":"안녕","interrupted":false,
+                           "ttsFirstByteMillis":190,"transcriptionDelayMillis":120,"endOfTurnDelayMillis":340}]}
+                """, MediaType.APPLICATION_JSON));
+
+        AiCallDetail detail = adapter.find(SESSION_ID).orElseThrow();
+
+        assertThat(detail.quality()).isEqualTo(new AiCallQuality(820, 1740, 2, false));
+        assertThat(detail.firstAiAudioMillis()).isEqualTo(1250);
+        assertThat(detail.promptVersion()).isEqualTo("a1b2c3d");
+        assertThat(detail.callIndex()).isEqualTo(3);
+        assertThat(detail.usages()).hasSize(2);
+        assertThat(detail.usages().get(0).kind()).isEqualTo("stt");
+        assertThat(detail.usages().get(0).audioSeconds()).isEqualByComparingTo(new BigDecimal("52.4"));
+        assertThat(detail.usages().get(1)).isEqualTo(
+            new AiCallUsage("llm", "openai", "gpt-x", null, 2310L, 1000L, 410L, null));
+        AiCallTurn turn = detail.turns().get(0);
+        assertThat(turn.ttsFirstByteMillis()).isEqualTo(190);
+        assertThat(turn.transcriptionDelayMillis()).isEqualTo(120);
+        assertThat(turn.endOfTurnDelayMillis()).isEqualTo(340);
+    }
+
+    @Test
+    void 새_필드가_없으면_null과_빈_목록이다() {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess("""
+                {"sessionId":"sess-1","turns":[{"index":0,"role":"USER","text":"안녕","interrupted":false}]}
+                """, MediaType.APPLICATION_JSON));
+
+        AiCallDetail detail = adapter.find(SESSION_ID).orElseThrow();
+
+        assertThat(detail.quality()).isNull();
+        assertThat(detail.firstAiAudioMillis()).isNull();
+        assertThat(detail.promptVersion()).isNull();
+        assertThat(detail.callIndex()).isNull();
+        assertThat(detail.usages()).isEmpty();
+        AiCallTurn turn = detail.turns().get(0);
+        assertThat(turn.ttsFirstByteMillis()).isNull();
+        assertThat(turn.transcriptionDelayMillis()).isNull();
+        assertThat(turn.endOfTurnDelayMillis()).isNull();
+    }
+
+    @Test
+    void 새_필드의_타입이_달라도_예외_없이_null이다() {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess("""
+                {"sessionId":"sess-1","quality":"bad","usage":{"kind":"stt"},"firstAiAudioMillis":"1250",
+                 "promptVersion":5,"callIndex":"3","turns":[]}
+                """, MediaType.APPLICATION_JSON));
+
+        AiCallDetail detail = adapter.find(SESSION_ID).orElseThrow();
+
+        assertThat(detail.quality()).isNull();
+        assertThat(detail.usages()).isEmpty();
+        assertThat(detail.firstAiAudioMillis()).isNull();
+        assertThat(detail.promptVersion()).isNull();
+        assertThat(detail.callIndex()).isNull();
+    }
+
+    @Test
+    void usage_항목의_일부_필드가_null이어도_읽는다() {
+        server.expect(requestTo(BASE_URL + "/calls/sess-1"))
+            .andRespond(withSuccess("""
+                {"sessionId":"sess-1","turns":[],
+                 "usage":[{"kind":"tts","provider":null,"model":null,"audioSeconds":null,"inputTokens":null,
+                           "cachedInputTokens":null,"outputTokens":null,"chars":120}]}
+                """, MediaType.APPLICATION_JSON));
+
+        AiCallDetail detail = adapter.find(SESSION_ID).orElseThrow();
+
+        assertThat(detail.usages()).containsExactly(
+            new AiCallUsage("tts", null, null, null, null, null, null, 120L));
     }
 
     @Test

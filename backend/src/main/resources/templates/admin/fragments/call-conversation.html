@@ -19,50 +19,6 @@
         <span class="badge badge-ghost badge-sm" th:if="${turn.interrupted}">끼어듦</span>
       </li>
     </ol>
-    <details class="call-conversation-latency">
-      <summary>품질 지표·비용·모델 보기</summary>
-      <dl class="member-info-list call-conversation-meta">
-        <div>
-          <dt>추정 비용(USD)</dt>
-          <dd th:if="${detail.aiDetail.estimatedCostUsd != null}"
-              th:text="${#numbers.formatDecimal(detail.aiDetail.estimatedCostUsd, 1, 4)}">0.0123</dd>
-          <dd th:if="${detail.aiDetail.estimatedCostUsd == null}">-</dd>
-        </div>
-        <div>
-          <dt>LLM 모델</dt>
-          <dd th:if="${detail.aiDetail.llmModel != null}" th:text="${detail.aiDetail.llmModel}">모델</dd>
-          <dd th:if="${detail.aiDetail.llmModel == null}">-</dd>
-        </div>
-        <div>
-          <dt>기억 주입</dt>
-          <dd th:if="${detail.aiDetail.memoryInjected == null}">-</dd>
-          <dd th:if="${detail.aiDetail.memoryInjected != null}"
-              th:text="${detail.aiDetail.memoryInjected} ? '주입함' : '주입 안 함'">주입함</dd>
-        </div>
-      </dl>
-      <div class="table-wrap">
-        <table class="table call-latency-table">
-          <thead>
-            <tr>
-              <th class="numeric-cell">순서</th>
-              <th>발화자</th>
-              <th class="numeric-cell">응답 지연(ms)</th>
-              <th class="numeric-cell">첫 토큰(ms)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr th:each="turn : ${detail.aiDetail.turns}">
-              <td class="numeric-cell" th:text="${turn.index}">0</td>
-              <td th:text="${turn.role.name() == 'USER'} ? '사용자' : 'AI'">사용자</td>
-              <td class="numeric-cell"
-                  th:text="${turn.endToEndLatencyMillis != null} ? ${#numbers.formatInteger(turn.endToEndLatencyMillis, 1, 'COMMA')} : '-'">-</td>
-              <td class="numeric-cell"
-                  th:text="${turn.llmFirstTokenMillis != null} ? ${#numbers.formatInteger(turn.llmFirstTokenMillis, 1, 'COMMA')} : '-'">-</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </details>
   </div>
 
   <p th:case="'RESULT_PENDING'" class="panel-body muted">통화 결과를 아직 받지 못했습니다.</p>

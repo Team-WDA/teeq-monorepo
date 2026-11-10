@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 대시보드 AI 서버 상태 카드의 자리표시. 페이지가 뜬 뒤 htmx가 요약 조각(ai-server-summary)을 불러와 이 영역을 통째로 바꾼다.
+     요약 조각은 AI 서버가 실패해도 200으로 실패 상태를 돌려주므로 셸의 오류 알림이 뜨지 않는다 -->
+<section id="dashboard-ai-server-status" class="panel dashboard-ai-server-status" th:fragment="dashboard-ai-server-status"
+         th:attr="hx-get=@{/admin/ai-server/summary}" hx-trigger="load" hx-swap="outerHTML">
+  <div class="panel-head"><h2>AI 서버 상태</h2></div>
+  <p class="panel-body muted">AI 서버에서 불러오는 중...</p>
+</section>
+</body>
+</html>

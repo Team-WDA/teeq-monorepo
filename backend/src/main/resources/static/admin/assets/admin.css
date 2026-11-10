@@ -112,6 +112,14 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .usage-chart-bar { display: block; width: 100%; height: var(--bar-height, 0%); background: var(--admin-accent-muted); border-radius: 3px 3px 0 0; }
 .usage-chart-bar-today { background: var(--admin-accent); }
 .usage-chart-label { font-size: 11px; color: var(--admin-text-muted); }
+/* AI 품질·비용 p95 막대: p95가 없는 기간은 줄무늬 막대, 기간이 길면 가로 스크롤 */
+.usage-chart-bar-empty { height: 100%; background: repeating-linear-gradient(45deg, var(--admin-border) 0 4px, transparent 4px 8px); }
+.ai-metrics-chart-scroll { overflow-x: auto; }
+.ai-metrics-chart-scroll .usage-chart-day { flex: 1 0 32px; }
+/* 대시보드 AI 서버 상태 카드: 오늘 / 전체 누적 두 열 */
+.dashboard-ai-server-status { margin-bottom: 16px; }
+.ai-server-status-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+.ai-server-status-line { margin: 4px 0 0; font-size: 13px; }
 
 .limit-summary { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; }
 .limit-percent { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -210,7 +218,8 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
 .call-bubble-role { font-size: 11px; font-weight: 600; color: var(--admin-text-muted); }
 .call-bubble-text { margin: 2px 0 0; white-space: pre-wrap; word-break: break-word; }
 .call-conversation-meta { margin-bottom: 16px; }
-.call-conversation-latency summary { cursor: pointer; color: var(--admin-accent); }
+.call-ai-metric-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.call-ai-metric-grid .dashboard-kpi-value { font-size: 20px; }
 
 /* 피드백: 필터 폼, 통화 상세의 피드백 영역(점수 표, 선택지 목록, 줄바꿈을 지키는 자유 서술) */
 .feedback-filter-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
@@ -251,6 +260,7 @@ body { margin: 0; background: var(--admin-page-background); color: var(--admin-t
   .dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-trend-grid, .dashboard-recent-grid { grid-template-columns: 1fr; }
   .call-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .call-ai-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .call-bubble { max-width: 90%; }
   .login-split { grid-template-columns: 1fr; }
   .login-brand-panel { padding: 24px; }
