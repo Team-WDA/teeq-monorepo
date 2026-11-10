@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 import java.time.Clock;
@@ -11,8 +12,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.UUID;
 import kr.co.teeq.api.call.application.dto.response.CallLimitStatusResponse;
+import kr.co.teeq.api.call.application.dto.response.MemberTodayCallLimitResponse;
 import kr.co.teeq.api.call.core.constant.CallLimitDecision;
 import kr.co.teeq.api.call.core.constant.LimitKind;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
@@ -20,6 +23,7 @@ import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
+import kr.co.teeq.api.member.core.repository.MemberRepository;
 import kr.co.teeq.api.setting.application.service.SettingConfigService;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,14 +58,17 @@ class CallLimitServiceTest {
     @Mock
     private SettingConfigService settingConfigService;
 
+    @Mock
+    private MemberRepository memberRepository;
+
     @BeforeEach
     void stubMemberId() {
-        given(member.getId()).willReturn(memberId);
+        lenient().when(member.getId()).thenReturn(memberId);
     }
 
     private CallLimitService createService(Instant now) {
         return new CallLimitService(callHistoryRepository, callBonusRepository, settingConfigService,
-            Clock.fixed(now, ZoneOffset.UTC), KOREA_ZONE_ID);
+            memberRepository, Clock.fixed(now, ZoneOffset.UTC), KOREA_ZONE_ID);
     }
 
     private void stubSettings() {
@@ -161,6 +168,38 @@ class CallLimitServiceTest {
         createService(Instant.parse("2026-10-16T15:00:00Z")).getTodayStatus(member);
 
         verify(callHistoryRepository).sumDurationSeconds(memberId, nextDayStart, nextDayEnd);
+    }
+
+    @Test
+    void getTodayLimit_overLimit_clampsRemainingToZero() {
+        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.of(member));
+        given(settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_DAY)).willReturn(1800L);
+        stubUsedSeconds(2000);
+
+        MemberTodayCallLimitResponse response = createService(NOON_KST).getTodayLimit(memberId);
+
+        assertThat(response).isEqualTo(new MemberTodayCallLimitResponse(1800, 0, 2000, 0));
+    }
+
+    @Test
+    void getTodayLimit_includesTodayBonus() {
+        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.of(member));
+        given(settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_DAY)).willReturn(1800L);
+        given(callHistoryRepository.sumDurationSeconds(memberId, TODAY_START, TODAY_END)).willReturn(400L);
+        stubBonusSeconds(300);
+
+        MemberTodayCallLimitResponse response = createService(NOON_KST).getTodayLimit(memberId);
+
+        assertThat(response).isEqualTo(new MemberTodayCallLimitResponse(1800, 300, 400, 1700));
+    }
+
+    @Test
+    void getTodayLimit_unknownMember_throwsMemberNotFound() {
+        given(memberRepository.findByIdAndDeletedFalse(memberId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> createService(NOON_KST).getTodayLimit(memberId))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.MEMBER_NOT_FOUND));
     }
 
     @Test
