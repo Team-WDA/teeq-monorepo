@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  회원 허브 공통 머리. 위치 경로, 닉네임·이메일·로그인 방식·가입일, 회원 삭제 버튼, 탭 줄을 그린다.
+  컨텍스트 변수 member, memberTabs, activeTab
+-->
+<header th:fragment="member-hub-header" class="member-hub-header">
+  <nav th:replace="~{admin/fragments/breadcrumb :: breadcrumb('회원 관리', '/admin/members', ${member.nickname})}"></nav>
+  <div class="page-head">
+    <div>
+      <h1 th:text="${member.nickname}">닉네임</h1>
+      <p class="muted">
+        <span th:text="${member.email}">user@example.com</span>
+        · <span th:text="${member.loginType}">APPLE</span>
+        · 가입 <span class="mono" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</span>
+      </p>
+    </div>
+    <div th:replace="~{admin/fragments/member-delete-modal :: member-delete-modal}"></div>
+  </div>
+  <nav th:replace="~{admin/fragments/tab-navigation :: tab-navigation(${memberTabs}, ${activeTab})}"></nav>
+</header>
+</body>
+</html>

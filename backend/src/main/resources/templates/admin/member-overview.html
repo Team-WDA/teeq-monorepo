@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 상세', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
+
+  <section class="panel">
+    <div class="panel-head"><h2>기본 정보</h2></div>
+    <dl class="panel-body member-info-list">
+      <div>
+        <dt>회원 ID</dt>
+        <dd class="mono" th:text="${member.id}">회원 ID</dd>
+      </div>
+      <div>
+        <dt>닉네임</dt>
+        <dd th:text="${member.nickname}">닉네임</dd>
+      </div>
+      <div>
+        <dt>이메일</dt>
+        <dd th:text="${member.email}">user@example.com</dd>
+      </div>
+      <div>
+        <dt>로그인 방식</dt>
+        <dd th:text="${member.loginType}">APPLE</dd>
+      </div>
+      <div>
+        <dt>가입일</dt>
+        <dd class="mono" th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section th:replace="~{admin/fragments/member-call-summary :: member-call-summary}"></section>
+
+  <section class="panel-section">
+    <h2 class="call-history-heading">최근 통화</h2>
+    <section th:replace="~{admin/fragments/call-history-table :: call-history-table}"></section>
+    <p><a class="link link-primary" th:href="@{${allCallsPath}}">전체 보기</a></p>
+  </section>
+</main>
+</body>
+</html>
