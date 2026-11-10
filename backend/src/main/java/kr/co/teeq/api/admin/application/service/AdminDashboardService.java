@@ -109,7 +109,7 @@ public class AdminDashboardService {
 
     private List<RecentMember> recentMembers() {
         return memberRepository.findTop5ByDeletedFalseOrderByCreatedAtDesc().stream()
-            .map(member -> new RecentMember(maskEmail(member.getEmail()), member.getCreatedAt()))
+            .map(member -> new RecentMember(member.getId(), maskEmail(member.getEmail()), member.getCreatedAt()))
             .toList();
     }
 
@@ -128,18 +128,19 @@ public class AdminDashboardService {
     }
 
     private RecentFeedback toRecentFeedback(RequiredFeedback feedback) {
-        return new RecentFeedback(REQUIRED_FEEDBACK_KIND, feedback.getRating(), feedback.getCreatedAt(), null);
+        return new RecentFeedback(feedback.getCallHistory().getMember().getId(), REQUIRED_FEEDBACK_KIND,
+            feedback.getRating(), feedback.getCreatedAt(), null);
     }
 
     private RecentFeedback toRecentFeedback(DetailedFeedback feedback) {
-        return new RecentFeedback(DETAILED_FEEDBACK_KIND, null, feedback.getCreatedAt(),
-            preview(feedback.getFreeText()));
+        return new RecentFeedback(feedback.getCallHistory().getMember().getId(), DETAILED_FEEDBACK_KIND, null,
+            feedback.getCreatedAt(), preview(feedback.getFreeText()));
     }
 
     private List<RecentBonus> recentBonuses() {
         return callBonusRepository.findTop5ByDeletedFalseOrderByCreatedAtDesc().stream()
-            .map(bonus -> new RecentBonus(bonus.getBonusDate(), bonus.getSeconds(), bonus.getReason(),
-                bonus.getCreatedAt()))
+            .map(bonus -> new RecentBonus(bonus.getMember().getId(), bonus.getBonusDate(), bonus.getSeconds(),
+                bonus.getReason(), bonus.getCreatedAt()))
             .toList();
     }
 

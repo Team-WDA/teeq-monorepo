@@ -16,11 +16,14 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import kr.co.teeq.api.admin.application.dto.response.AdminDashboardResponse;
 import kr.co.teeq.api.admin.application.dto.response.AdminDashboardResponse.RecentFeedback;
 import kr.co.teeq.api.call.application.dto.response.CallUsageResponse;
 import kr.co.teeq.api.call.application.service.CallUsageService;
 import kr.co.teeq.api.call.core.constant.CallUsageUnit;
+import kr.co.teeq.api.call.core.entity.CallBonus;
+import kr.co.teeq.api.call.core.entity.CallHistory;
 import kr.co.teeq.api.call.core.repository.CallBonusRepository;
 import kr.co.teeq.api.call.core.repository.CallHistoryRepository;
 import kr.co.teeq.api.feedback.core.entity.DetailedFeedback;
@@ -44,6 +47,7 @@ class AdminDashboardServiceTest {
     // KST 2026-10-20 12:00
     private static final Instant NOW = Instant.parse("2026-10-20T03:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 20);
+    private static final UUID FEEDBACK_MEMBER_ID = UUID.randomUUID();
     private static final LocalDate FOURTEEN_DAYS_START = LocalDate.of(2026, 10, 7);
 
     @Mock
@@ -197,6 +201,8 @@ class AdminDashboardServiceTest {
     void getDashboard_recentMembers_masksEmailExceptFirstCharacter() {
         givenUsages(0, 0, 0, 900_000);
         Member member = mock(Member.class);
+        UUID memberId = UUID.randomUUID();
+        given(member.getId()).willReturn(memberId);
         given(member.getEmail()).willReturn("minji@gmail.com");
         given(member.getCreatedAt()).willReturn(NOW);
         given(memberRepository.findTop5ByDeletedFalseOrderByCreatedAtDesc()).willReturn(List.of(member));
@@ -206,6 +212,27 @@ class AdminDashboardServiceTest {
         assertThat(response.recentMembers()).hasSize(1);
         assertThat(response.recentMembers().getFirst().maskedEmail()).isEqualTo("m***@gmail.com");
         assertThat(response.recentMembers().getFirst().joinedAt()).isEqualTo(NOW);
+        assertThat(response.recentMembers().getFirst().memberId()).isEqualTo(memberId);
+    }
+
+    @Test
+    void getDashboard_recentBonuses_fillsMemberId() {
+        givenUsages(0, 0, 0, 900_000);
+        UUID memberId = UUID.randomUUID();
+        Member member = mock(Member.class);
+        given(member.getId()).willReturn(memberId);
+        CallBonus bonus = mock(CallBonus.class);
+        given(bonus.getMember()).willReturn(member);
+        given(bonus.getBonusDate()).willReturn(TODAY);
+        given(bonus.getSeconds()).willReturn(600);
+        given(bonus.getReason()).willReturn("이벤트");
+        given(bonus.getCreatedAt()).willReturn(NOW);
+        given(callBonusRepository.findTop5ByDeletedFalseOrderByCreatedAtDesc()).willReturn(List.of(bonus));
+
+        AdminDashboardResponse response = createService().getDashboard();
+
+        assertThat(response.recentBonuses()).hasSize(1);
+        assertThat(response.recentBonuses().getFirst().memberId()).isEqualTo(memberId);
     }
 
     @Test
@@ -232,10 +259,21 @@ class AdminDashboardServiceTest {
         assertThat(recentFeedbacks.get(1).freeTextPreview()).isEqualTo("가".repeat(40));
         assertThat(recentFeedbacks.get(3).freeTextPreview()).isNull();
         assertThat(recentFeedbacks.get(0).createdAt()).isEqualTo(NOW.minusSeconds(60));
+        assertThat(recentFeedbacks).extracting(RecentFeedback::memberId).containsOnly(FEEDBACK_MEMBER_ID);
+    }
+
+    private CallHistory feedbackCallHistory() {
+        Member member = mock(Member.class);
+        given(member.getId()).willReturn(FEEDBACK_MEMBER_ID);
+        CallHistory callHistory = mock(CallHistory.class);
+        given(callHistory.getMember()).willReturn(member);
+        return callHistory;
     }
 
     private RequiredFeedback requiredFeedback(int rating, Instant createdAt) {
         RequiredFeedback feedback = mock(RequiredFeedback.class);
+        CallHistory callHistory = feedbackCallHistory();
+        given(feedback.getCallHistory()).willReturn(callHistory);
         given(feedback.getRating()).willReturn(rating);
         given(feedback.getCreatedAt()).willReturn(createdAt);
         return feedback;
@@ -243,6 +281,8 @@ class AdminDashboardServiceTest {
 
     private DetailedFeedback detailedFeedback(String freeText, Instant createdAt) {
         DetailedFeedback feedback = mock(DetailedFeedback.class);
+        CallHistory callHistory = feedbackCallHistory();
+        given(feedback.getCallHistory()).willReturn(callHistory);
         given(feedback.getFreeText()).willReturn(freeText);
         given(feedback.getCreatedAt()).willReturn(createdAt);
         return feedback;
