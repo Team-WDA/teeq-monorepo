@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 버그 제보 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 statusFilter, sourceFilter, statuses, sources -->
+<!-- 버그 제보 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 bugReportBasePath(생략하면 /admin/bug-reports), statusFilter, sourceFilter, statuses, sources -->
 <section class="panel" th:fragment="bug-report-filter-form">
-  <form class="panel-body bug-report-filter-form" method="get" th:action="@{/admin/bug-reports}">
+  <form class="panel-body bug-report-filter-form" method="get" th:action="@{${bugReportBasePath ?: '/admin/bug-reports'}}">
     <label>
       <span>처리 상태</span>
       <select class="select select-sm" name="status">

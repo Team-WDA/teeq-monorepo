@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 온보딩 응답 이력 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 memberId, from, to, optionCode, activeFilter, optionCodes -->
+<!-- 온보딩 응답 이력 필터(GET 폼, 값은 쿼리스트링에 남는다). 컨텍스트 변수 onboardingBasePath(생략하면 /admin/onboarding-submissions), showMember(false면 회원 ID 입력 숨김), memberId, from, to, optionCode, activeFilter, optionCodes -->
 <section class="panel" th:fragment="onboarding-submission-filter-form">
-  <form class="panel-body onboarding-submission-filter-form" method="get" th:action="@{/admin/onboarding-submissions}">
-    <label class="onboarding-submission-filter-field onboarding-submission-filter-member">
+  <form class="panel-body onboarding-submission-filter-form" method="get" th:action="@{${onboardingBasePath ?: '/admin/onboarding-submissions'}}">
+    <label class="onboarding-submission-filter-field onboarding-submission-filter-member" th:if="${showMember == null or showMember}">
       <span class="onboarding-submission-filter-label">회원 ID (선택)</span>
       <input class="input input-sm mono" type="text" name="memberId" th:value="${memberId}" placeholder="비우면 전체 회원">
     </label>

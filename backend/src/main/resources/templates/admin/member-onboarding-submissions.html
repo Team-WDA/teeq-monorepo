@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 온보딩 응답 이력', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
+
+  <section th:replace="~{admin/fragments/onboarding-submission-filter-form :: onboarding-submission-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/onboarding-submission-table :: onboarding-submission-table}"></section>
+
+  <nav th:replace="~{admin/fragments/onboarding-submission-pagination :: onboarding-submission-pagination}"></nav>
+</main>
+</body>
+</html>
