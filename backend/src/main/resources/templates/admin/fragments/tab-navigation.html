@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  화면 안의 탭 줄. 탭마다 다른 경로로 이동하고 activeKey와 같은 키의 탭을 강조한다.
+  tabs: List<AdminTab>, activeKey: 강조할 탭 키
+-->
+<nav th:fragment="tab-navigation(tabs, activeKey)" class="tab-navigation tabs tabs-border" aria-label="탭">
+  <a th:each="tab : ${tabs}" class="tab" th:href="@{${tab.path}}" th:text="${tab.label}"
+     th:classappend="${tab.key == activeKey} ? 'tab-active'"
+     th:attr="aria-current=${tab.key == activeKey} ? 'page'">탭</a>
+</nav>
+</body>
+</html>

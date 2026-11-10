@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  하위 화면 제목 위의 위치 경로. "부모 화면 > 현재 화면"을 보이고 부모 화면은 링크다.
+  parentLabel: 부모 화면 이름, parentPath: 부모 화면 경로(컨텍스트 경로 제외), currentLabel: 현재 화면 이름
+-->
+<nav th:fragment="breadcrumb(parentLabel, parentPath, currentLabel)" class="breadcrumb" aria-label="위치 경로">
+  <a class="breadcrumb-parent" th:href="@{${parentPath}}" th:text="${parentLabel}">회원 관리</a>
+  <span class="breadcrumb-separator" aria-hidden="true">&gt;</span>
+  <span class="breadcrumb-current" aria-current="page" th:text="${currentLabel}">회원 상세</span>
+</nav>
+</body>
+</html>
