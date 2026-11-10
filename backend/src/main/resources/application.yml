@@ -54,3 +54,5 @@ chuseok22:
     enabled: true
     mask-sensitive: false
 
+# AI 서버 집계 조회(관리자 AI 품질·비용 화면) 읽기 타임아웃. 선택 키이며 값은 profile 파일에 둔다.
+# ai-server.metrics.timeout: PT15S 형식(ISO-8601 Duration). 비우면 15초
