@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko" th:replace="~{admin/fragments/shell :: shell('회원 통화 사용량', ~{::main}, 'members')}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<main class="content">
+  <header th:replace="~{admin/fragments/member-hub-header :: member-hub-header}"></header>
+
+  <section th:replace="~{admin/fragments/call-usage-filter-form :: call-usage-filter-form}"></section>
+
+  <section th:replace="~{admin/fragments/call-usage-table :: call-usage-table}"></section>
+</main>
+</body>
+</html>
