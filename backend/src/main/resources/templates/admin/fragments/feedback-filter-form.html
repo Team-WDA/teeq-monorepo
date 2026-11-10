@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 피드백 목록 필터(GET 폼, 값은 쿼리스트링에 남는다). 기간은 필수 피드백 제출일 기준. 컨텍스트 변수 feedbackBasePath, feedbackFrom, feedbackTo, feedbackRating, feedbackRatingOptions, feedbackDetailedOnly -->
+<section class="panel" th:fragment="feedback-filter-form">
+  <form class="panel-body feedback-filter-form" method="get" th:action="@{${feedbackBasePath}}">
+    <label class="feedback-filter-field">
+      <span class="feedback-filter-label">제출일 시작</span>
+      <input class="input input-sm" type="date" name="from" th:value="${feedbackFrom}">
+    </label>
+    <label class="feedback-filter-field">
+      <span class="feedback-filter-label">제출일 종료</span>
+      <input class="input input-sm" type="date" name="to" th:value="${feedbackTo}">
+    </label>
+    <label class="feedback-filter-field">
+      <span class="feedback-filter-label">별점</span>
+      <select class="select select-sm" name="rating">
+        <option value="">전체</option>
+        <option th:each="option : ${feedbackRatingOptions}" th:value="${option}" th:text="|${option}점|"
+                th:selected="${option == feedbackRating}">5점</option>
+      </select>
+    </label>
+    <label class="feedback-filter-checkbox">
+      <input class="checkbox checkbox-sm" type="checkbox" name="detailedOnly" value="true" th:checked="${feedbackDetailedOnly}">
+      <span>상세 피드백이 있는 것만 보기</span>
+    </label>
+    <button class="btn btn-sm btn-primary" type="submit">조회</button>
+  </form>
+</section>
+</body>
+</html>

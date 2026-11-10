@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 피드백 목록 표. 통화 하나가 한 행이고 통화 시각은 통화 상세로 이어진다(세션 ID가 없으면 링크 없음). 컨텍스트 변수 feedbackResult, feedbackMemberColumnVisible, feedbackRevisitIntentionLabels -->
+<section class="panel" th:fragment="feedback-table">
+  <div class="table-wrap">
+    <table class="table feedback-table">
+      <thead>
+        <tr>
+          <th>통화 시작 시각</th>
+          <th th:if="${feedbackMemberColumnVisible}">회원</th>
+          <th class="numeric-cell">별점</th>
+          <th>재방문 의향</th>
+          <th>상세 피드백</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="item : ${feedbackResult.items}">
+          <td class="mono">
+            <a th:if="${item.callSessionId != null}" class="link link-primary"
+               th:href="@{/admin/calls/{callSessionId}(callSessionId=${item.callSessionId})}"
+               th:text="${#temporals.format(item.callStartedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</a>
+            <span th:if="${item.callSessionId == null}"
+                  th:text="${#temporals.format(item.callStartedAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-20 12:00:00</span>
+          </td>
+          <td th:if="${feedbackMemberColumnVisible}">
+            <a class="link link-primary" th:href="@{/admin/members/{memberId}(memberId=${item.memberId})}"
+               th:text="${item.memberNickname ?: '-'}">닉네임</a>
+            <div class="muted" th:text="${item.memberEmail}">user@example.com</div>
+          </td>
+          <td class="numeric-cell" th:text="|${item.rating}점|">5점</td>
+          <td th:text="${feedbackRevisitIntentionLabels[item.revisitIntention.name()]}">다시 이용하고 싶음</td>
+          <td>
+            <span th:if="${item.detailedSubmitted}" class="badge badge-ghost badge-sm">제출함</span>
+            <span th:unless="${item.detailedSubmitted}" class="muted">-</span>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(feedbackResult.items)}">
+          <td class="muted" th:colspan="${feedbackMemberColumnVisible} ? 5 : 4">피드백이 없습니다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 이전/다음 페이지 이동. 링크는 필터를 유지한다. 컨텍스트 변수 feedbackCurrentPageNumber, feedbackTotalPages, feedbackPreviousPageUrl, feedbackNextPageUrl, feedbackResult -->
+<nav class="member-pagination" aria-label="피드백 페이지 이동" th:fragment="feedback-pagination">
+  <a th:if="${feedbackPreviousPageUrl != null}" class="btn btn-sm btn-ghost" th:href="@{${feedbackPreviousPageUrl}}">이전</a>
+  <span class="muted" th:text="|${feedbackCurrentPageNumber} / ${feedbackTotalPages}|">1 / 1</span>
+  <a th:if="${feedbackNextPageUrl != null}" class="btn btn-sm btn-ghost" th:href="@{${feedbackNextPageUrl}}">다음</a>
+  <span class="muted">총 <span th:text="${#numbers.formatInteger(feedbackResult.totalElements, 1, 'COMMA')}">0</span>건</span>
+</nav>
+</body>
+</html>
