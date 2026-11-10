@@ -111,6 +111,36 @@ public interface CallHistoryRepository extends JpaRepository<CallHistory, UUID>,
         @Param("unit") String unit, @Param("zoneName") String zoneName,
         @Param("fromInclusive") Instant fromInclusive, @Param("toExclusive") Instant toExclusive);
 
+    // 기간별 비정상 종료 집계 결과. 별칭은 getter 이름과 같아야 한다
+    interface AbnormalCallRow {
+
+        // KST 기준 기간 시작 날짜(yyyy-MM-dd)
+        String getPeriodStart();
+
+        long getAbnormalCount();
+
+    }
+
+    // 기간별(unit: day, month) 비정상 통화 건수. 시작 시각이 [fromInclusive, toExclusive)인 활성 기록만 집계한다.
+    // 비정상 기준은 AbnormalCallCriteria의 이름 목록으로 받는다(status, end_reason은 문자열로 저장된다).
+    // 타입 없는 null은 PostgreSQL에서 bytea로 바인딩돼 실패하므로 기간 경계는 항상 non-null로 넘긴다
+    @Query(value = """
+        select to_char(date_trunc(:unit, started_at at time zone :zoneName), 'YYYY-MM-DD') as "periodStart",
+               count(*) as "abnormalCount"
+        from call_history
+        where deleted = false
+          and started_at >= :fromInclusive
+          and started_at < :toExclusive
+          and (status in (:abnormalStatuses)
+               or (status = 'ENDED' and end_reason in (:abnormalEndReasons)))
+        group by 1
+        order by 1
+        """, nativeQuery = true)
+    List<AbnormalCallRow> aggregateAbnormal(@Param("unit") String unit, @Param("zoneName") String zoneName,
+        @Param("fromInclusive") Instant fromInclusive, @Param("toExclusive") Instant toExclusive,
+        @Param("abnormalStatuses") List<String> abnormalStatuses,
+        @Param("abnormalEndReasons") List<String> abnormalEndReasons);
+
     // 시작 시각이 [fromInclusive, toExclusive)인 활성(deleted = false) 기록 중 실패·대기 중이 아닌 통화가
     // minimumCalls회 이상인 서로 다른 회원 수(관리자 홈의 주간 재통화 회원)
     @Query(value = """
