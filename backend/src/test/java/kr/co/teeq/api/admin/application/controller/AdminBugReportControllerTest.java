@@ -81,7 +81,7 @@ class AdminBugReportControllerTest {
 
     private BugReportSummaryResponse summary(BugReportSource source, boolean memberDeleted) {
         return new BugReportSummaryResponse(BUG_REPORT_ID, "앱이 멈춰요", BugReportStatus.RECEIVED, source,
-            "a@teeq.com", memberDeleted, LOGGED_AT);
+            MEMBER_ID, "a@teeq.com", memberDeleted, LOGGED_AT);
     }
 
     private BugReportDetailResponse detail(
@@ -101,7 +101,7 @@ class AdminBugReportControllerTest {
 
     @Test
     void list_rendersRowsWithBadgesAndKeepsFilters() throws Exception {
-        given(bugReportQueryService.search(any(), any(), any())).willReturn(
+        given(bugReportQueryService.search(any(), any(), any(), any())).willReturn(
             new BugReportPageResponse(List.of(summary(BugReportSource.DEVELOPER_CONSOLE, true)), 1, 20, 41));
 
         mockMvc.perform(get(PATH).with(asAdmin())
@@ -123,25 +123,43 @@ class AdminBugReportControllerTest {
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(bugReportQueryService).search(
-            eq(BugReportStatus.RECEIVED), eq(BugReportSource.DEVELOPER_CONSOLE), pageable.capture());
+            eq(BugReportStatus.RECEIVED), eq(BugReportSource.DEVELOPER_CONSOLE), eq(null), pageable.capture());
         assertThat(pageable.getValue().getPageNumber()).isEqualTo(1);
     }
 
     @Test
+    void bugReports_rendersMemberLinkForActiveMemberAndPlainTextForDeleted() throws Exception {
+        given(bugReportQueryService.search(any(), any(), any(), any())).willReturn(new BugReportPageResponse(
+            List.of(summary(BugReportSource.USER, false)), 0, 20, 1));
+
+        mockMvc.perform(get(PATH).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("href=\"/admin/members/" + MEMBER_ID + "\"")));
+
+        given(bugReportQueryService.search(any(), any(), any(), any())).willReturn(new BugReportPageResponse(
+            List.of(summary(BugReportSource.USER, true)), 0, 20, 1));
+
+        mockMvc.perform(get(PATH).with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("a@teeq.com")))
+            .andExpect(content().string(not(containsString("/admin/members/"))));
+    }
+
+    @Test
     void list_userSourceWithActiveMember_showsGeneralBadgeWithoutWithdrawnBadge() throws Exception {
-        given(bugReportQueryService.search(any(), any(), any()))
+        given(bugReportQueryService.search(any(), any(), any(), any()))
             .willReturn(new BugReportPageResponse(List.of(summary(BugReportSource.USER, false)), 0, 20, 1));
 
         mockMvc.perform(get(PATH).with(asAdmin()))
             .andExpect(status().isOk())
             .andExpect(content().string(containsString("일반")))
             .andExpect(content().string(not(containsString("탈퇴"))));
-        verify(bugReportQueryService).search(eq(null), eq(null), any());
+        verify(bugReportQueryService).search(eq(null), eq(null), eq(null), any());
     }
 
     @Test
     void list_empty_showsEmptyMessage() throws Exception {
-        given(bugReportQueryService.search(any(), any(), any()))
+        given(bugReportQueryService.search(any(), any(), any(), any()))
             .willReturn(new BugReportPageResponse(List.of(), 0, 20, 0));
 
         mockMvc.perform(get(PATH).with(asAdmin()))
@@ -155,7 +173,7 @@ class AdminBugReportControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(view().name("admin/error"));
 
-        verify(bugReportQueryService, never()).search(any(), any(), any());
+        verify(bugReportQueryService, never()).search(any(), any(), any(), any());
     }
 
     @Test
@@ -166,6 +184,8 @@ class AdminBugReportControllerTest {
         mockMvc.perform(get(PATH + "/" + BUG_REPORT_ID).with(asAdmin()))
             .andExpect(status().isOk())
             .andExpect(view().name("admin/bug-report-detail"))
+            .andExpect(content().string(containsString("aria-label=\"위치 경로\"")))
+            .andExpect(content().string(not(containsString("버그 제보 목록으로"))))
             // 본문과 로그 문자열은 이스케이프되어 보인다
             .andExpect(content().string(containsString(ESCAPED_MARKUP)))
             .andExpect(content().string(not(containsString(MARKUP))))
@@ -181,7 +201,11 @@ class AdminBugReportControllerTest {
             .andExpect(content().string(containsString("개발자 콘솔")))
             .andExpect(content().string(containsString("Pixel 9")))
             // 상태 변경 폼
-            .andExpect(content().string(containsString("hx-post=\"/admin/bug-reports/" + BUG_REPORT_ID + "/status\"")));
+            .andExpect(content().string(containsString("hx-post=\"/admin/bug-reports/" + BUG_REPORT_ID + "/status\"")))
+            // 상태 변경 확인 모달: 현재 상태는 선택지에 없으므로 이전값을 직접 싣는다
+            .andExpect(content().string(containsString("data-confirm-title=\"상태를 변경할까요?\"")))
+            .andExpect(content().string(containsString("data-confirm-label=\"상태\"")))
+            .andExpect(content().string(containsString("data-confirm-previous=\"확인 중\"")));
     }
 
     @Test
@@ -248,6 +272,7 @@ class AdminBugReportControllerTest {
             .andExpect(content().string(not(containsString("<option value=\"RESOLVED\""))))
             .andExpect(content().string(containsString("<option value=\"RECEIVED\"")))
             .andExpect(content().string(containsString("<option value=\"IN_PROGRESS\"")))
+            .andExpect(content().string(containsString("data-confirm-previous=\"해결\"")))
             .andExpect(content().string(not(containsString("<html"))));
 
         verify(bugReportCommandService).changeStatus(BUG_REPORT_ID, BugReportStatus.RESOLVED);

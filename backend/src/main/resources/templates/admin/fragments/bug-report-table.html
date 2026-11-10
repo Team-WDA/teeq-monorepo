@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!-- 버그 제보 목록 표. 컨텍스트 변수 result -->
+<!-- 버그 제보 목록 표. 컨텍스트 변수 result, showMember(생략하면 true, false면 회원 열 숨김) -->
 <section class="panel" th:fragment="bug-report-table">
   <div class="table-wrap">
     <table class="table bug-report-table">
@@ -10,7 +10,7 @@
           <th>접수 시각</th>
           <th>출처</th>
           <th>상태</th>
-          <th>회원</th>
+          <th th:if="${showMember == null or showMember}">회원</th>
           <th>본문</th>
         </tr>
       </thead>
@@ -19,8 +19,11 @@
           <td class="mono" th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd HH:mm:ss', 'Asia/Seoul')}">2026-10-22 12:00:00</td>
           <td><span th:replace="~{admin/fragments/bug-report-source-badge :: bug-report-source-badge(${item.source})}"></span></td>
           <td><span th:replace="~{admin/fragments/bug-report-status-badge :: bug-report-status-badge(${item.status})}"></span></td>
-          <td>
-            <span th:text="${item.memberEmail}">user@example.com</span>
+          <td th:if="${showMember == null or showMember}">
+            <span th:if="${item.memberDeleted}" th:text="${item.memberEmail}">user@example.com</span>
+            <a th:unless="${item.memberDeleted}" class="link link-primary"
+               th:href="@{/admin/members/{memberId}(memberId=${item.memberId})}"
+               th:text="${item.memberEmail}">user@example.com</a>
             <span th:if="${item.memberDeleted}" class="badge badge-ghost badge-sm">탈퇴</span>
           </td>
           <td>
@@ -29,7 +32,7 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(result.items)}">
-          <td class="muted" colspan="5">버그 제보가 없습니다.</td>
+          <td class="muted" th:colspan="${showMember == null or showMember} ? 5 : 4">버그 제보가 없습니다.</td>
         </tr>
       </tbody>
     </table>

@@ -2,10 +2,10 @@
 <html lang="ko" th:replace="~{admin/fragments/shell :: shell('버그 제보 상세', ~{::main}, 'bug-reports')}" xmlns:th="http://www.thymeleaf.org">
 <body>
 <main class="content">
+  <nav th:replace="~{admin/fragments/breadcrumb :: breadcrumb('버그 제보', '/admin/bug-reports', '제보 상세')}"></nav>
   <div class="page-head">
     <div>
       <h1>버그 제보 상세</h1>
-      <p><a class="link link-primary" th:href="@{/admin/bug-reports}">버그 제보 목록으로</a></p>
     </div>
     <form th:replace="~{admin/fragments/bug-report-status-form :: bug-report-status-form}"></form>
   </div>

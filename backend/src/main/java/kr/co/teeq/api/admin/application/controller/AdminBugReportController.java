@@ -47,7 +47,7 @@ public class AdminBugReportController {
         @RequestParam(required = false) BugReportSource source,
         Pageable pageable,
         Model model) {
-        BugReportPageResponse result = bugReportQueryService.search(status, source, clampPage(pageable));
+        BugReportPageResponse result = bugReportQueryService.search(status, source, null, clampPage(pageable));
 
         long totalPages = (result.totalElements() + result.size() - 1) / result.size();
         model.addAttribute("statusFilter", status);
