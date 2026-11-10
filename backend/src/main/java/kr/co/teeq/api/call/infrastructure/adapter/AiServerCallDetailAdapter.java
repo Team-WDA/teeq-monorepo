@@ -7,9 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 import kr.co.teeq.api.call.core.port.AiCallDetail;
 import kr.co.teeq.api.call.core.port.AiCallDetailPort;
+import kr.co.teeq.api.call.core.port.AiCallQuality;
 import kr.co.teeq.api.call.core.port.AiCallResultStatus;
 import kr.co.teeq.api.call.core.port.AiCallTurn;
 import kr.co.teeq.api.call.core.port.AiCallTurnRole;
+import kr.co.teeq.api.call.core.port.AiCallUsage;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.common.infrastructure.properties.AiServerProperties;
@@ -38,6 +40,26 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
     private static final String INTERRUPTED_FIELD = "interrupted";
     private static final String END_TO_END_LATENCY_FIELD = "endToEndLatencyMillis";
     private static final String LLM_FIRST_TOKEN_FIELD = "llmFirstTokenMillis";
+    private static final String TTS_FIRST_BYTE_FIELD = "ttsFirstByteMillis";
+    private static final String TRANSCRIPTION_DELAY_FIELD = "transcriptionDelayMillis";
+    private static final String END_OF_TURN_DELAY_FIELD = "endOfTurnDelayMillis";
+    private static final String QUALITY_FIELD = "quality";
+    private static final String P50_LATENCY_FIELD = "p50LatencyMillis";
+    private static final String P95_LATENCY_FIELD = "p95LatencyMillis";
+    private static final String USER_INTERRUPTIONS_FIELD = "userInterruptions";
+    private static final String EARLY_HANGUP_FIELD = "earlyHangup";
+    private static final String FIRST_AI_AUDIO_FIELD = "firstAiAudioMillis";
+    private static final String PROMPT_VERSION_FIELD = "promptVersion";
+    private static final String CALL_INDEX_FIELD = "callIndex";
+    private static final String USAGE_FIELD = "usage";
+    private static final String KIND_FIELD = "kind";
+    private static final String PROVIDER_FIELD = "provider";
+    private static final String MODEL_FIELD = "model";
+    private static final String AUDIO_SECONDS_FIELD = "audioSeconds";
+    private static final String INPUT_TOKENS_FIELD = "inputTokens";
+    private static final String CACHED_INPUT_TOKENS_FIELD = "cachedInputTokens";
+    private static final String OUTPUT_TOKENS_FIELD = "outputTokens";
+    private static final String CHARS_FIELD = "chars";
     private static final String DETAIL_FIELD = "detail";
     private static final String CODE_FIELD = "code";
     private static final String SESSION_NOT_FOUND_CODE = "SESSION_NOT_FOUND";
@@ -90,7 +112,12 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
             readText(responseBody.get(LLM_MODEL_FIELD)),
             readCost(responseBody.get(ESTIMATED_COST_FIELD)),
             responseBody.get(MEMORY_INJECTED_FIELD) instanceof Boolean memoryInjected ? memoryInjected : null,
-            readTurns(responseBody.get(TURNS_FIELD))));
+            readTurns(responseBody.get(TURNS_FIELD)),
+            readQuality(responseBody.get(QUALITY_FIELD)),
+            readMillis(responseBody.get(FIRST_AI_AUDIO_FIELD)),
+            readText(responseBody.get(PROMPT_VERSION_FIELD)),
+            readMillis(responseBody.get(CALL_INDEX_FIELD)),
+            readUsages(responseBody.get(USAGE_FIELD))));
     }
 
     // FastAPI는 detail 아래에 code를 감싸 내리고 문서에는 평평한 형태라 둘 다 받는다.
@@ -144,7 +171,36 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
         String text = turn.get(TEXT_FIELD) instanceof String value ? value : "";
         boolean interrupted = turn.get(INTERRUPTED_FIELD) instanceof Boolean value && value;
         return new AiCallTurn(index, readRole(turn.get(ROLE_FIELD)), text, interrupted,
-            readMillis(turn.get(END_TO_END_LATENCY_FIELD)), readMillis(turn.get(LLM_FIRST_TOKEN_FIELD)));
+            readMillis(turn.get(END_TO_END_LATENCY_FIELD)), readMillis(turn.get(LLM_FIRST_TOKEN_FIELD)),
+            readMillis(turn.get(TTS_FIRST_BYTE_FIELD)), readMillis(turn.get(TRANSCRIPTION_DELAY_FIELD)),
+            readMillis(turn.get(END_OF_TURN_DELAY_FIELD)));
+    }
+
+    // 품질 지표는 선택 값이라 객체가 아니면 null이다
+    private AiCallQuality readQuality(Object rawQuality) {
+        if (!(rawQuality instanceof Map<?, ?> quality)) {
+            return null;
+        }
+        return new AiCallQuality(readMillis(quality.get(P50_LATENCY_FIELD)), readMillis(quality.get(P95_LATENCY_FIELD)),
+            readMillis(quality.get(USER_INTERRUPTIONS_FIELD)),
+            quality.get(EARLY_HANGUP_FIELD) instanceof Boolean earlyHangup ? earlyHangup : null);
+    }
+
+    // 사용량은 선택 값이라 배열이 아니면 빈 목록이고 객체가 아닌 항목은 건너뛴다
+    private List<AiCallUsage> readUsages(Object rawUsages) {
+        if (!(rawUsages instanceof List<?> rawUsageList)) {
+            return List.of();
+        }
+        List<AiCallUsage> usages = new ArrayList<>();
+        for (Object rawUsage : rawUsageList) {
+            if (rawUsage instanceof Map<?, ?> usage) {
+                usages.add(new AiCallUsage(readText(usage.get(KIND_FIELD)), readText(usage.get(PROVIDER_FIELD)),
+                    readText(usage.get(MODEL_FIELD)), readCost(usage.get(AUDIO_SECONDS_FIELD)),
+                    readLong(usage.get(INPUT_TOKENS_FIELD)), readLong(usage.get(CACHED_INPUT_TOKENS_FIELD)),
+                    readLong(usage.get(OUTPUT_TOKENS_FIELD)), readLong(usage.get(CHARS_FIELD))));
+            }
+        }
+        return usages;
     }
 
     private AiCallTurnRole readRole(Object rawRole) {
@@ -168,8 +224,13 @@ public class AiServerCallDetailAdapter implements AiCallDetailPort {
         return rawCost instanceof Number number ? new BigDecimal(number.toString()) : null;
     }
 
+    // 밀리초 외에 정수 값(통화 횟수, 끼어들기 횟수)도 같은 규칙(숫자만 Integer, 아니면 null)으로 읽는다
     private Integer readMillis(Object rawMillis) {
         return rawMillis instanceof Number number ? number.intValue() : null;
+    }
+
+    private Long readLong(Object rawNumber) {
+        return rawNumber instanceof Number number ? number.longValue() : null;
     }
 
     private CustomException invalidResponse(String reason) {

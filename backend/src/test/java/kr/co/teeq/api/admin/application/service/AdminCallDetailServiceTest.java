@@ -44,7 +44,8 @@ class AdminCallDetailServiceTest {
     @Test
     void 대화가_있으면_LOADED이고_AI_상세를_담는다() {
         CallHistoryItemResponse call = call();
-        AiCallDetail detail = detail(List.of(new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, null, null)));
+        AiCallDetail detail = detail(List.of(
+            new AiCallTurn(0, AiCallTurnRole.USER, "안녕", false, null, null, null, null, null)));
         given(callHistoryQueryService.getBySessionId(SESSION_ID)).willReturn(call);
         given(aiCallDetailPort.find(SESSION_ID)).willReturn(Optional.of(detail));
 
@@ -129,7 +130,8 @@ class AdminCallDetailServiceTest {
     }
 
     private AiCallDetail detail(AiCallResultStatus resultStatus, List<AiCallTurn> turns) {
-        return new AiCallDetail(SESSION_ID, resultStatus, null, null, null, null, turns);
+        return new AiCallDetail(SESSION_ID, resultStatus, null, null, null, null, turns, null, null, null, null,
+            List.of());
     }
 
 }

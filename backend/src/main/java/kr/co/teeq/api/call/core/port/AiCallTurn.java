@@ -9,7 +9,10 @@ public record AiCallTurn(
     String text,
     boolean interrupted,
     Integer endToEndLatencyMillis,
-    Integer llmFirstTokenMillis
+    Integer llmFirstTokenMillis,
+    Integer ttsFirstByteMillis,
+    Integer transcriptionDelayMillis,
+    Integer endOfTurnDelayMillis
 ) {
 
 }
