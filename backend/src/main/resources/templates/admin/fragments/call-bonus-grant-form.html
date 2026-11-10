@@ -9,21 +9,26 @@
 -->
 <section class="panel" th:fragment="call-bonus-grant-form">
   <div class="panel-head"><h2>추가 통화 시간 부여</h2></div>
-  <form class="panel-body call-bonus-grant-form" method="post" th:action="@{/admin/members/{memberId}/call-bonuses/grant(memberId=${member.id})}">
+  <form class="panel-body call-bonus-grant-form" method="post"
+        th:action="@{/admin/members/{memberId}/call-bonuses/grant(memberId=${member.id})}"
+        data-confirm-title="추가 통화 시간을 부여할까요?" th:data-confirm-subject="${member.nickname}">
     <ul class="call-bonus-form-errors" role="alert" th:if="${formErrorMessages != null}">
       <li th:each="formErrorMessage : ${formErrorMessages}" th:text="${formErrorMessage}">입력값이 올바르지 않습니다.</li>
     </ul>
     <label class="call-bonus-field">
       <span class="call-bonus-label">추가 시간(초, 1~3600)</span>
-      <input class="input input-sm" type="number" step="1" name="seconds" th:value="${submittedSeconds}" required>
+      <input class="input input-sm" type="number" step="1" name="seconds" th:value="${submittedSeconds}" required
+             data-confirm-label="추가 시간(초)" data-confirm-previous="">
     </label>
     <label class="call-bonus-field">
       <span class="call-bonus-label">유효 날짜 (비우면 오늘)</span>
-      <input class="input input-sm" type="date" name="bonusDate" th:value="${submittedBonusDate}">
+      <input class="input input-sm" type="date" name="bonusDate" th:value="${submittedBonusDate}"
+             data-confirm-label="유효 날짜" data-confirm-previous="">
     </label>
     <label class="call-bonus-field call-bonus-reason-field">
       <span class="call-bonus-label">부여 사유 (200자 이하)</span>
-      <input class="input input-sm" type="text" name="reason" maxlength="200" th:value="${submittedReason}" required>
+      <input class="input input-sm" type="text" name="reason" maxlength="200" th:value="${submittedReason}" required
+             data-confirm-label="사유" data-confirm-previous="">
     </label>
     <button class="btn btn-sm btn-primary" type="submit">부여</button>
   </form>
