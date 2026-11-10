@@ -12,23 +12,28 @@
   <tr th:fragment="setting-row" class="setting-row" th:id="|setting-row-${setting.key}|"
       th:with="editorValue=${submittedValue != null ? submittedValue : setting.value}">
     <td class="setting-name-cell">
-      <div class="setting-key mono" th:text="${setting.key}">CALL_MAX_SECONDS_PER_SESSION</div>
+      <div class="setting-key" th:text="${setting.displayName}">통화 1회 최대 시간(초)</div>
+      <div class="setting-key-name mono muted" th:text="${setting.key}">CALL_MAX_SECONDS_PER_SESSION</div>
       <div class="setting-description muted" th:text="${setting.description}">설명</div>
     </td>
     <td class="setting-value-cell">
       <form class="setting-form" method="post" sec:authorize="hasRole('SUPER_ADMIN')"
             th:action="@{/admin/settings/{key}(key=${setting.key})}"
             th:attr="hx-post=@{/admin/settings/{key}(key=${setting.key})}"
-            hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']">
+            hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="find button[type='submit']"
+            data-confirm-title="설정을 저장할까요?" th:data-confirm-subject="${setting.displayName}">
         <textarea th:if="${setting.multilineValue()}" class="textarea textarea-bordered setting-multiline-input"
+                  data-confirm-label="값" th:data-confirm-previous="${setting.value}"
                   name="value" rows="4" th:classappend="${rowErrorMessage != null} ? 'textarea-error'"
-                  th:attr="aria-label=|${setting.key} 값|" th:text="${editorValue}"></textarea>
+                  th:attr="aria-label=|${setting.displayName} 값|" th:text="${editorValue}"></textarea>
         <input th:if="${setting.integerValue()}" class="input input-bordered setting-number-input"
                type="number" step="1" name="value" th:value="${editorValue}"
-               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.key} 값|">
+               data-confirm-label="값" th:data-confirm-previous="${setting.value}"
+               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.displayName} 값|">
         <input th:unless="${setting.multilineValue() or setting.integerValue()}"
+               data-confirm-label="값" th:data-confirm-previous="${setting.value}"
                class="input input-bordered setting-text-input" type="text" name="value" th:value="${editorValue}"
-               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.key} 값|">
+               th:classappend="${rowErrorMessage != null} ? 'input-error'" th:attr="aria-label=|${setting.displayName} 값|">
 
         <p th:if="${rowErrorMessage != null}" class="setting-row-error" role="alert" th:text="${rowErrorMessage}">
           설정 값이 올바르지 않습니다.
@@ -43,7 +48,8 @@
           <button type="button" class="btn btn-sm btn-ghost" th:disabled="${setting.usingDefaultValue()}"
                   th:attr="hx-post=@{/admin/settings/{key}/reset(key=${setting.key})}"
                   hx-target="closest tr" hx-swap="outerHTML" hx-disabled-elt="this"
-                  hx-confirm="기본값으로 되돌릴까요?">기본값으로 되돌리기</button>
+                  data-confirm-title="기본값으로 되돌릴까요?" th:data-confirm-subject="${setting.displayName}"
+                  th:data-confirm-message="|기본값: ${setting.defaultValue}|">기본값으로 되돌리기</button>
           <button class="btn btn-sm btn-primary" type="submit">저장</button>
         </div>
       </form>

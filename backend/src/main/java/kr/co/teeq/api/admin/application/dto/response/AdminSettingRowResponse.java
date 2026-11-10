@@ -1,6 +1,7 @@
 package kr.co.teeq.api.admin.application.dto.response;
 
 import java.time.Instant;
+import kr.co.teeq.api.admin.application.view.SettingKeyDisplayName;
 import kr.co.teeq.api.setting.application.dto.response.SettingConfigResponse;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
 import kr.co.teeq.api.setting.core.constant.SettingValueType;
@@ -10,6 +11,7 @@ import kr.co.teeq.api.setting.core.constant.SettingValueType;
  */
 public record AdminSettingRowResponse(
     String key,
+    String displayName,
     String value,
     SettingValueType valueType,
     String description,
@@ -19,8 +21,9 @@ public record AdminSettingRowResponse(
 
     // 설정 응답의 키는 SettingKey 상수 이름이므로 기본값을 그대로 찾을 수 있다
     public static AdminSettingRowResponse from(SettingConfigResponse response) {
-        return new AdminSettingRowResponse(response.key(), response.value(), response.valueType(),
-            response.description(), response.updatedAt(), SettingKey.valueOf(response.key()).defaultValue());
+        return new AdminSettingRowResponse(response.key(), SettingKeyDisplayName.of(response.key()), response.value(),
+            response.valueType(), response.description(), response.updatedAt(),
+            SettingKey.valueOf(response.key()).defaultValue());
     }
 
     public boolean usingDefaultValue() {

@@ -4,6 +4,8 @@ import com.chuseok22.logging.annotation.LogMonitoring;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Optional;
 import kr.co.teeq.api.admin.application.dto.response.AdminSettingRowResponse;
+import kr.co.teeq.api.admin.application.view.AdminTabs;
+import kr.co.teeq.api.admin.application.view.SettingGroup;
 import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.setting.application.dto.request.SettingConfigUpdateRequest;
@@ -39,10 +41,21 @@ public class AdminSettingController {
 
     @LogMonitoring
     @GetMapping
-    public String settings(Model model) {
+    public String settings() {
+        return "redirect:/admin/settings/" + SettingGroup.CALL_LIMITS.path();
+    }
+
+    @LogMonitoring
+    @GetMapping("/{group}")
+    public String settingsGroup(@PathVariable String group, Model model) {
+        SettingGroup settingGroup = SettingGroup.fromPath(group)
+            .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
         model.addAttribute("settings", settingConfigService.getAll().stream()
+            .filter(setting -> settingGroup.keys().stream().anyMatch(key -> key.name().equals(setting.key())))
             .map(AdminSettingRowResponse::from)
             .toList());
+        model.addAttribute("settingTabs", AdminTabs.settings());
+        model.addAttribute("activeTab", settingGroup.path());
         return SETTINGS_VIEW;
     }
 
