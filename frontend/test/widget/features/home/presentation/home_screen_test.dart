@@ -12,6 +12,7 @@ import 'package:teeq/core/error/error_handler.dart';
 import 'package:teeq/core/permission/microphone_permission_prompt.dart';
 import 'package:teeq/core/router/app_routes.dart';
 import 'package:teeq/core/ui/button/app_close_button.dart';
+import 'package:teeq/core/ui/button/primary_filled_button.dart';
 import 'package:teeq/core/ui/progress/full_screen_loading_indicator.dart';
 import 'package:teeq/features/feedback/domain/pending_feedback.dart';
 import 'package:teeq/features/home/data/home_repository_impl.dart';
@@ -68,19 +69,20 @@ const _callStubText = 'CALL-SCREEN';
 const _returnHomeButtonText = '홈으로 돌아가기';
 const _closeButtonText = '닫기';
 const _callGuideTitle = '통화 전에 잠깐!';
+const _callGuideStartButtonText = '통화 시작';
 
-/// 통화 전 안내 모달의 X 버튼을 눌러 닫는다.
+/// 통화 전 안내 모달의 "통화 시작" 버튼을 눌러 닫는다.
 Future<void> _closeCallGuideDialog(WidgetTester tester) async {
   await tester.tap(
     find.descendant(
       of: find.byType(CallGuideDialog),
-      matching: find.byType(AppCloseButton),
+      matching: find.text(_callGuideStartButtonText),
     ),
   );
   await tester.pumpAndSettle();
 }
 
-/// "통화하기"를 누르고 안내 모달을 X로 닫아 통화 화면까지 연다.
+/// "통화하기"를 누르고 안내 모달의 "통화 시작"을 눌러 통화 화면까지 연다.
 Future<void> _startCall(WidgetTester tester) async {
   await tester.tap(find.text('통화하기'));
   await tester.pumpAndSettle();
@@ -474,7 +476,52 @@ void main() {
       expect(find.text(_callStubText), findsNothing);
     });
 
-    testWidgets('X로_닫으면_모달이_사라지고_통화_화면으로_이동한다', (tester) async {
+    testWidgets('X_없이_통화_시작_버튼만_있다', (tester) async {
+      final setUp = _setUp(FakeHomeRepository(summary: _summary));
+      await _pumpRoutedHome(tester, setUp.container);
+
+      await tester.tap(find.text('통화하기'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byType(CallGuideDialog),
+          matching: find.byType(AppCloseButton),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(CallGuideDialog),
+          matching: find.text(_callGuideStartButtonText),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('통화_시작_버튼을_연타해도_한_번만_닫힌다', (tester) async {
+      final setUp = _setUp(FakeHomeRepository(summary: _summary));
+      final router = await _pumpRoutedHome(tester, setUp.container);
+
+      await tester.tap(find.text('통화하기'));
+      await tester.pumpAndSettle();
+      // 닫힘 애니메이션 중에는 실제 탭이 막히므로 같은 탭 핸들러를 직접 연달아 호출한다.
+      final onPressed = tester
+          .widget<PrimaryFilledButton>(find.byType(PrimaryFilledButton))
+          .onPressed!;
+      onPressed();
+      onPressed();
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(_callStubText), findsOneWidget);
+      // 팝업이 두 번 닫혔다면 아래 홈까지 닫혔을 것이므로, 한 번 pop으로 홈에 돌아오는지 확인한다.
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(_currentPath(router), AppRoutes.home);
+    });
+
+    testWidgets('통화_시작을_누르면_모달이_사라지고_통화_화면으로_이동한다', (tester) async {
       final setUp = _setUp(FakeHomeRepository(summary: _summary));
       final router = await _pumpRoutedHome(tester, setUp.container);
 
