@@ -201,7 +201,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _openFeedbackFlow(pendingFeedback.callSessionId);
   }
 
-  /// 통화 전 안내 모달을 먼저 띄우고, X로 닫으면 통화 화면을 연다.
+  /// 통화 전 안내 모달을 먼저 띄우고, "통화 시작"을 누르면 통화 화면을 연다.
   /// 모달이 떠 있는 동안 다시 눌려도 모달을 또 띄우지 않고, 대기 피드백 자동 열림도 막는다.
   Future<void> _openCallFlow() async {
     if (_isCallFlowOpening || _isCallGuideDialogOpen) {
