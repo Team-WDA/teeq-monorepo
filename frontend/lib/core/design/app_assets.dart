@@ -5,6 +5,7 @@ import 'package:teeq/features/onboarding/domain/character_type.dart';
 abstract final class AppAssets {
   static const String _icons = 'assets/icons';
   static const String _images = 'assets/images';
+  static const String _sounds = 'assets/sounds';
 
   static const String arrowBackIcon = '$_icons/arrow_back.svg';
   static const String checkIcon = '$_icons/check.svg';
@@ -96,4 +97,10 @@ abstract final class AppAssets {
       '$_icons/call_control_background.svg';
   static const String callEndControlBackground =
       '$_icons/call_end_control_background.svg';
+
+  // 통화 화면 효과음. WAV 파일은 같은 이름·형식으로 교체한다.
+  static const String callRingtoneSound = '$_sounds/call_ringtone.wav';
+  static const String callConnectingToneSound =
+      '$_sounds/call_connecting_tone.wav';
+  static const String callEndToneSound = '$_sounds/call_end_tone.wav';
 }

@@ -53,6 +53,10 @@ dependencies:
   permission_handler: ^13.0.2
   wakelock_plus: ^1.8.2
   flutter_foreground_task: ^11.0.3
+  audioplayers: ^6.8.1
+  vibration: ^3.2.1
+  proximity_sensor: ^2.0.0
+  audio_session: ^0.2.4
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +91,7 @@ flutter:
     - assets/icons/
     - assets/images/
     - assets/legal/
+    - assets/sounds/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
