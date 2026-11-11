@@ -39,17 +39,8 @@ class CallPhaseBottomContent extends StatelessWidget {
           ),
         ),
       ),
-      // 워커가 보이기 전에는 종료만 동작한다(확인 없이 끝난다). 스피커·음소거는 누를 수만 있다.
-      CallStarting() || CallConnecting() => _controls(
-        CallControlsBar(
-          isSpeakerOn: false,
-          isMuted: false,
-          onSpeakerPressed: _ignorePress,
-          onEndPressed: controller.requestEnd,
-          onMutePressed: _ignorePress,
-        ),
-      ),
-      CallInProgress(:final isSpeakerOn, :final isMuted) => _controls(
+      // 워커가 보이기 전에도 스피커·음소거를 고를 수 있고, 종료는 확인 없이 끝난다.
+      CallControlsPhase(:final isSpeakerOn, :final isMuted) => _controls(
         CallControlsBar(
           isSpeakerOn: isSpeakerOn,
           isMuted: isMuted,
@@ -71,6 +62,4 @@ class CallPhaseBottomContent extends StatelessWidget {
     bottom: AppLayout.callControlsBottomOffset,
     child: controlsBar,
   );
-
-  static void _ignorePress() {}
 }

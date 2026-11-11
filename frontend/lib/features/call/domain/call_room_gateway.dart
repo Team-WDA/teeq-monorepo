@@ -11,9 +11,11 @@ import 'package:teeq/features/call/domain/call_room_event.dart';
 abstract interface class CallRoomGateway {
   Stream<CallRoomEvent> get events;
 
+  /// [isMicrophoneMuted]가 true이면 연결 직후 마이크를 켜지 않고 음소거 상태로 둔다.
   Future<void> connect({
     required String serverUrl,
     required String accessToken,
+    bool isMicrophoneMuted = false,
   });
 
   /// 최신 토큰으로 다시 연결한다. 성공하면 true.

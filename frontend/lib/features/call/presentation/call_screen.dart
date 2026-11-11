@@ -29,7 +29,8 @@ class CallScreen extends ConsumerStatefulWidget {
   ConsumerState<CallScreen> createState() => _CallScreenState();
 }
 
-class _CallScreenState extends ConsumerState<CallScreen> {
+class _CallScreenState extends ConsumerState<CallScreen>
+    with WidgetsBindingObserver {
   /// 종료 이동을 한 번만 하도록 막는다.
   bool _hasNavigated = false;
 
@@ -39,6 +40,34 @@ class _CallScreenState extends ConsumerState<CallScreen> {
 
   CallSessionController get _controller =>
       ref.read(callSessionControllerProvider.notifier);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// 앱이 백그라운드로 가고 돌아오는 것만 컨트롤러에 전달한다.
+  /// 알림 창을 내리는 등 잠깐 가려지는 `inactive`는 벨소리를 멈추지 않도록 무시한다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.paused:
+        _controller.handleAppPaused();
+      case AppLifecycleState.resumed:
+        _controller.handleAppResumed();
+      case AppLifecycleState.inactive ||
+          AppLifecycleState.hidden ||
+          AppLifecycleState.detached:
+        return;
+    }
+  }
 
   /// 하드웨어 뒤로가기와 화면의 뒤로가기 화살표가 함께 쓰는 처리. 카드가 떠 있으면 카드의 닫기와 같다.
   void _handleBack() {

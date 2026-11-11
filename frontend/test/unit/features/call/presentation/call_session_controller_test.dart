@@ -14,9 +14,13 @@ import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/permission/app_permission.dart';
 import 'package:teeq/core/permission/app_permission_status.dart';
 import 'package:teeq/core/permission/permission_handler_gateway.dart';
+import 'package:teeq/features/call/data/audioplayers_call_sound_player.dart';
 import 'package:teeq/features/call/data/call_repository_impl.dart';
 import 'package:teeq/features/call/data/foreground_call_keep_alive.dart';
 import 'package:teeq/features/call/data/livekit_call_room_gateway.dart';
+import 'package:teeq/features/call/data/platform_call_audio_environment.dart';
+import 'package:teeq/features/call/data/platform_call_proximity_screen.dart';
+import 'package:teeq/features/call/data/platform_call_vibrator.dart';
 import 'package:teeq/features/call/domain/call_destination.dart';
 import 'package:teeq/features/call/domain/call_event_message.dart';
 import 'package:teeq/features/call/domain/call_limit_kind.dart';
@@ -34,9 +38,13 @@ import 'package:teeq/features/home/presentation/home_summary_provider.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../../support/fake_app_permission_gateway.dart';
+import '../../../../support/fake_call_audio_environment.dart';
 import '../../../../support/fake_call_keep_alive.dart';
+import '../../../../support/fake_call_proximity_screen.dart';
 import '../../../../support/fake_call_repository.dart';
 import '../../../../support/fake_call_room_gateway.dart';
+import '../../../../support/fake_call_sound_player.dart';
+import '../../../../support/fake_call_vibrator.dart';
 import '../../../../support/fake_current_member_controller.dart';
 import '../../../../support/fake_home_repository.dart';
 
@@ -128,6 +136,10 @@ class _Harness {
     required this.permissionGateway,
     required this.keepAlive,
     required this.errorHandler,
+    required this.soundPlayer,
+    required this.vibrator,
+    required this.audioEnvironment,
+    required this.proximityScreen,
   });
 
   final FakeAsync async;
@@ -137,6 +149,10 @@ class _Harness {
   final FakeAppPermissionGateway permissionGateway;
   final FakeCallKeepAlive keepAlive;
   final _RecordingErrorHandler errorHandler;
+  final FakeCallSoundPlayer soundPlayer;
+  final FakeCallVibrator vibrator;
+  final FakeCallAudioEnvironment audioEnvironment;
+  final FakeCallProximityScreen proximityScreen;
 
   bool isContainerDisposed = false;
 
@@ -183,6 +199,8 @@ void _runWithHarness(
   FakeCallRepository? repository,
   FakeCallRoomGateway? gateway,
   FakeAppPermissionGateway? permissionGateway,
+  void Function(FakeCallAudioEnvironment environment)?
+  configureAudioEnvironment,
 }) {
   fakeAsync((async) {
     final callRepository =
@@ -193,6 +211,12 @@ void _runWithHarness(
         FakeAppPermissionGateway(initialStatus: AppPermissionStatus.granted);
     final keepAlive = FakeCallKeepAlive();
     final errorHandler = _RecordingErrorHandler();
+    final soundPlayer = FakeCallSoundPlayer();
+    final vibrator = FakeCallVibrator();
+    // 게이트(Completer)가 fakeAsync 안에서 만들어지도록 컨테이너 생성 전에 여기서 설정한다.
+    final callAudioEnvironment = FakeCallAudioEnvironment();
+    configureAudioEnvironment?.call(callAudioEnvironment);
+    final proximityScreen = FakeCallProximityScreen();
     final container = ProviderContainer(
       retry: (retryCount, error) => null,
       overrides: [
@@ -200,6 +224,10 @@ void _runWithHarness(
         callRoomGatewayProvider.overrideWithValue(roomGateway),
         appPermissionGatewayProvider.overrideWithValue(permission),
         callKeepAliveProvider.overrideWithValue(keepAlive),
+        callSoundPlayerProvider.overrideWithValue(soundPlayer),
+        callVibratorProvider.overrideWithValue(vibrator),
+        callAudioEnvironmentProvider.overrideWithValue(callAudioEnvironment),
+        callProximityScreenProvider.overrideWithValue(proximityScreen),
         callClockProvider.overrideWithValue(
           () => _startTime.add(async.elapsed),
         ),
@@ -234,6 +262,10 @@ void _runWithHarness(
       permissionGateway: permission,
       keepAlive: keepAlive,
       errorHandler: errorHandler,
+      soundPlayer: soundPlayer,
+      vibrator: vibrator,
+      audioEnvironment: callAudioEnvironment,
+      proximityScreen: proximityScreen,
     );
     body(harness);
     if (!harness.isContainerDisposed) {
@@ -549,16 +581,6 @@ void main() {
       expect(harness.keepAlive.startedBodies, isEmpty);
     }
 
-    test('마이크 켜기 실패면 방을 나가고 연결 실패 카드를 보인다', () {
-      _runWithHarness(
-        (harness) {
-          harness.answer();
-          expectReleasedWithFailedNotice(harness);
-        },
-        gateway: FakeCallRoomGateway()..microphoneMutedError = StateError('x'),
-      );
-    });
-
     test('수화기 출력 실패면 방을 나가고 연결 실패 카드를 보인다', () {
       _runWithHarness(
         (harness) {
@@ -573,7 +595,7 @@ void main() {
       _runWithHarness(
         (harness) {
           harness.answer();
-          harness.gateway.microphoneMutedError = null;
+          harness.gateway.speakerPreferredError = null;
 
           harness.controller.retryConnection();
           harness.flush();
@@ -594,7 +616,7 @@ void main() {
           harness.emit(const CallRoomAgentPresent());
           expect(harness.phase, _inProgress());
         },
-        gateway: FakeCallRoomGateway()..microphoneMutedError = StateError('x'),
+        gateway: FakeCallRoomGateway()..speakerPreferredError = StateError('x'),
       );
     });
   });
@@ -622,11 +644,100 @@ void main() {
     });
   });
 
-  test('connect enables microphone and prefers earpiece', () {
+  group('controls while connecting', () {
+    test('passes the muted choice to the room connection', () {
+      final repository = FakeCallRepository(startInfo: _startInfo);
+      _runWithHarness((harness) {
+        final startGate = Completer<void>();
+        repository.startGate = startGate;
+        harness.answer();
+        expect(harness.phase, isA<CallStarting>());
+
+        harness.controller.toggleMute();
+        harness.flush();
+        expect(harness.gateway.microphoneMutedCalls, isEmpty);
+
+        startGate.complete();
+        harness.flush();
+
+        expect(harness.gateway.connectMutedArguments.last, isTrue);
+        expect(harness.gateway.microphoneMutedCalls, isEmpty);
+      }, repository: repository);
+    });
+
+    test('reapplies a choice made while the room was connecting', () {
+      final gateway = FakeCallRoomGateway();
+      _runWithHarness((harness) {
+        final connectGate = Completer<void>();
+        gateway.connectGate = connectGate;
+        harness.answer();
+        expect(harness.gateway.connectCount, 1);
+
+        harness.controller.toggleMute();
+        harness.controller.toggleSpeaker();
+        harness.flush();
+        connectGate.complete();
+        harness.flush();
+
+        expect(harness.gateway.connectMutedArguments.last, isFalse);
+        expect(harness.gateway.microphoneMutedCalls.last, isTrue);
+        expect(harness.gateway.speakerPreferredCalls.last, isTrue);
+        expect(harness.phase, isA<CallConnecting>());
+      }, gateway: gateway);
+    });
+
+    test('applies toggles immediately while the room is connected and '
+        'the agent is awaited', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        expect(harness.phase, isA<CallConnecting>());
+
+        harness.controller.toggleMute();
+        harness.flush();
+
+        expect(harness.gateway.microphoneMutedCalls.last, isTrue);
+        expect(
+          harness.phase,
+          isA<CallConnecting>().having(
+            (phase) => phase.isMuted,
+            'isMuted',
+            true,
+          ),
+        );
+      });
+    });
+
+    test('keeps chosen toggles when reconnecting', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.controller.toggleMute();
+        harness.controller.toggleSpeaker();
+        harness.flush();
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.connectionLost),
+        );
+
+        harness.controller.retryConnection();
+        harness.flush();
+
+        expect(
+          harness.phase,
+          isA<CallConnecting>()
+              .having((phase) => phase.isMuted, 'isMuted', true)
+              .having((phase) => phase.isSpeakerOn, 'isSpeakerOn', true),
+        );
+        // 새 방에도 고른 출력 경로를 다시 적용한다(연결 시 false, 전환 true, 재접속 true).
+        expect(harness.gateway.speakerPreferredCalls, [false, true, true]);
+      });
+    });
+  });
+
+  test('connect opens the microphone and prefers earpiece', () {
     _runWithHarness((harness) {
       harness.answer();
 
-      expect(harness.gateway.microphoneMutedCalls, [false]);
+      expect(harness.gateway.connectMutedArguments, [false]);
+      expect(harness.gateway.microphoneMutedCalls, isEmpty);
       expect(harness.gateway.speakerPreferredCalls, [false]);
     });
   });
@@ -979,7 +1090,7 @@ void main() {
 
       harness.controller.toggleMute();
       harness.flush();
-      expect(harness.gateway.microphoneMutedCalls, [false, true]);
+      expect(harness.gateway.microphoneMutedCalls, [true]);
       expect(_inProgressOf(harness).isMuted, isTrue);
 
       harness.controller.toggleSpeaker();
@@ -989,7 +1100,7 @@ void main() {
 
       harness.controller.toggleMute();
       harness.flush();
-      expect(harness.gateway.microphoneMutedCalls, [false, true, false]);
+      expect(harness.gateway.microphoneMutedCalls, [true, false]);
       expect(_inProgressOf(harness).isMuted, isFalse);
     });
   });
@@ -1035,7 +1146,7 @@ void main() {
       _runWithHarness((harness) {
         reachTimeout(harness);
 
-        expect(harness.gateway.microphoneMutedCalls, [false, true]);
+        expect(harness.gateway.microphoneMutedCalls, [true]);
       });
     });
 
@@ -1062,7 +1173,7 @@ void main() {
         harness.flush();
 
         expect(harness.gateway.reconnectCount, 1);
-        expect(harness.gateway.microphoneMutedCalls, [false, true, false]);
+        expect(harness.gateway.microphoneMutedCalls, [true, false]);
         expect(harness.phase, isA<CallConnecting>());
       });
     });
@@ -1375,6 +1486,376 @@ void main() {
         harness.flush();
         harness.controller.restartAfterLimitReached();
         expect(harness.phase, _finishedFeedback);
+      });
+    });
+  });
+
+  group('call sounds and vibration', () {
+    int countOf(List<String> calls, String call) =>
+        calls.where((recorded) => recorded == call).length;
+
+    void reachLimitDuringCall(_Harness harness) {
+      harness.answerAndJoinAgent();
+      harness.emit(
+        _eventData({
+          'type': 'CALL_LIMIT_REACHED',
+          'v': 1,
+          'limitKind': 'PER_CALL',
+        }),
+      );
+      harness.emit(
+        const CallRoomMetadataChanged('{"v":1,"end_reason":"limit_reached"}'),
+      );
+      harness.emit(const CallRoomDisconnected(CallDisconnectCause.roomDeleted));
+    }
+
+    test('starts ringtone and ringing vibration when the ringing screen '
+        'opens', () {
+      _runWithHarness((harness) {
+        expect(harness.soundPlayer.calls, ['ringtone']);
+        expect(harness.vibrator.calls, ['start']);
+      });
+    });
+
+    test('stops ringtone and vibration when the call is answered', () {
+      _runWithHarness((harness) {
+        harness.answer();
+
+        expect(harness.soundPlayer.calls.take(2), [
+          'ringtone',
+          'stop:fade=false',
+        ]);
+        expect(harness.vibrator.calls, ['start', 'stop']);
+      });
+    });
+
+    test('skips ringtone but keeps vibration when the ringer is silent', () {
+      _runWithHarness(
+        (harness) {
+          expect(harness.soundPlayer.calls, isNot(contains('ringtone')));
+          expect(harness.vibrator.calls, ['start']);
+        },
+        configureAudioEnvironment: (environment) =>
+            environment.ringerSilent = true,
+      );
+    });
+
+    test('does not start looping sound when the screen closes before the '
+        'ringer check completes', () {
+      late Completer<void> ringerSilentGate;
+      _runWithHarness(
+        (harness) {
+          harness.disposeContainer();
+          ringerSilentGate.complete();
+          harness.flush();
+
+          expect(harness.soundPlayer.calls, isNot(contains('ringtone')));
+          expect(harness.vibrator.calls.last, 'stop');
+        },
+        configureAudioEnvironment: (environment) =>
+            environment.ringerSilentGate = ringerSilentGate = Completer<void>(),
+      );
+    });
+
+    test('restarts ringtone once when ringing is re-entered', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          expect(harness.phase, isA<CallRinging>());
+
+          final calls = harness.soundPlayer.calls;
+          expect(countOf(calls, 'ringtone'), 2);
+          final firstRingtone = calls.indexOf('ringtone');
+          final stopAfterFirst = calls.indexOf('stop:fade=false');
+          expect(stopAfterFirst, greaterThan(firstRingtone));
+          expect(stopAfterFirst, lessThan(calls.lastIndexOf('ringtone')));
+          expect(harness.vibrator.calls, ['start', 'stop', 'start']);
+        },
+        repository: FakeCallRepository(
+          startError: _apiError(ErrorCode.unknown),
+        ),
+      );
+    });
+
+    test('plays connecting tone from answer until the agent joins with '
+        'fade-out', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+
+        expect(harness.soundPlayer.calls, [
+          'ringtone',
+          'stop:fade=false',
+          'connecting:speaker=false',
+          'stop:fade=true',
+        ]);
+      });
+    });
+
+    test('stops connecting tone without fade-out when the connection '
+        'fails', () {
+      _runWithHarness((harness) {
+        harness.answer();
+
+        expect(harness.soundPlayer.calls, [
+          'ringtone',
+          'stop:fade=false',
+          'connecting:speaker=false',
+          'stop:fade=false',
+        ]);
+      }, gateway: FakeCallRoomGateway(connectError: StateError('x')));
+    });
+
+    test('does not play connecting tone when reconnecting after the call '
+        'started', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.connectionLost),
+        );
+
+        harness.controller.retryConnection();
+        harness.flush();
+
+        expect(harness.phase, isA<CallConnecting>());
+        expect(
+          countOf(harness.soundPlayer.calls, 'connecting:speaker=false'),
+          1,
+        );
+      });
+    });
+
+    test('does not start the connecting tone when retrying from the '
+        'connection timeout card', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        harness.elapse(const Duration(seconds: 40));
+        expect(
+          harness.phase,
+          _notice(
+            CallConnectionNoticeKind.connectionTimeout,
+            callStarted: false,
+          ),
+        );
+        final connectingCount = harness.soundPlayer.calls
+            .where((call) => call.startsWith('connecting:'))
+            .length;
+
+        harness.controller.retryConnection();
+        harness.flush();
+
+        expect(harness.phase, isA<CallConnecting>());
+        expect(
+          harness.soundPlayer.calls.where(
+            (call) => call.startsWith('connecting:'),
+          ),
+          hasLength(connectingCount),
+        );
+      });
+    });
+
+    test('plays end tone when the user confirms ending', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+
+        harness.controller.requestEnd();
+        harness.controller.confirmEnd();
+        harness.flush();
+
+        expect(harness.phase, _finishedFeedback);
+        expect(countOf(harness.soundPlayer.calls, 'end'), 1);
+      });
+    });
+
+    test('plays end tone when the agent ends the call normally', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.roomDeleted),
+        );
+
+        expect(harness.phase, _finishedFeedback);
+        expect(countOf(harness.soundPlayer.calls, 'end'), 1);
+      });
+    });
+
+    test('plays end tone when the limit is reached during the call', () {
+      _runWithHarness((harness) {
+        reachLimitDuringCall(harness);
+
+        expect(harness.phase, isA<CallLimitReached>());
+        expect(countOf(harness.soundPlayer.calls, 'end'), 1);
+      });
+    });
+
+    test('plays end tone when the user ends while reconnecting after the '
+        'call started', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.connectionLost),
+        );
+        harness.controller.retryConnection();
+        harness.flush();
+        expect(harness.phase, isA<CallConnecting>());
+
+        harness.controller.requestEnd();
+        harness.flush();
+
+        expect(harness.phase, _finishedFeedback);
+        expect(countOf(harness.soundPlayer.calls, 'end'), 1);
+      });
+    });
+
+    test('does not play end tone on a connection notice or before the call '
+        'started', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.connectionLost),
+        );
+        harness.controller.closeConnectionNotice();
+        harness.flush();
+
+        expect(harness.phase, _finishedFeedback);
+        expect(harness.soundPlayer.calls, isNot(contains('end')));
+      });
+      _runWithHarness((harness) {
+        harness.answer();
+        harness.controller.confirmEnd();
+        harness.flush();
+
+        expect(harness.phase, _finishedHome);
+        expect(harness.soundPlayer.calls, isNot(contains('end')));
+      });
+    });
+
+    test('stops looping sound, vibration and proximity when the screen '
+        'closes', () {
+      _runWithHarness((harness) {
+        harness.disposeContainer();
+
+        expect(harness.soundPlayer.calls.last, 'stop:fade=false');
+        expect(harness.vibrator.calls.last, 'stop');
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+      });
+    });
+
+    test('pauses the ringtone when the app is paused and restarts it on '
+        'resume', () {
+      _runWithHarness((harness) {
+        harness.controller.handleAppPaused();
+        harness.flush();
+        expect(harness.soundPlayer.calls, ['ringtone', 'stop:fade=false']);
+        expect(harness.vibrator.calls, ['start', 'stop']);
+
+        harness.controller.handleAppResumed();
+        harness.flush();
+        expect(harness.soundPlayer.calls, [
+          'ringtone',
+          'stop:fade=false',
+          'ringtone',
+        ]);
+        expect(harness.vibrator.calls, ['start', 'stop', 'start']);
+      });
+    });
+
+    test('does not restart the ringtone on resume when it was not paused', () {
+      _runWithHarness((harness) {
+        harness.controller.handleAppResumed();
+        harness.flush();
+
+        expect(harness.soundPlayer.calls, ['ringtone']);
+        expect(harness.vibrator.calls, ['start']);
+      });
+    });
+  });
+
+  group('headset and proximity', () {
+    test('enables proximity only on the earpiece without a headset while '
+        'connecting or in progress', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        expect(harness.phase, isA<CallConnecting>());
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+
+        harness.controller.toggleSpeaker();
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+
+        harness.controller.toggleSpeaker();
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+
+        harness.audioEnvironment.emitHeadset(true);
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+
+        harness.emit(const CallRoomAgentPresent());
+        expect(harness.phase, isA<CallInProgress>());
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+
+        harness.audioEnvironment.emitHeadset(false);
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+      });
+    });
+
+    test('keeps proximity off when a headset is already connected at '
+        'start', () {
+      _runWithHarness(
+        (harness) {
+          harness.answerAndJoinAgent();
+
+          expect(harness.proximityScreen.enabledCalls, isNot(contains(true)));
+        },
+        configureAudioEnvironment: (environment) =>
+            environment.headsetConnected = true,
+      );
+    });
+
+    test('does not call the proximity screen again when the desired value is '
+        'unchanged', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        final callCount = harness.proximityScreen.enabledCalls.length;
+
+        harness.audioEnvironment.emitHeadset(false);
+        harness.flush();
+
+        expect(harness.proximityScreen.enabledCalls, hasLength(callCount));
+      });
+    });
+
+    test('disables proximity while a card is visible', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+
+        harness.controller.requestEnd();
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+        harness.controller.cancelEnd();
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+
+        harness.emit(
+          _eventData({
+            'type': 'CALL_ENDING_SOON',
+            'v': 1,
+            'remainingSeconds': 60,
+          }),
+        );
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+        harness.controller.dismissEndingSoon();
+        harness.flush();
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
+
+        harness.emit(const CallRoomReconnecting());
+        harness.elapse(const Duration(seconds: 5));
+        expect(harness.proximityScreen.enabledCalls.last, isFalse);
+        harness.emit(const CallRoomReconnected());
+        expect(harness.proximityScreen.enabledCalls.last, isTrue);
       });
     });
   });

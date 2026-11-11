@@ -8,9 +8,13 @@ import 'package:teeq/core/logging/app_logger.dart';
 import 'package:teeq/core/permission/app_permission.dart';
 import 'package:teeq/core/permission/app_permission_status.dart';
 import 'package:teeq/core/permission/permission_handler_gateway.dart';
+import 'package:teeq/features/call/data/audioplayers_call_sound_player.dart';
 import 'package:teeq/features/call/data/call_repository_impl.dart';
 import 'package:teeq/features/call/data/foreground_call_keep_alive.dart';
 import 'package:teeq/features/call/data/livekit_call_room_gateway.dart';
+import 'package:teeq/features/call/data/platform_call_audio_environment.dart';
+import 'package:teeq/features/call/data/platform_call_proximity_screen.dart';
+import 'package:teeq/features/call/data/platform_call_vibrator.dart';
 import 'package:teeq/features/call/domain/call_destination.dart';
 import 'package:teeq/features/call/domain/call_event_message.dart';
 import 'package:teeq/features/call/domain/call_keep_alive.dart';
@@ -21,6 +25,7 @@ import 'package:teeq/features/call/domain/call_room_gateway.dart';
 import 'package:teeq/features/call/domain/call_start_failure.dart';
 import 'package:teeq/features/call/domain/call_start_info.dart';
 import 'package:teeq/features/call/domain/call_termination.dart';
+import 'package:teeq/features/call/presentation/call_session_audio_feedback.dart';
 import 'package:teeq/features/call/presentation/call_session_timers.dart';
 import 'package:teeq/features/call/presentation/call_timing_provider.dart';
 import 'package:teeq/features/home/presentation/home_summary_provider.dart';
@@ -35,6 +40,7 @@ class CallSessionController extends _$CallSessionController {
 
   late CallRoomGateway _gateway;
   late CallKeepAlive _keepAlive;
+  late CallSessionAudioFeedback _audioFeedback;
   late CallSessionTimers _timers;
   late DateTime Function() _clock;
 
@@ -70,14 +76,30 @@ class CallSessionController extends _$CallSessionController {
     _clock = ref.watch(callClockProvider);
     // 연결 직후 방출되는 이벤트를 놓치지 않도록 연결 전에 구독한다.
     final subscription = _gateway.events.listen(_handleRoomEvent);
+    final audioFeedback = _audioFeedback = CallSessionAudioFeedback(
+      soundPlayer: ref.watch(callSoundPlayerProvider),
+      vibrator: ref.watch(callVibratorProvider),
+      audioEnvironment: ref.watch(callAudioEnvironmentProvider),
+      proximityScreen: ref.watch(callProximityScreenProvider),
+      readPhase: () => state,
+      isMounted: () => ref.mounted,
+    );
     ref.onDispose(() {
       unawaited(subscription.cancel());
       _timers.cancelAll();
       _stopKeepAlive();
       _disposeGateway();
+      audioFeedback.dispose();
     });
+    listenSelf(audioFeedback.syncPhase);
     return const CallRinging();
   }
+
+  /// 앱이 백그라운드로 가면 울리는 중의 벨소리·진동을 멈춘다.
+  void handleAppPaused() => _audioFeedback.handleAppPaused();
+
+  /// 백그라운드에서 멈춘 벨소리·진동을 아직 울리는 중일 때만 다시 시작한다.
+  void handleAppResumed() => _audioFeedback.handleAppResumed();
 
   /// 밀어서 통화하기 완료. 여러 번 불려도 한 번만 진행한다.
   Future<void> answer() async {
@@ -169,19 +191,25 @@ class CallSessionController extends _$CallSessionController {
       _logWarning('통화 방 나가기 실패', error);
     }
     // 보통은 직접 끊음 이벤트가 먼저 처리해 이미 끝나 있다.
+    // 이벤트 경로가 먼저 끝냈으면 세대가 바뀌어 여기서 종료음을 다시 내지 않는다.
     if (!_isStale(attempt)) {
+      _playEndToneIfCallStarted();
       _finish(_destinationAfterCall());
     }
   }
 
   Future<void> toggleMute() async {
     final current = state;
-    if (current is! CallInProgress) {
+    if (current is! CallControlsPhase) {
       return;
     }
     final previousIsMuted = current.isMuted;
     final sequence = ++_muteRequestSequence;
     _setMuted(!previousIsMuted);
+    // 시작 요청 중에는 방이 없으므로 연결 뒤에 한 번에 적용한다.
+    if (current is CallStarting) {
+      return;
+    }
     try {
       await _gateway.setMicrophoneMuted(!previousIsMuted);
     } on Object catch (error) {
@@ -198,12 +226,15 @@ class CallSessionController extends _$CallSessionController {
 
   Future<void> toggleSpeaker() async {
     final current = state;
-    if (current is! CallInProgress) {
+    if (current is! CallControlsPhase) {
       return;
     }
     final previousIsSpeakerOn = current.isSpeakerOn;
     final sequence = ++_speakerRequestSequence;
     _setSpeakerOn(!previousIsSpeakerOn);
+    if (current is CallStarting) {
+      return;
+    }
     try {
       await _gateway.setSpeakerOutputPreferred(!previousIsSpeakerOn);
     } on Object catch (error) {
@@ -310,7 +341,7 @@ class CallSessionController extends _$CallSessionController {
   /// 통화 시작 API → 방 연결 → 마이크 켜기·수화기 출력 → 워커 대기.
   Future<void> _startCall() async {
     final attempt = _beginAttempt();
-    state = const CallStarting();
+    state = CallStarting(isMuted: _isMuted, isSpeakerOn: _isSpeakerOn);
     final CallStartInfo startInfo;
     try {
       startInfo = await ref.read(callRepositoryProvider).startCall();
@@ -325,14 +356,15 @@ class CallSessionController extends _$CallSessionController {
     }
     _callSessionId = startInfo.callSessionId;
     var isRoomConnected = false;
+    final isMutedAtConnect = _isMuted;
     try {
       await _gateway.connect(
         serverUrl: startInfo.serverUrl,
         accessToken: startInfo.accessToken,
+        isMicrophoneMuted: isMutedAtConnect,
       );
       isRoomConnected = true;
-      await _gateway.setMicrophoneMuted(false);
-      await _gateway.setSpeakerOutputPreferred(false);
+      await _applyControlsAfterConnect(isMutedAtConnect: isMutedAtConnect);
     } on CallRoomConnectionCancelledException {
       // 화면이 닫히거나 사용자가 끊어 연결을 멈춘 것이라 실패가 아니다.
       return;
@@ -350,6 +382,25 @@ class CallSessionController extends _$CallSessionController {
     }
     if (!_isStale(attempt)) {
       _waitForAgent();
+    }
+  }
+
+  /// 연결하는 동안·적용하는 동안(아직 시작 요청 중이라 방에 보내지 않은) 사용자가 고른
+  /// 음소거·스피커 값을 방에 적용한다. 적용하는 사이 값이 또 바뀌면 같아질 때까지 다시 적용한다.
+  Future<void> _applyControlsAfterConnect({
+    required bool isMutedAtConnect,
+  }) async {
+    bool? appliedIsSpeakerOn;
+    var appliedIsMuted = isMutedAtConnect;
+    while (appliedIsSpeakerOn != _isSpeakerOn || appliedIsMuted != _isMuted) {
+      if (appliedIsSpeakerOn != _isSpeakerOn) {
+        appliedIsSpeakerOn = _isSpeakerOn;
+        await _gateway.setSpeakerOutputPreferred(appliedIsSpeakerOn);
+      }
+      if (appliedIsMuted != _isMuted) {
+        appliedIsMuted = _isMuted;
+        await _gateway.setMicrophoneMuted(appliedIsMuted);
+      }
     }
   }
 
@@ -400,7 +451,7 @@ class CallSessionController extends _$CallSessionController {
     final attempt = _attempt;
     _leaveCall();
     _isAgentPresent = false;
-    state = const CallConnecting();
+    state = CallConnecting(isMuted: _isMuted, isSpeakerOn: _isSpeakerOn);
     final isReconnected = await _gateway.reconnectWithLatestToken();
     if (_isStale(attempt)) {
       return;
@@ -409,8 +460,9 @@ class CallSessionController extends _$CallSessionController {
       _showNotice(CallConnectionNoticeKind.connectionFailed);
       return;
     }
-    // 시간 초과 카드에서 꺼 둔 마이크를 사용자가 고른 상태로 되돌린다.
+    // 새 방이므로 시간 초과 카드에서 꺼 둔 마이크와 고른 출력 경로를 다시 적용한다.
     unawaited(_applyMicrophoneMuted(_isMuted));
+    unawaited(_applySpeakerOutputPreferred(_isSpeakerOn));
     if (state is CallConnecting) {
       _waitForAgent();
     }
@@ -418,7 +470,7 @@ class CallSessionController extends _$CallSessionController {
 
   /// 연결중으로 바꾸고, 워커가 이미 보였으면 바로 통화중으로, 아니면 대기 시간을 잰다.
   void _waitForAgent() {
-    state = const CallConnecting();
+    state = CallConnecting(isMuted: _isMuted, isSpeakerOn: _isSpeakerOn);
     if (_isAgentPresent) {
       _enterInProgress();
       return;
@@ -534,10 +586,12 @@ class CallSessionController extends _$CallSessionController {
     );
     switch (termination) {
       case CallEndedNormally():
+        _playEndToneIfCallStarted();
         _finish(_destinationAfterCall());
       case CallEndedByAgentError():
         _showNotice(CallConnectionNoticeKind.connectionFailed);
       case CallEndedByLimit(:final limitKind):
+        _playEndToneIfCallStarted();
         _stopAttempt(
           CallLimitReached(limitKind: limitKind, callStarted: _callStarted),
         );
@@ -565,7 +619,15 @@ class CallSessionController extends _$CallSessionController {
     if (state is CallConnecting) {
       unawaited(_disconnectLoggingFailure());
     }
+    _playEndToneIfCallStarted();
     _finish(_destinationAfterCall());
+  }
+
+  /// 통화가 시작된 뒤 끝날 때만 종료음을 낸다.
+  void _playEndToneIfCallStarted() {
+    if (_callStarted) {
+      _audioFeedback.playEndTone();
+    }
   }
 
   Future<void> _disconnectLoggingFailure() async {
@@ -584,6 +646,16 @@ class CallSessionController extends _$CallSessionController {
     } on Object catch (error) {
       if (ref.mounted) {
         _logWarning('마이크 상태 변경 실패', error);
+      }
+    }
+  }
+
+  Future<void> _applySpeakerOutputPreferred(bool isSpeakerOn) async {
+    try {
+      await _gateway.setSpeakerOutputPreferred(isSpeakerOn);
+    } on Object catch (error) {
+      if (ref.mounted) {
+        _logWarning('출력 경로 변경 실패', error);
       }
     }
   }
@@ -647,12 +719,23 @@ class CallSessionController extends _$CallSessionController {
 
   void _setMuted(bool isMuted) {
     _isMuted = isMuted;
-    _updateInProgress((phase) => phase.copyWith(isMuted: isMuted));
+    _syncControls();
   }
 
   void _setSpeakerOn(bool isSpeakerOn) {
     _isSpeakerOn = isSpeakerOn;
-    _updateInProgress((phase) => phase.copyWith(isSpeakerOn: isSpeakerOn));
+    _syncControls();
+  }
+
+  /// 음소거·스피커 값을 현재 단계에 반영한다.
+  void _syncControls() {
+    final current = state;
+    if (current is CallControlsPhase) {
+      state = current.copyWithControls(
+        isMuted: _isMuted,
+        isSpeakerOn: _isSpeakerOn,
+      );
+    }
   }
 
   void _updateInProgress(CallInProgress Function(CallInProgress) update) {
