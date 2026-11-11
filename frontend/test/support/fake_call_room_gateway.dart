@@ -36,6 +36,12 @@ class FakeCallRoomGateway implements CallRoomGateway {
   int reconnectCount = 0;
   int disconnectCount = 0;
   int disposeCount = 0;
+
+  /// [connect]가 받은 초기 음소거 값.
+  final List<bool> connectMutedArguments = <bool>[];
+
+  /// 지정하면 [connect]가 이 게이트가 완료될 때까지 기다린다(연결 지연 재현용).
+  Completer<void>? connectGate;
   final List<bool> microphoneMutedCalls = <bool>[];
   final List<bool> speakerPreferredCalls = <bool>[];
 
@@ -52,9 +58,12 @@ class FakeCallRoomGateway implements CallRoomGateway {
   Future<void> connect({
     required String serverUrl,
     required String accessToken,
+    bool isMicrophoneMuted = false,
   }) async {
     connectCount += 1;
+    connectMutedArguments.add(isMicrophoneMuted);
     operations.add('connect');
+    await connectGate?.future;
     _isLocalHangupEmitted = false;
     final failure = connectError;
     if (failure != null) {

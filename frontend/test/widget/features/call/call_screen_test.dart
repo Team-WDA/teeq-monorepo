@@ -17,9 +17,13 @@ import 'package:teeq/core/permission/app_permission.dart';
 import 'package:teeq/core/permission/app_permission_status.dart';
 import 'package:teeq/core/permission/permission_handler_gateway.dart';
 import 'package:teeq/core/router/app_routes.dart';
+import 'package:teeq/features/call/data/audioplayers_call_sound_player.dart';
 import 'package:teeq/features/call/data/call_repository_impl.dart';
 import 'package:teeq/features/call/data/foreground_call_keep_alive.dart';
 import 'package:teeq/features/call/data/livekit_call_room_gateway.dart';
+import 'package:teeq/features/call/data/platform_call_audio_environment.dart';
+import 'package:teeq/features/call/data/platform_call_proximity_screen.dart';
+import 'package:teeq/features/call/data/platform_call_vibrator.dart';
 import 'package:teeq/features/call/domain/call_event_message.dart';
 import 'package:teeq/features/call/domain/call_limit_status.dart';
 import 'package:teeq/features/call/domain/call_room_event.dart';
@@ -37,9 +41,13 @@ import 'package:teeq/features/home/domain/home_summary.dart';
 import 'package:teeq/features/onboarding/domain/character_type.dart';
 
 import '../../../support/fake_app_permission_gateway.dart';
+import '../../../support/fake_call_audio_environment.dart';
 import '../../../support/fake_call_keep_alive.dart';
+import '../../../support/fake_call_proximity_screen.dart';
 import '../../../support/fake_call_repository.dart';
 import '../../../support/fake_call_room_gateway.dart';
+import '../../../support/fake_call_sound_player.dart';
+import '../../../support/fake_call_vibrator.dart';
 import '../../../support/fake_current_member_controller.dart';
 import '../../../support/fake_home_repository.dart';
 import '../../../support/viewport_cases.dart';
@@ -166,6 +174,12 @@ Future<_CallScreenHarness> _pumpCallScreen(
             ),
       ),
       callKeepAliveProvider.overrideWithValue(FakeCallKeepAlive()),
+      callSoundPlayerProvider.overrideWithValue(FakeCallSoundPlayer()),
+      callVibratorProvider.overrideWithValue(FakeCallVibrator()),
+      callAudioEnvironmentProvider.overrideWithValue(
+        FakeCallAudioEnvironment(),
+      ),
+      callProximityScreenProvider.overrideWithValue(FakeCallProximityScreen()),
       callClockProvider.overrideWithValue(() => harness.now),
       errorHandlerProvider.overrideWithValue(errorHandler),
       homeRepositoryProvider.overrideWithValue(

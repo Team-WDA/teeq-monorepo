@@ -38,11 +38,12 @@ final class LiveKitCallRoomGateway implements CallRoomGateway {
   Future<void> connect({
     required String serverUrl,
     required String accessToken,
+    bool isMicrophoneMuted = false,
   }) async {
     // 새 통화 연결을 시작할 때만 직접 끊음 플래그를 초기화한다(재접속에서는 초기화하지 않는다).
     _isLocalHangupRequested = false;
     _serverUrl = serverUrl;
-    _isMicrophoneMuted = false;
+    _isMicrophoneMuted = isMicrophoneMuted;
     await _connectNewRoom(serverUrl: serverUrl, accessToken: accessToken);
   }
 

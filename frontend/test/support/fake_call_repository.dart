@@ -25,7 +25,7 @@ class FakeCallRepository implements CallRepository {
   final Object? limitError;
 
   /// 지정하면 [startCall]이 이 게이트가 완료될 때까지 기다린다(응답 지연 재현용).
-  final Completer<void>? startGate;
+  Completer<void>? startGate;
 
   int startCallCount = 0;
 

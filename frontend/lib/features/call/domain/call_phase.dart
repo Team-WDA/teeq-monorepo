@@ -31,18 +31,53 @@ final class CallPermissionRequired extends CallPhase {
   final bool shouldOpenSettings;
 }
 
+/// 음소거·스피커 버튼을 쓸 수 있는 단계. 통화 시작 요청 중부터 통화 중까지 이어진다.
+sealed class CallControlsPhase extends CallPhase {
+  const CallControlsPhase();
+
+  bool get isMuted;
+  bool get isSpeakerOn;
+
+  CallControlsPhase copyWithControls({
+    required bool isMuted,
+    required bool isSpeakerOn,
+  });
+}
+
 /// 통화 시작 API를 호출하는 중.
-final class CallStarting extends CallPhase {
-  const CallStarting();
+final class CallStarting extends CallControlsPhase {
+  const CallStarting({this.isMuted = false, this.isSpeakerOn = false});
+
+  @override
+  final bool isMuted;
+  @override
+  final bool isSpeakerOn;
+
+  @override
+  CallStarting copyWithControls({
+    required bool isMuted,
+    required bool isSpeakerOn,
+  }) => CallStarting(isMuted: isMuted, isSpeakerOn: isSpeakerOn);
 }
 
 /// LiveKit 방에 연결하고 상대를 기다리는 중.
-final class CallConnecting extends CallPhase {
-  const CallConnecting();
+final class CallConnecting extends CallControlsPhase {
+  const CallConnecting({this.isMuted = false, this.isSpeakerOn = false});
+
+  @override
+  final bool isMuted;
+  @override
+  final bool isSpeakerOn;
+
+  @override
+  CallConnecting copyWithControls({
+    required bool isMuted,
+    required bool isSpeakerOn,
+  }) => CallConnecting(isMuted: isMuted, isSpeakerOn: isSpeakerOn);
 }
 
 /// 통화 중.
-final class CallInProgress extends CallPhase {
+final class CallInProgress extends CallControlsPhase {
   const CallInProgress({
     required this.elapsed,
     required this.isMuted,
@@ -53,7 +88,9 @@ final class CallInProgress extends CallPhase {
   });
 
   final Duration elapsed;
+  @override
   final bool isMuted;
+  @override
   final bool isSpeakerOn;
   final bool isEndConfirmationVisible;
   final bool isEndingSoonVisible;
@@ -78,6 +115,12 @@ final class CallInProgress extends CallPhase {
           isReconnectNoticeVisible ?? this.isReconnectNoticeVisible,
     );
   }
+
+  @override
+  CallInProgress copyWithControls({
+    required bool isMuted,
+    required bool isSpeakerOn,
+  }) => copyWith(isMuted: isMuted, isSpeakerOn: isSpeakerOn);
 }
 
 /// 연결 실패·시간 초과·끊김 안내.
