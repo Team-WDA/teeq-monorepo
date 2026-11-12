@@ -1,14 +1,33 @@
 {
   "metadata": {
-    "lastUpdated": "2026-11-11T15:54:09Z",
-    "currentVersion": "0.46.0",
+    "lastUpdated": "2026-11-12T05:57:13Z",
+    "currentVersion": "0.46.1",
     "projectTypes": [
       "spring",
       "flutter"
     ],
-    "totalReleases": 61
+    "totalReleases": 62
   },
   "releases": [
+    {
+      "version": "0.46.1",
+      "project_types": [
+        "spring",
+        "flutter"
+      ],
+      "date": "2026-11-12",
+      "pr_number": null,
+      "raw_summary": "## [0.46.1]\n\n### 🔧 변경사항\n- TestFlight 외부 테스터 그룹(MVP Test Group) 배포 설정",
+      "parsed_changes": {
+        "변경사항": {
+          "title": "🔧 변경사항",
+          "items": [
+            "TestFlight 외부 테스터 그룹(MVP Test Group) 배포 설정"
+          ]
+        }
+      },
+      "parse_method": "markdown"
+    },
     {
       "version": "0.46.0",
       "project_types": [
