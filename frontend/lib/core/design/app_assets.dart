@@ -97,6 +97,11 @@ abstract final class AppAssets {
       '$_icons/call_control_background.svg';
   static const String callEndControlBackground =
       '$_icons/call_end_control_background.svg';
+  static const String callSpeakerActiveIcon =
+      '$_icons/call_speaker_active_icon.svg';
+  static const String callMuteActiveIcon = '$_icons/call_mute_active_icon.svg';
+  static const String callControlActiveBackground =
+      '$_icons/call_control_active_background.svg';
 
   // 통화 화면 효과음. WAV 파일은 같은 이름·형식으로 교체한다.
   static const String callRingtoneSound = '$_sounds/call_ringtone.wav';
