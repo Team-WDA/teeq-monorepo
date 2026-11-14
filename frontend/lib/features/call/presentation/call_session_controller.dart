@@ -20,6 +20,7 @@ import 'package:teeq/features/call/domain/call_event_message.dart';
 import 'package:teeq/features/call/domain/call_keep_alive.dart';
 import 'package:teeq/features/call/domain/call_limit_kind.dart';
 import 'package:teeq/features/call/domain/call_phase.dart';
+import 'package:teeq/features/call/domain/call_repository.dart';
 import 'package:teeq/features/call/domain/call_room_event.dart';
 import 'package:teeq/features/call/domain/call_room_gateway.dart';
 import 'package:teeq/features/call/domain/call_start_failure.dart';
@@ -47,6 +48,9 @@ class CallSessionController extends _$CallSessionController {
   /// 통화 시도마다(시작·종료) 늘어난다. 늦게 끝난 비동기 작업이 새 상태를 건드리지 않게 구분한다.
   int _attempt = 0;
   bool _isGatewayDisposed = false;
+
+  /// 연결 실패 카드의 다시 연결하기가 진행 중인지 여부. 재진입을 막는다.
+  bool _isRetryingFailedConnection = false;
   bool _isKeepAliveActive = false;
 
   String? _callSessionId;
@@ -259,14 +263,30 @@ class CallSessionController extends _$CallSessionController {
     final current = state;
     if (current is CallConnectionNotice) {
       if (current.kind == CallConnectionNoticeKind.connectionFailed) {
-        // 새 세션을 요청하기 전에 이전 방이 남아 있지 않게 먼저 나간다.
-        await _disconnectLoggingFailure();
-        // 기다리는 사이 카드가 닫혔거나 다른 다시 연결하기가 먼저 진행됐으면 멈춘다.
-        if (!ref.mounted || !identical(state, current)) {
+        // 취소를 기다리는 사이 다시 탭해도 취소 완료 전에 새 시작이 나가지 않게 재진입을 막는다.
+        if (_isRetryingFailedConnection) {
           return;
         }
-        // 이미 시작된 통화였다면 새 세션이 생기고, 이전 세션의 피드백은 홈 안전망이 연다.
-        await _startCall();
+        _isRetryingFailedConnection = true;
+        try {
+          // 첫 await 전에 동기로 꺼내 두어 기다리는 사이 닫기가 같은 세션을 또 취소하지 않는다.
+          final abandonedCallSessionId = _takeAbandonedCallSessionId();
+          final repository = ref.read(callRepositoryProvider);
+          // 새 세션을 요청하기 전에 이전 방이 남아 있지 않게 먼저 나간다.
+          await _disconnectLoggingFailure();
+          if (abandonedCallSessionId != null) {
+            // 이전 세션이 활성으로 남아 새 시작이 409가 되지 않게 취소를 기다린다(상한 없음).
+            await _cancelCallQuietly(repository, abandonedCallSessionId);
+          }
+          // 기다리는 사이 카드가 닫혔거나 다른 시도가 진행됐으면 멈춘다.
+          if (!ref.mounted || !identical(state, current)) {
+            return;
+          }
+          // 이미 시작된 통화였다면 새 세션이 생기고, 이전 세션의 피드백은 홈 안전망이 연다.
+          await _startCall();
+        } finally {
+          _isRetryingFailedConnection = false;
+        }
       } else {
         await _reconnect();
       }
@@ -278,6 +298,7 @@ class CallSessionController extends _$CallSessionController {
   /// 안내 카드의 닫기·통화 마치기. 통화가 시작됐으면 피드백, 아니면 홈으로 끝낸다.
   void closeConnectionNotice() {
     if (state is CallConnectionNotice) {
+      _cancelAbandonedCall();
       _finish(_destinationAfterCall());
     }
   }
@@ -342,9 +363,11 @@ class CallSessionController extends _$CallSessionController {
   Future<void> _startCall() async {
     final attempt = _beginAttempt();
     state = CallStarting(isMuted: _isMuted, isSpeakerOn: _isSpeakerOn);
+    // 컨트롤러가 정리돼도 취소가 끝나도록 await 전에 저장소를 잡아 둔다.
+    final repository = ref.read(callRepositoryProvider);
     final CallStartInfo startInfo;
     try {
-      startInfo = await ref.read(callRepositoryProvider).startCall();
+      startInfo = await repository.startCall();
     } on Object catch (error) {
       if (!_isStale(attempt)) {
         _showStartFailure(error);
@@ -352,6 +375,8 @@ class CallSessionController extends _$CallSessionController {
       return;
     }
     if (_isStale(attempt)) {
+      // 응답이 늦게 와 쓰이지 못한 세션이므로 항상 취소 대상이다.
+      unawaited(_cancelCallQuietly(repository, startInfo.callSessionId));
       return;
     }
     _callSessionId = startInfo.callSessionId;
@@ -619,8 +644,44 @@ class CallSessionController extends _$CallSessionController {
     if (state is CallConnecting) {
       unawaited(_disconnectLoggingFailure());
     }
+    _cancelAbandonedCall();
     _playEndToneIfCallStarted();
     _finish(_destinationAfterCall());
+  }
+
+  /// 통화가 시작되지 않았고 세션 ID가 있으면 그 ID를 꺼내면서 비운다. 한 번만 꺼내므로
+  /// 어떤 경로·재진입에서도 같은 세션이 두 번 취소되지 않는다.
+  String? _takeAbandonedCallSessionId() {
+    final callSessionId = _callSessionId;
+    if (_callStarted || callSessionId == null) {
+      return null;
+    }
+    _callSessionId = null;
+    return callSessionId;
+  }
+
+  /// 버려진 세션이 있으면 기다리지 않고 BE에 취소를 알린다.
+  void _cancelAbandonedCall() {
+    final callSessionId = _takeAbandonedCallSessionId();
+    if (callSessionId != null) {
+      unawaited(
+        _cancelCallQuietly(ref.read(callRepositoryProvider), callSessionId),
+      );
+    }
+  }
+
+  /// 취소 실패는 화면 이동·상태에 영향을 주지 않고 경고 로그만 남긴다.
+  Future<void> _cancelCallQuietly(
+    CallRepository repository,
+    String callSessionId,
+  ) async {
+    try {
+      await repository.cancelCall(callSessionId);
+    } on Object catch (error) {
+      if (ref.mounted) {
+        _logWarning('통화 취소 실패', error);
+      }
+    }
   }
 
   /// 통화가 시작된 뒤 끝날 때만 종료음을 낸다.
