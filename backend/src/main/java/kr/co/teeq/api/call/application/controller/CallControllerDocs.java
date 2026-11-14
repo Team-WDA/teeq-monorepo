@@ -7,12 +7,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.co.teeq.api.call.application.dto.response.CallHistoryResponse;
 import kr.co.teeq.api.call.application.dto.response.CallStartResponse;
 import kr.co.teeq.api.common.application.exception.ErrorResponse;
 import kr.co.teeq.api.member.core.principal.AuthenticatedMember;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 
-@Tag(name = "통화", description = "통화 시작")
+@Tag(name = "통화", description = "통화 시작·취소")
 public interface CallControllerDocs {
 
     @Operation(summary = "통화 시작",
@@ -39,5 +41,22 @@ public interface CallControllerDocs {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<CallStartResponse> start(@Parameter(hidden = true) AuthenticatedMember authenticatedMember);
+
+    @Operation(summary = "통화 취소",
+        description = """
+            통화 연결 중(AI 에이전트 입장 전)에 사용자가 통화를 버렸을 때 해당 통화를 즉시 취소 상태로 종료한다.
+            취소된 통화는 사용 시간 0초로 기록되며 진행 중인 통화로 세지 않으므로 바로 새 통화를 시작할 수 있다.
+            진행 중이 아닌(이미 종료·만료·취소된) 통화는 변경 없이 현재 상태를 200으로 응답한다(멱등).""")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "취소 성공(이미 종료된 통화 포함). 응답의 `status`가 통화의 현재 상태"),
+        @ApiResponse(responseCode = "401",
+            description = "`UNAUTHENTICATED`: Authorization 헤더가 없거나 Access Token이 유효하지 않거나 삭제된 회원임. `EXPIRED_TOKEN`: Access Token이 만료됨(토큰 재발급 후 재시도)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404",
+            description = "`CALL_SESSION_NOT_FOUND`: 해당 통화 세션 ID의 기록이 없거나 본인의 통화가 아님",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<CallHistoryResponse> cancel(@Parameter(hidden = true) AuthenticatedMember authenticatedMember,
+        @PathVariable("call-session-id") String callSessionId);
 
 }

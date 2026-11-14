@@ -1,5 +1,6 @@
 package kr.co.teeq.api.call.core.constant;
 
+import static kr.co.teeq.api.call.core.constant.CallStatus.CANCELLED;
 import static kr.co.teeq.api.call.core.constant.CallStatus.ENDED;
 import static kr.co.teeq.api.call.core.constant.CallStatus.EXPIRED;
 import static kr.co.teeq.api.call.core.constant.CallStatus.FAILED;
@@ -16,10 +17,11 @@ class CallStatusTest {
 
     private static final Map<CallStatus, Set<CallStatus>> ALLOWED = Map.of(
         PENDING, Set.of(IN_PROGRESS, FAILED, EXPIRED),
-        IN_PROGRESS, Set.of(ENDED, EXPIRED),
+        IN_PROGRESS, Set.of(ENDED, EXPIRED, CANCELLED),
         EXPIRED, Set.of(ENDED),
         ENDED, Set.of(),
-        FAILED, Set.of());
+        FAILED, Set.of(),
+        CANCELLED, Set.of(ENDED));
 
     @Test
     @DisplayName("canTransitionTo는 허용된 전이만 true다")

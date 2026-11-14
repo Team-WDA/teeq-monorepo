@@ -62,17 +62,39 @@ public class CallHistoryService {
         findCallHistory(callHistoryId).fail();
     }
 
-    // 이미 종료된 기록은 변경 없이 돌려주고(첫 보고 유지), IN_PROGRESS·EXPIRED 기록은 1회 한도로 잘라 종료 처리한다
+    // 워커 입장 전에 사용자가 통화를 버린 경우. 본인 통화가 아니면 존재 여부를 숨기려고 없는 것과 같은 404로 응답하고,
+    // IN_PROGRESS가 아닌 기록은 변경 없이 돌려준다. 종료 보고와의 경합은 행 잠금으로 직렬화한다
+    @Transactional
+    public CallHistoryResponse cancel(Member member, String callSessionId) {
+        CallHistory callHistory = callHistoryRepository.findWithLockByCallSessionIdAndDeletedFalse(callSessionId)
+            .filter(found -> found.getMember().getId().equals(member.getId()))
+            .orElseThrow(() -> new CustomException(ErrorCode.CALL_SESSION_NOT_FOUND));
+        if (callHistory.getStatus() == CallStatus.IN_PROGRESS) {
+            callHistory.cancel(clock.instant());
+        }
+        return CallHistoryResponse.from(callHistory);
+    }
+
+    // ENDED 기록은 변경 없이 돌려주고(첫 보고 유지), IN_PROGRESS·EXPIRED 기록은 1회 한도로 잘라 종료 처리한다.
+    // CANCELLED 기록은 0초 보고면 취소 상태를 유지하고, 1초 이상 보고면 늦게 온 사용 시간으로 덮어써 한도 우회를 막는다
     @Transactional
     public CallHistoryResponse reportUsage(String callSessionId, CallUsageReportRequest request) {
         CallHistory callHistory = callHistoryRepository.findWithLockByCallSessionIdAndDeletedFalse(callSessionId)
             .orElseThrow(() -> new CustomException(ErrorCode.CALL_SESSION_NOT_FOUND));
-        if (callHistory.getStatus() != CallStatus.ENDED) {
+        if (isReportable(callHistory, request)) {
             long maxSecondsPerSession = settingConfigService.getInt(SettingKey.CALL_MAX_SECONDS_PER_SESSION);
             int usedSeconds = (int) Math.min(request.usedSeconds(), maxSecondsPerSession);
             callHistory.end(usedSeconds, request.endedAt(), request.endReason());
         }
         return CallHistoryResponse.from(callHistory);
+    }
+
+    private boolean isReportable(CallHistory callHistory, CallUsageReportRequest request) {
+        return switch (callHistory.getStatus()) {
+            case ENDED -> false;
+            case CANCELLED -> request.usedSeconds() > 0;
+            default -> true;
+        };
     }
 
     private CallHistory findCallHistory(UUID callHistoryId) {

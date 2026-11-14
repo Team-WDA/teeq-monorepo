@@ -1859,4 +1859,285 @@ void main() {
       });
     });
   });
+
+  group('워커 입장 전에 통화를 버리면 BE에 취소를 알린다', () {
+    final connectionFailedNotice = _notice(
+      CallConnectionNoticeKind.connectionFailed,
+      callStarted: false,
+    );
+
+    test('시작 요청 응답 대기 중 뒤로가기는 응답 뒤 그 세션을 한 번 취소하고 방에 연결하지 않는다', () {
+      final repository = FakeCallRepository(startInfo: _startInfo);
+      _runWithHarness((harness) {
+        final startGate = Completer<void>();
+        repository.startGate = startGate;
+        harness.answer();
+        expect(harness.phase, isA<CallStarting>());
+
+        harness.controller.requestEnd();
+        harness.flush();
+        expect(harness.phase, _finishedHome);
+        expect(repository.cancelledCallSessionIds, isEmpty);
+
+        startGate.complete();
+        harness.flush();
+
+        expect(repository.cancelledCallSessionIds, [_callSessionId]);
+        expect(harness.gateway.connectCount, 0);
+        expect(harness.phase, _finishedHome);
+      }, repository: repository);
+    });
+
+    test('방 연결 중(응답은 받았고 아직 시작 요청 중) 뒤로가기는 취소 한 번 뒤 홈으로 끝난다', () {
+      final gateway = FakeCallRoomGateway();
+      _runWithHarness((harness) {
+        final connectGate = Completer<void>();
+        gateway.connectGate = connectGate;
+        harness.answer();
+        expect(harness.phase, isA<CallStarting>());
+
+        harness.controller.requestEnd();
+        harness.flush();
+        connectGate.complete();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, [_callSessionId]);
+        expect(harness.phase, _finishedHome);
+      }, gateway: gateway);
+    });
+
+    test('연결중 뒤로가기는 취소 한 번 뒤 홈으로 끝난다', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        expect(harness.phase, isA<CallConnecting>());
+
+        harness.controller.requestEnd();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, [_callSessionId]);
+        expect(harness.phase, _finishedHome);
+      });
+    });
+
+    test('워커 입장 뒤 종료는 취소를 호출하지 않는다', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+
+        harness.controller.confirmEnd();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, isEmpty);
+      });
+    });
+
+    test('통화가 시작된 뒤 재접속 중 뒤로가기는 취소를 호출하지 않는다', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.connectionLost),
+        );
+        harness.controller.retryConnection();
+        harness.flush();
+        expect(harness.phase, isA<CallConnecting>());
+
+        harness.controller.requestEnd();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, isEmpty);
+        expect(harness.phase, isA<CallFinished>());
+      });
+    });
+
+    test('연결 실패 카드 닫기는 취소 한 번 뒤 홈으로 끝난다', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        expect(harness.phase, connectionFailedNotice);
+
+        harness.controller.closeConnectionNotice();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, [_callSessionId]);
+        expect(harness.phase, _finishedHome);
+      }, gateway: FakeCallRoomGateway(connectError: StateError('x')));
+    });
+
+    test('시간 초과 카드 닫기는 취소 한 번 뒤 홈으로 끝난다', () {
+      _runWithHarness((harness) {
+        harness.answer();
+        harness.elapse(const Duration(minutes: 5));
+        expect(
+          harness.phase,
+          _notice(
+            CallConnectionNoticeKind.connectionTimeout,
+            callStarted: false,
+          ),
+        );
+
+        harness.controller.closeConnectionNotice();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, [_callSessionId]);
+        expect(harness.phase, _finishedHome);
+      });
+    });
+
+    test('통화가 시작된 뒤의 연결 실패 카드 닫기는 취소 없이 피드백으로 간다', () {
+      _runWithHarness((harness) {
+        harness.answerAndJoinAgent();
+        harness.emit(
+          const CallRoomMetadataChanged('{"v":1,"end_reason":"agent_error"}'),
+        );
+        harness.emit(
+          const CallRoomDisconnected(CallDisconnectCause.roomDeleted),
+        );
+        expect(
+          harness.phase,
+          _notice(CallConnectionNoticeKind.connectionFailed, callStarted: true),
+        );
+
+        harness.controller.closeConnectionNotice();
+        harness.flush();
+
+        expect(harness.repository.cancelledCallSessionIds, isEmpty);
+        expect(harness.phase, isA<CallFinished>());
+      });
+    });
+
+    test('다시 연결하기는 이전 세션 취소가 끝난 뒤 새 시작을 요청한다', () {
+      final repository = FakeCallRepository(startInfo: _startInfo);
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          expect(harness.phase, connectionFailedNotice);
+          final cancelGate = Completer<void>();
+          repository.cancelGate = cancelGate;
+
+          harness.controller.retryConnection();
+          harness.flush();
+          expect(repository.cancelledCallSessionIds, [_callSessionId]);
+          expect(repository.startCallCount, 1);
+
+          cancelGate.complete();
+          harness.flush();
+
+          expect(repository.startCallCount, 2);
+          expect(repository.operations, [
+            'startCall',
+            'cancelCall',
+            'startCall',
+          ]);
+          expect(repository.cancelledCallSessionIds, [_callSessionId]);
+        },
+        repository: repository,
+        gateway: FakeCallRoomGateway(connectError: StateError('x')),
+      );
+    });
+
+    test('취소가 실패해도 다시 연결하기는 새 시작을 진행한다', () {
+      final repository = FakeCallRepository(
+        startInfo: _startInfo,
+        cancelError: StateError('cancel failed'),
+      );
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+
+          harness.controller.retryConnection();
+          harness.flush();
+
+          expect(repository.cancelledCallSessionIds, [_callSessionId]);
+          expect(repository.startCallCount, 2);
+          expect(harness.errorHandler.handledErrors, isEmpty);
+        },
+        repository: repository,
+        gateway: FakeCallRoomGateway(connectError: StateError('x')),
+      );
+    });
+
+    test('시작 요청이 실패해 뜬 연결 실패 카드의 다시 연결하기는 취소하지 않는다', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          expect(harness.phase, connectionFailedNotice);
+
+          harness.controller.retryConnection();
+          harness.flush();
+
+          expect(harness.repository.startCallCount, 2);
+          expect(harness.repository.cancelledCallSessionIds, isEmpty);
+        },
+        repository: FakeCallRepository(
+          startError: _apiError(ErrorCode.callAlreadyInProgress),
+        ),
+      );
+    });
+
+    test('취소 호출이 오류를 던져도 목적지는 홈이고 오류 처리기로 가지 않는다', () {
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+
+          harness.controller.requestEnd();
+          harness.flush();
+
+          expect(harness.repository.cancelledCallSessionIds, [_callSessionId]);
+          expect(harness.phase, _finishedHome);
+          expect(harness.errorHandler.handledErrors, isEmpty);
+        },
+        repository: FakeCallRepository(
+          startInfo: _startInfo,
+          cancelError: StateError('cancel failed'),
+        ),
+      );
+    });
+
+    test('다시 연결하기의 취소를 기다리는 동안 카드를 닫으면 취소는 한 번이고 시작하지 않는다', () {
+      final repository = FakeCallRepository(startInfo: _startInfo);
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          repository.cancelGate = Completer<void>();
+
+          harness.controller.retryConnection();
+          harness.flush();
+          harness.controller.closeConnectionNotice();
+          harness.flush();
+          expect(harness.phase, _finishedHome);
+
+          repository.cancelGate!.complete();
+          harness.flush();
+
+          expect(repository.cancelledCallSessionIds, [_callSessionId]);
+          expect(repository.startCallCount, 1);
+          expect(harness.phase, _finishedHome);
+        },
+        repository: repository,
+        gateway: FakeCallRoomGateway(connectError: StateError('x')),
+      );
+    });
+
+    test('다시 연결하기를 두 번 탭해도 취소는 한 번이고 시작은 한 번만 늘어난다', () {
+      final repository = FakeCallRepository(startInfo: _startInfo);
+      _runWithHarness(
+        (harness) {
+          harness.answer();
+          final cancelGate = Completer<void>();
+          repository.cancelGate = cancelGate;
+
+          harness.controller.retryConnection();
+          harness.controller.retryConnection();
+          harness.flush();
+          // 취소가 끝나기 전에는 새 시작이 나가지 않는다.
+          expect(repository.startCallCount, 1);
+          cancelGate.complete();
+          harness.flush();
+
+          expect(repository.cancelledCallSessionIds, [_callSessionId]);
+          expect(repository.startCallCount, 2);
+        },
+        repository: repository,
+        gateway: FakeCallRoomGateway(connectError: StateError('x')),
+      );
+    });
+  });
 }

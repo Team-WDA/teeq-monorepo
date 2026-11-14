@@ -10,7 +10,8 @@ public enum CallStatus {
     IN_PROGRESS,
     ENDED,
     FAILED,
-    EXPIRED;
+    EXPIRED,
+    CANCELLED;
 
     // 진행 중으로 보는 상태. 회원당 하나만 허용하며 통화 시작과 회원 삭제가 같은 기준을 쓴다
     public static final Set<CallStatus> ACTIVE_STATUSES = Set.of(PENDING, IN_PROGRESS);
@@ -22,8 +23,8 @@ public enum CallStatus {
     private Set<CallStatus> allowedTargets() {
         return switch (this) {
             case PENDING -> Set.of(IN_PROGRESS, FAILED, EXPIRED);
-            case IN_PROGRESS -> Set.of(ENDED, EXPIRED);
-            case EXPIRED -> Set.of(ENDED);
+            case IN_PROGRESS -> Set.of(ENDED, EXPIRED, CANCELLED);
+            case EXPIRED, CANCELLED -> Set.of(ENDED);
             case ENDED, FAILED -> Set.of();
         };
     }

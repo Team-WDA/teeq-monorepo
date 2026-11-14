@@ -23,6 +23,7 @@ public interface AiServerCallControllerDocs {
             `endReason`은 `USER_HANGUP`, `USER_DISCONNECTED`, `LIMIT_REACHED`, `AGENT_ERROR`, `DISPATCH_FAILED` 중 하나이며 필수다. `DISPATCH_FAILED`는 AI 서버가 보고하지 않는다.
             같은 세션을 다시 보고하면 종료 이유를 포함해 첫 값을 유지하고 현재 기록을 그대로 돌려준다(멱등).
             1회 통화 한도를 넘겨 만료 처리된 기록도 늦게 온 보고로 종료 상태로 덮어쓴다.
+            취소된 기록에 0초 보고가 오면 취소 상태를 유지하고, 1초 이상 보고가 오면 종료 상태로 덮어 기록한다.
             사용 시간이 1회 통화 한도를 넘으면 1회 한도로 잘라 저장한다.""")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "종료 보고 반영 성공(중복 보고 포함)"),

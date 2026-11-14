@@ -35,7 +35,7 @@ public interface FeedbackControllerDocs {
             description = "`CALL_SESSION_NOT_FOUND`: 해당 통화 세션 ID의 기록이 없거나 본인의 통화가 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
-            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(진행 중이거나 실패한 통화). 통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도",
+            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(진행 중이거나 실패한 통화), 통화 시간이 0초인 종료 통화, 취소된 통화. 통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<FeedbackStatusResponse> getFeedbackStatus(
@@ -60,7 +60,7 @@ public interface FeedbackControllerDocs {
             description = "`CALL_SESSION_NOT_FOUND`: 해당 통화 세션 ID의 기록이 없거나 본인의 통화가 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
-            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도). `FEEDBACK_ALREADY_SUBMITTED`: 이 통화의 필수 피드백을 이미 제출함(동시 중복 요청 포함)",
+            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도), 통화 시간이 0초인 종료 통화, 취소된 통화. `FEEDBACK_ALREADY_SUBMITTED`: 이 통화의 필수 피드백을 이미 제출함(동시 중복 요청 포함)",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<RequiredFeedbackResponse> submitRequiredFeedback(
@@ -86,7 +86,7 @@ public interface FeedbackControllerDocs {
             description = "`CALL_SESSION_NOT_FOUND`: 해당 통화 세션 ID의 기록이 없거나 본인의 통화가 아님",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "409",
-            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도). `REQUIRED_FEEDBACK_NOT_SUBMITTED`: 필수 피드백을 아직 제출하지 않음. `DETAILED_FEEDBACK_NOT_INVITED`: 상세 피드백 대상 통화가 아님. `FEEDBACK_ALREADY_SUBMITTED`: 이 통화의 상세 피드백을 이미 제출함(동시 중복 요청 포함)",
+            description = "`CALL_NOT_FEEDBACKABLE`: 종료 또는 만료 상태가 아닌 통화(통화 종료 보고가 처리되기 전(진행 중)이면 거절되므로 잠시 후 재시도), 통화 시간이 0초인 종료 통화, 취소된 통화. `REQUIRED_FEEDBACK_NOT_SUBMITTED`: 필수 피드백을 아직 제출하지 않음. `DETAILED_FEEDBACK_NOT_INVITED`: 상세 피드백 대상 통화가 아님. `FEEDBACK_ALREADY_SUBMITTED`: 이 통화의 상세 피드백을 이미 제출함(동시 중복 요청 포함)",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ResponseEntity<Void> submitDetailedFeedback(

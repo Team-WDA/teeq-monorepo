@@ -29,6 +29,13 @@ final class CallRepositoryImpl implements CallRepository {
   }
 
   @override
+  Future<void> cancelCall(String callSessionId) async {
+    await _dio.post<void>(
+      '/api/calls/${Uri.encodeComponent(callSessionId)}/cancel',
+    );
+  }
+
+  @override
   Future<CallLimitStatus> fetchTodayLimitStatus() async {
     final response = await _dio.get<Map<String, dynamic>>(
       '/api/call-limits/today',

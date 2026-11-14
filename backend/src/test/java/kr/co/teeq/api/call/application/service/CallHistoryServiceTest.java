@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import java.time.Clock;
@@ -30,6 +31,8 @@ import kr.co.teeq.api.setting.application.service.SettingConfigService;
 import kr.co.teeq.api.setting.core.constant.SettingKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -246,6 +249,100 @@ class CallHistoryServiceTest {
             new CallUsageReportRequest((int) MAX_SECONDS_PER_SESSION + 500, REPORTED_ENDED_AT, EndReason.USER_HANGUP));
 
         assertThat(callHistory.getDurationSeconds()).isEqualTo((int) MAX_SECONDS_PER_SESSION);
+    }
+
+    @Test
+    void reportUsage_cancelledRecordWithZeroSeconds_keepsCancelled() {
+        CallHistory callHistory = inProgressRecord();
+        callHistory.cancel(NOW);
+        stubLockedRecord(callHistory);
+
+        CallHistoryResponse response = createService()
+            .reportUsage("call-session-1", new CallUsageReportRequest(0, REPORTED_ENDED_AT, EndReason.USER_HANGUP));
+
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.CANCELLED);
+        assertThat(callHistory.getEndedAt()).isEqualTo(NOW);
+        assertThat(callHistory.getEndReason()).isNull();
+        assertThat(response.status()).isEqualTo(CallStatus.CANCELLED);
+    }
+
+    @Test
+    void reportUsage_cancelledRecordWithPositiveSeconds_becomesEndedCappedToLimit() {
+        stubMaxSecondsPerSession();
+        CallHistory callHistory = inProgressRecord();
+        callHistory.cancel(NOW);
+        stubLockedRecord(callHistory);
+
+        CallHistoryResponse response = createService().reportUsage("call-session-1",
+            new CallUsageReportRequest((int) MAX_SECONDS_PER_SESSION + 500, REPORTED_ENDED_AT,
+                EndReason.USER_DISCONNECTED));
+
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
+        assertThat(callHistory.getDurationSeconds()).isEqualTo((int) MAX_SECONDS_PER_SESSION);
+        assertThat(callHistory.getEndedAt()).isEqualTo(REPORTED_ENDED_AT);
+        assertThat(callHistory.getEndReason()).isEqualTo(EndReason.USER_DISCONNECTED);
+        assertThat(response.status()).isEqualTo(CallStatus.ENDED);
+    }
+
+    @Test
+    void cancel_ownInProgressRecord_becomesCancelledAtNow() {
+        CallHistory callHistory = inProgressRecord();
+        stubLockedRecord(callHistory);
+        given(member.getId()).willReturn(memberId);
+
+        CallHistoryResponse response = createService().cancel(member, "call-session-1");
+
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.CANCELLED);
+        assertThat(callHistory.getEndedAt()).isEqualTo(NOW);
+        assertThat(callHistory.getDurationSeconds()).isZero();
+        assertThat(response.status()).isEqualTo(CallStatus.CANCELLED);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CallStatus.class, names = {"ENDED", "EXPIRED", "CANCELLED"})
+    void cancel_alreadyFinishedRecord_returnsUnchangedWithoutError(CallStatus status) {
+        CallHistory callHistory = inProgressRecord();
+        switch (status) {
+            case ENDED -> callHistory.end(300, REPORTED_ENDED_AT, EndReason.USER_HANGUP);
+            case EXPIRED -> callHistory.expire();
+            default -> callHistory.cancel(NOW.minusSeconds(10));
+        }
+        int durationBefore = callHistory.getDurationSeconds();
+        Instant endedAtBefore = callHistory.getEndedAt();
+        stubLockedRecord(callHistory);
+        given(member.getId()).willReturn(memberId);
+
+        CallHistoryResponse response = createService().cancel(member, "call-session-1");
+
+        assertThat(callHistory.getStatus()).isEqualTo(status);
+        assertThat(callHistory.getDurationSeconds()).isEqualTo(durationBefore);
+        assertThat(callHistory.getEndedAt()).isEqualTo(endedAtBefore);
+        assertThat(response.status()).isEqualTo(status);
+    }
+
+    @Test
+    void cancel_unknownSession_throwsCallSessionNotFound() {
+        given(callHistoryRepository.findWithLockByCallSessionIdAndDeletedFalse("unknown"))
+            .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> createService().cancel(member, "unknown"))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SESSION_NOT_FOUND));
+    }
+
+    @Test
+    void cancel_otherMembersSession_throwsCallSessionNotFoundAndKeepsStatus() {
+        Member otherMember = mock(Member.class);
+        given(otherMember.getId()).willReturn(UUID.randomUUID());
+        CallHistory callHistory = CallHistory.pending(otherMember, "persona-1", LimitKind.PER_DAY, NOW);
+        callHistory.activate("call-session-1", "v1", "model-1");
+        stubLockedRecord(callHistory);
+        given(member.getId()).willReturn(memberId);
+
+        assertThatThrownBy(() -> createService().cancel(member, "call-session-1"))
+            .isInstanceOfSatisfying(CustomException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CALL_SESSION_NOT_FOUND));
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.IN_PROGRESS);
     }
 
     @Test

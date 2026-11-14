@@ -40,7 +40,8 @@ public class CallHistoryQueryService {
     // 요청의 정렬은 무시하고 항상 최근 시작 통화가 먼저 오게 한다
     private static final Sort CALL_SORT = Sort.by(Sort.Order.desc("startedAt"), Sort.Order.desc("id"));
     // 요약의 통화 횟수·사용 시간에서 제외하는 상태
-    private static final Set<CallStatus> SUMMARY_EXCLUDED_STATUSES = Set.of(CallStatus.FAILED, CallStatus.PENDING);
+    private static final Set<CallStatus> SUMMARY_EXCLUDED_STATUSES = Set.of(CallStatus.FAILED, CallStatus.PENDING,
+        CallStatus.CANCELLED);
     // 오늘을 포함한 최근 일수
     private static final long RECENT_DAYS = 7;
 
