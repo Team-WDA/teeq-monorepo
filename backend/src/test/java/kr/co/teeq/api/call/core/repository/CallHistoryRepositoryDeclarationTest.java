@@ -8,7 +8,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import kr.co.teeq.api.call.core.constant.CallStatus;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -63,6 +65,20 @@ class CallHistoryRepositoryDeclarationTest {
             .contains("started_at >= :fromInclusive", "started_at < :toExclusive");
         assertThat(method.getGenericReturnType().getTypeName())
             .contains(CallHistoryRepository.AbnormalCallRow.class.getSimpleName());
+    }
+
+    @Test
+    void findLatestFeedbackableCall_declaresFeedbackableRuleQuery() throws NoSuchMethodException {
+        Method method = CallHistoryRepository.class.getMethod(
+            "findLatestFeedbackableCall", UUID.class, CallStatus.class, CallStatus.class, Limit.class);
+
+        String queryText = method.getAnnotation(Query.class).value();
+
+        assertThat(queryText).contains("c.member.id = :memberId", "c.deleted = false")
+            .contains("c.status = :expiredStatus")
+            .contains("c.status = :endedStatus and c.durationSeconds > 0")
+            .contains("order by c.startedAt desc");
+        assertThat(method.getGenericReturnType().getTypeName()).contains("Optional");
     }
 
     @Test

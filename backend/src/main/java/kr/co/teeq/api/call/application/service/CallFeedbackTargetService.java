@@ -11,6 +11,7 @@ import kr.co.teeq.api.common.core.exception.CustomException;
 import kr.co.teeq.api.common.core.exception.ErrorCode;
 import kr.co.teeq.api.member.core.entity.Member;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CallFeedbackTargetService {
 
-    private static final Set<CallStatus> FEEDBACKABLE_STATUSES = Set.of(CallStatus.ENDED, CallStatus.EXPIRED);
+    // 통화 순번에서 제외하는 상태
+    private static final Set<CallStatus> CALL_INDEX_EXCLUDED_STATUSES = Set.of(CallStatus.FAILED, CallStatus.CANCELLED);
 
     private final CallHistoryRepository callHistoryRepository;
 
@@ -31,24 +33,25 @@ public class CallFeedbackTargetService {
         CallHistory callHistory = callHistoryRepository.findByCallSessionIdAndDeletedFalse(callSessionId)
             .filter(found -> found.getMember().getId().equals(member.getId()))
             .orElseThrow(() -> new CustomException(ErrorCode.CALL_SESSION_NOT_FOUND));
-        if (!FEEDBACKABLE_STATUSES.contains(callHistory.getStatus())) {
+        if (!callHistory.isFeedbackable()) {
             throw new CustomException(ErrorCode.CALL_NOT_FEEDBACKABLE);
         }
         return new FeedbackTargetCall(callHistory, countCallIndex(member, callHistory));
     }
 
-    // 피드백 가능한(종료·만료) 통화 중 가장 최근 것. 없으면 empty
+    // 피드백 가능한(통화 시간이 1초 이상인 종료, 만료) 통화 중 가장 최근 것. 없으면 empty
     @Transactional(readOnly = true)
     public Optional<LatestFeedbackableCall> findLatestFeedbackableCall(Member member) {
         return callHistoryRepository
-            .findFirstByMemberIdAndStatusInAndDeletedFalseOrderByStartedAtDesc(member.getId(), FEEDBACKABLE_STATUSES)
+            .findLatestFeedbackableCall(member.getId(), CallStatus.ENDED, CallStatus.EXPIRED, Limit.of(1))
             .map(callHistory -> new LatestFeedbackableCall(
                 callHistory.getId(), callHistory.getCallSessionId(), countCallIndex(member, callHistory)));
     }
 
     private int countCallIndex(Member member, CallHistory callHistory) {
-        long callIndex = callHistoryRepository.countByMemberIdAndStatusNotAndStartedAtLessThanEqualAndDeletedFalse(
-            member.getId(), CallStatus.FAILED, callHistory.getStartedAt());
+        long callIndex = callHistoryRepository
+            .countByMemberIdAndStatusNotInAndStartedAtLessThanEqualAndDeletedFalse(
+                member.getId(), CALL_INDEX_EXCLUDED_STATUSES, callHistory.getStartedAt());
         return Math.toIntExact(callIndex);
     }
 
