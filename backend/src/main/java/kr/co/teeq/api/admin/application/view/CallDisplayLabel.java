@@ -21,6 +21,7 @@ public final class CallDisplayLabel {
             case ENDED -> "종료";
             case FAILED -> "시작 실패";
             case EXPIRED -> "만료";
+            case CANCELLED -> "취소";
         };
     }
 

@@ -142,6 +142,72 @@ class CallHistoryTest {
         assertStateConflict(() -> pending().end(10, ENDED_AT, EndReason.USER_HANGUP));
     }
 
+    @Test
+    @DisplayName("cancel은 IN_PROGRESS를 CANCELLED로 바꾸고 종료 시각을 저장하며 0초, 종료 사유 없음으로 둔다")
+    void cancel() {
+        CallHistory callHistory = inProgress();
+
+        callHistory.cancel(ENDED_AT);
+
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.CANCELLED);
+        assertThat(callHistory.getEndedAt()).isEqualTo(ENDED_AT);
+        assertThat(callHistory.getDurationSeconds()).isZero();
+        assertThat(callHistory.getEndReason()).isNull();
+    }
+
+    @Test
+    @DisplayName("IN_PROGRESS가 아니면 cancel할 수 없다")
+    void cancelRejectsNonInProgress() {
+        CallHistory ended = inProgress();
+        ended.end(300, ENDED_AT, EndReason.USER_HANGUP);
+        CallHistory expired = inProgress();
+        expired.expire();
+        CallHistory cancelled = inProgress();
+        cancelled.cancel(ENDED_AT);
+
+        assertStateConflict(() -> pending().cancel(ENDED_AT));
+        assertStateConflict(() -> ended.cancel(ENDED_AT));
+        assertStateConflict(() -> expired.cancel(ENDED_AT));
+        assertStateConflict(() -> cancelled.cancel(ENDED_AT));
+    }
+
+    @Test
+    @DisplayName("end는 CANCELLED도 ENDED로 덮어쓰고 시간과 종료 사유를 저장한다")
+    void endFromCancelled() {
+        CallHistory callHistory = inProgress();
+        callHistory.cancel(ENDED_AT);
+
+        callHistory.end(45, ENDED_AT.plusSeconds(30), EndReason.USER_HANGUP);
+
+        assertThat(callHistory.getStatus()).isEqualTo(CallStatus.ENDED);
+        assertThat(callHistory.getDurationSeconds()).isEqualTo(45);
+        assertThat(callHistory.getEndedAt()).isEqualTo(ENDED_AT.plusSeconds(30));
+        assertThat(callHistory.getEndReason()).isEqualTo(EndReason.USER_HANGUP);
+    }
+
+    @Test
+    @DisplayName("isFeedbackable은 1초 이상인 ENDED와 EXPIRED만 true다")
+    void isFeedbackable() {
+        CallHistory endedWithUsage = inProgress();
+        endedWithUsage.end(1, ENDED_AT, EndReason.USER_HANGUP);
+        CallHistory endedWithoutUsage = inProgress();
+        endedWithoutUsage.end(0, ENDED_AT, EndReason.USER_HANGUP);
+        CallHistory expired = inProgress();
+        expired.expire();
+        CallHistory cancelled = inProgress();
+        cancelled.cancel(ENDED_AT);
+        CallHistory failed = pending();
+        failed.fail();
+
+        assertThat(endedWithUsage.isFeedbackable()).isTrue();
+        assertThat(expired.isFeedbackable()).isTrue();
+        assertThat(endedWithoutUsage.isFeedbackable()).isFalse();
+        assertThat(cancelled.isFeedbackable()).isFalse();
+        assertThat(failed.isFeedbackable()).isFalse();
+        assertThat(pending().isFeedbackable()).isFalse();
+        assertThat(inProgress().isFeedbackable()).isFalse();
+    }
+
     private void assertStateConflict(Runnable action) {
         assertThatThrownBy(action::run)
             .isInstanceOf(CustomException.class)

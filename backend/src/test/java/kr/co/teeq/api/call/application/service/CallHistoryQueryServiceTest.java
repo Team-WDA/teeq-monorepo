@@ -78,7 +78,7 @@ class CallHistoryQueryServiceTest {
 
         MemberCallSummaryResponse response = callHistoryQueryService.getMemberSummary(MEMBER_ID);
 
-        verify(callHistoryRepository).summarizeByMember(MEMBER_ID, Set.of(CallStatus.FAILED, CallStatus.PENDING),
+        verify(callHistoryRepository).summarizeByMember(MEMBER_ID, Set.of(CallStatus.FAILED, CallStatus.PENDING, CallStatus.CANCELLED),
             Instant.parse("2026-10-13T15:00:00Z"));
         assertThat(response).isEqualTo(new MemberCallSummaryResponse(3, 120,
             Instant.parse("2026-10-19T01:00:00Z"), 2));

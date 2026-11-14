@@ -95,7 +95,7 @@ public class CallHistory extends BaseEntity {
         transitionTo(CallStatus.FAILED);
     }
 
-    // EXPIRED 기록이 늦게 온 종료 보고로 덮어쓰이는 경우도 포함한다
+    // EXPIRED, CANCELLED 기록이 늦게 온 종료 보고로 덮어쓰이는 경우도 포함한다
     public void end(int usedSeconds, Instant endedAt, EndReason endReason) {
         transitionTo(CallStatus.ENDED);
         this.durationSeconds = usedSeconds;
@@ -103,9 +103,21 @@ public class CallHistory extends BaseEntity {
         this.endReason = endReason;
     }
 
+    // 워커 입장 전에 사용자가 통화를 버린 경우. 사용 시간은 0초이고 종료 사유는 없다
+    public void cancel(Instant endedAt) {
+        transitionTo(CallStatus.CANCELLED);
+        this.endedAt = endedAt;
+    }
+
     public void expire() {
         transitionTo(CallStatus.EXPIRED);
         this.durationSeconds = 0;
+    }
+
+    // 피드백 대상인지. 종료는 통화 시간이 1초 이상일 때만, 만료는 항상 대상이다.
+    // 같은 규칙이 CallHistoryRepository.findLatestFeedbackableCall 쿼리에도 있으므로 함께 고친다
+    public boolean isFeedbackable() {
+        return status == CallStatus.EXPIRED || (status == CallStatus.ENDED && durationSeconds > 0);
     }
 
     private void transitionTo(CallStatus target) {
