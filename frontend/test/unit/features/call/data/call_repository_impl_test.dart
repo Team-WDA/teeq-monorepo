@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:teeq/core/auth/token_storage.dart';
 import 'package:teeq/core/config/app_config.dart';
 import 'package:teeq/core/error/app_exception.dart';
+import 'package:teeq/core/error/error_code.dart';
 import 'package:teeq/core/network/dio_client.dart';
 import 'package:teeq/features/call/data/call_repository_impl.dart';
 import 'package:teeq/features/call/domain/call_repository.dart';
@@ -109,5 +111,44 @@ void main() {
 
     expect(adapter.requestsTo('/api/call-limits/today').single.method, 'GET');
     expect(status.remainingSeconds, 500);
+  });
+
+  test('cancelCall_postsToEncodedCancelPath', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/calls/call%2Fsession-1/cancel', [
+      ScriptedReply.json(200, {'callSessionId': 'call/session-1'}),
+    ]);
+
+    await repository.cancelCall('call/session-1');
+
+    expect(
+      adapter.requestsTo('/api/calls/call%2Fsession-1/cancel').single.method,
+      'POST',
+    );
+  });
+
+  test('cancelCall_propagatesApiError', () async {
+    final (:repository, :adapter) = _setUp();
+    adapter.on('/api/calls/call-session-1/cancel', [
+      ScriptedReply.json(404, {
+        'errorCode': 'CALL_SESSION_NOT_FOUND',
+        'errorMessage': 'not found',
+      }),
+    ]);
+
+    await expectLater(
+      repository.cancelCall('call-session-1'),
+      throwsA(
+        isA<DioException>().having(
+          (exception) => exception.error,
+          'error',
+          isA<ApiException>().having(
+            (exception) => exception.errorCode,
+            'errorCode',
+            ErrorCode.callSessionNotFound,
+          ),
+        ),
+      ),
+    );
   });
 }
